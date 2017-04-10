@@ -1,0 +1,29 @@
+{
+  "name": "ihtai_2.0",
+  "version": "2.0.0",
+  "description": "",
+  "main": "server/index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --reporter spec"
+  },
+  "author": "Chris Natale",
+  "license": "ISC",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "eslint": "^3.13.0",
+    "eslint-config-google": "^0.7.1",
+    "eslint-config-standard": "^7.1.0",
+    "eslint-plugin-filenames": "^1.1.0",
+    "eslint-plugin-mocha": "^4.8.0",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-standard": "^2.1.1",
+    "gulp": "^3.9.1",
+    "gulp-eslint": "^3.0.1",
+    "gulp-mocha": "^4.1.0",
+    "gulp-nodemon": "^2.2.1",
+    "mocha": "^3.2.0"
+  },
+  "dependencies": {
+    "config": "^1.25.1"
+  }
+}
