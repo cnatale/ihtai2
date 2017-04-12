@@ -4,6 +4,8 @@
   "description": "",
   "main": "server/index.js",
   "scripts": {
+    "start": "node ./server/index.js",
+    "start-debugger": "node --inspect --debug-brk ./server/index.js",
     "test": "./node_modules/.bin/mocha --reporter spec"
   },
   "author": "Chris Natale",
@@ -24,6 +26,13 @@
     "mocha": "^3.2.0"
   },
   "dependencies": {
-    "config": "^1.25.1"
+    "bunyan": "^1.8.10",
+    "config": "^1.25.1",
+    "knex": "^0.12.9",
+    "logrotate-stream": "^0.2.5",
+    "mysql": "^2.13.0",
+    "mysql2": "^1.2.0",
+    "sqlformatter": "^0.1.0",
+    "when": "^3.7.8"
   }
 }
