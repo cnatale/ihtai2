@@ -1,4 +1,4 @@
-// TODO: write tests to test connection with database, that it returns expected data
+// test connection with database, that it returns expected data
 const chai = require('chai');
 const _ = require('lodash');
 const chaiAsPromised = require('chai-as-promised');

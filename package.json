@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node ./server/index.js",
     "start-debugger": "node --inspect --debug-brk ./server/index.js",
-    "test": "./node_modules/.bin/mocha test/**/*.spec.js"
+    "test": "./node_modules/.bin/mocha test/**/*.spec.js",
+    "cover": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test/**/*.spec.js"
   },
   "author": "Chris Natale",
   "license": "ISC",
@@ -29,6 +30,7 @@
     "bunyan": "^1.8.10",
     "chai-as-promised": "^6.0.0",
     "config": "^1.25.1",
+    "istanbul": "^0.4.5",
     "knex": "^0.12.9",
     "lodash": "^4.17.4",
     "logrotate-stream": "^0.2.5",
