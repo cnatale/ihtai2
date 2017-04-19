@@ -10,5 +10,8 @@ module.exports = {
       maxSize: '1g',
       maxFiles: 10
     }
+  },
+  db: {
+    globalPointsTableName: 'global_points_table'
   }
 };
