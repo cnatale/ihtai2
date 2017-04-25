@@ -12,6 +12,11 @@
     -if time period sliding window isn’t full, skip reweighting
   -has method to get next action with lowest score from db table
 
+
+  Instantiation: pass in an n-dimensional point object. This object has the following properties:
+    -inputState array
+    -actionState array
+    -driveState array
 */
 
 const when = require('when');
@@ -55,11 +60,10 @@ class PatternRecognizer {
   }
 
   createActionsTableIfNoneExists(tableName) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       knex.schema.hasTable(tableName).then((exists) => {
         if (!exists) {
           knex.schema.createTable(tableName, (table) => {
-            log.info('||||||| TABLE CREATED: ');
             table.increments('id').primary();
             table.string('next_action');
             table.double('score');
@@ -88,13 +92,15 @@ class PatternRecognizer {
 
   }
 
+  /**
+    Drops actions table with name string given by this pattern recognizer's patternToString method
+  */
   dropActionsTable() {
     return new Promise((resolve) => {
       knex.schema.dropTable(this.patternToString()).then(() => {
         resolve();
       }, () => { resolve(); });
     });
-    
   }
 
   _createPointsTableIfNoneExists() {
@@ -132,7 +138,10 @@ class PatternRecognizer {
   }
 
   _removePointFromPointsTable() {
+    const globalPointsTableName = config.get('db').globalPointsTableName;
 
+    return knex(globalPointsTableName).where(
+      'point', this.patternToString()).del();    
   }
 
 

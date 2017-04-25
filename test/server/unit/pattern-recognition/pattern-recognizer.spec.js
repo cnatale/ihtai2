@@ -65,7 +65,6 @@ describe('patternRecognizer', () => {
       });
 
       patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3_4_5_6').then(() => { 
-        log.info('WTFWTFWTFWTF');
         patternRecognizer.dropActionsTable().then(() => {
           knex.schema.hasTable('pattern_1_2_3_4_5_6').then(function(exists) {
             if (exists) {
@@ -129,6 +128,8 @@ describe('patternRecognizer', () => {
         driveState: [5, 6]
       });
 
+      const globalPointsTableName = config.get('db').globalPointsTableName;
+
       patternRecognizer.initializeTables().then(() => {
         patternRecognizer.createPointsTableIfNoneExists().then(() => {
           patternRecognizer.addPointToPointsTable().then(() => {
@@ -139,18 +140,31 @@ describe('patternRecognizer', () => {
           });
         });
       });
-
-      const globalPointsTableName = config.get('db').globalPointsTableName;
-      log.info('||||||||||| PATTERN: ' + patternRecognizer.patternToString() + ' |||||||||');
-
-      // BUG: doesn't work if point isn't already in db
-      patternRecognizer.createPointsTableIfNoneExists().then(() => {
-
-      }); 
-
     });
   });
 
+  describe('_removePointFromPointsTable', () => {
+    it('should remove the patternRecognizer point from the points table', (done) => {
+      const patternRecognizer = new PatternRecognizer({
+        inputState: [1, 2],
+        actionState: [3, 4],
+        driveState: [5, 6]
+      });
+
+      patternRecognizer.initializeTables().then(() => {
+        patternRecognizer.createPointsTableIfNoneExists().then(() => {
+          patternRecognizer.addPointToPointsTable().then(() => {
+            patternRecognizer._removePointFromPointsTable().then((result) => {
+              // result is the number of rows affected; should be at least 1
+              expect(result).to.be.a('number').and.to.be.above(0);
+              done();
+            });
+          });
+        });
+      });
+
+    });
+  });
 
 
   it('should delete a patternRecognizer', () => {
