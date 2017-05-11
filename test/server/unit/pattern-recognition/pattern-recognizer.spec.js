@@ -130,13 +130,11 @@ describe('patternRecognizer', () => {
 
       const globalPointsTableName = config.get('db').globalPointsTableName;
 
-      patternRecognizer.initializeTables().then(() => {
-        patternRecognizer.createPointsTableIfNoneExists().then(() => {
-          patternRecognizer.addPointToPointsTable().then(() => {
-            knex(globalPointsTableName).select().where('point', '=', patternRecognizer.patternToString()).then((results) => {
-              expect(results).to.be.an('array').and.to.not.be.empty;
-              done();
-            });
+      patternRecognizer.createPointsTableIfNoneExists().then(() => {
+        patternRecognizer.addPointToPointsTable().then(() => {
+          knex(globalPointsTableName).select().where('point', '=', patternRecognizer.patternToString()).then((results) => {
+            expect(results).to.be.an('array').and.to.not.be.empty;
+            done();
           });
         });
       });
@@ -151,14 +149,12 @@ describe('patternRecognizer', () => {
         driveState: [5, 6]
       });
 
-      patternRecognizer.initializeTables().then(() => {
-        patternRecognizer.createPointsTableIfNoneExists().then(() => {
-          patternRecognizer.addPointToPointsTable().then(() => {
-            patternRecognizer._removePointFromPointsTable().then((result) => {
-              // result is the number of rows affected; should be at least 1
-              expect(result).to.be.a('number').and.to.be.above(0);
-              done();
-            });
+      patternRecognizer.createPointsTableIfNoneExists().then(() => {
+        patternRecognizer.addPointToPointsTable().then(() => {
+          patternRecognizer._removePointFromPointsTable().then((result) => {
+            // result is the number of rows affected; should be at least 1
+            expect(result).to.be.a('number').and.to.be.above(0);
+            done();
           });
         });
       });
@@ -166,14 +162,45 @@ describe('patternRecognizer', () => {
     });
   });
 
+  describe('initializeAllPossibleActions', () => {
+    it('should initialize all possible actions in database', (done) => {
+      const patternRecognizer = new PatternRecognizer({
+        inputState: [1],
+        actionState: [2],
+        driveState: [3]
+      });
 
+      patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3_4_5_6').then(() => { 
+        patternRecognizer.initializeAllPossibleActions([[-1, 1], [-1, 1], [-1, 1]]).then(() => {
+          // TODO: check table to see if they're created
+
+
+        });
+      });
+    });
+
+    });
+  });
+
+  describe('getNextBestAction', () => {
+    it('should return its next action with lowest(best) score', (done) => {
+      // TODO: call initializeAllPossibleActions first to create actions
+      done();
+    });
+  });
+
+  describe('initializeTables', () => {
+    it('should initialize actions, points tables if necessary, and add starting data', (done) => {
+      done();
+    });
+  });
+
+
+  /////////////////////////////////////////////////////
   it('should delete a patternRecognizer', () => {
     // probably should be integration test since it'll involve db
   });
 
-  it('should return its next action with lowest score', () => {
-    // probably should be integration test since it'll involve db
-  });
 
   it('should provide access to all next actions scores', () => {
     // probably should be integration test since it'll involve db

@@ -22,6 +22,7 @@
 const when = require('when');
 const knex = require('../db/knex');
 const config = require('config');
+const _ = require('lodash');
 const log = require('../../log');
 
 class PatternRecognizer {
@@ -40,17 +41,32 @@ class PatternRecognizer {
 
   }
 
-  _initializeTables() {
+  // TODO: pass in possibleActions
+  _initializeTables(possibleActions) {
     const tableName = this.patternToString();
 
+    return new Promise((resolve) => {
+      Promise.all([
+        this.createActionsTableIfNoneExists(tableName),
+        this.createPointsTableIfNoneExists()
+      ]).then(() => {
+        Promise.all([
+          this.initializeAllPossibleActions(possibleActions),
+          this.addPointToPointsTable()
+        ]).then(() => {
+          resolve();
+        });
+        
+      });
+    });
     // TODO: return a when.all of all the promises that need to complete
     // add to global lookup table
 
     // create db table holding all possible next moves/scores
 
-    this.createActionsTableIfNoneExists(tableName).then(() => {
+    // this.createActionsTableIfNoneExists(tableName).then(() => {
       // TODO: add random scores to every possible next action
-    });
+    // });
 
     // TODO: add pattern to table of all pattern recognizer ids    
   }
@@ -66,7 +82,7 @@ class PatternRecognizer {
           knex.schema.createTable(tableName, (table) => {
             table.increments('id').primary();
             table.string('next_action');
-            table.double('score');
+            table.double('score').index();
             table.timestamps();
           }).then(() => {
             resolve();
@@ -88,8 +104,83 @@ class PatternRecognizer {
     });
   }
 
-  initializeAllPossibleActions() {
+  /**
+  Creates random weights for each possible next move combination.
 
+  @param possibleActions {object} Has the following format:
+  {
+    [
+      [possible actions for index 0],
+      [possible actions for index 1],
+      ...
+      [possible actions for index n]
+    ]
+
+    ex: [[-1, 0, 1], [1, 2, 3], ... [-1, 1]]
+  }
+  */
+  initializeAllPossibleActions(possibleActions) {
+    /*
+    To do this, I'd need a list of every possible action that could be taken. That's
+    actually not so bad.
+    */
+    const actionsTableName = this.patternToString();
+
+    /* TODO: create method that drills down number of dimensions action signal is
+       then recursively generates a random score for every combination.
+      This would be like a for (i = 0 ...) { for (j = 0 ...) { ... } } loop but for arbitrary 
+      dimensionality. Do the row insertion logic once the descent reaches the last element.
+    */
+
+    // BUG: this will generate a row for every signal, not signal combination.
+    // You want an n-fold Cartesian product
+    /*
+    [[-1,1,2,2], [2,3], [1,2,1,1,3,2,1], ... [1,2,1,3,2]]
+    -this is a 2d array. info necessary to recursively determine:
+    -array
+    -1st dimension index
+    -2nd dimension index
+    [[-1,1], [-1,1]]
+    */
+    const outputs = [];
+    function generateAllCombos(possibleActions, insertArray, firstDimIndex, secondDimIndex) {
+      // iterate through all elements in first index
+      if (firstDimIndex < possibleActions.length) {
+        generateAllCombos(possibleActions, insertArray, firstDimIndex + 1, secondDimIndex);
+      }
+      if (secondDimIndex < possibleActions[firstDimIndex.length]) {
+        generateAllCombos(possibleActions, insertArray, firstDimIndex, secondDimIndex + 1);
+      }
+
+      // TODO: create random score for knex row, insert into table
+      // let's assume scores are from 0 - 10 for now
+      // it may make sense to score fairly close to perfect score so that none
+      // get completely ruled out form start.
+      // TODO: Use knex(tablname).insert() with an array of objects, so this look should
+      // append to an array, and then after the loop runs do the insert with array.
+
+      /*
+      insertArray should store a stack of indices, and then generate 0's for rest of 
+      indices in list
+      */
+
+      
+      insertArray.push(secondDimIndex);
+      const fillerArr = [];
+      for (let i = 0; i < (possibleActions.length - insertArray.length); i++) {
+        fillerArr.push(0);
+      }
+
+      outputs.push = {
+        next_action: insertArray.join('_') + fillerArr.length ? ('_' + fillerArr.join('_')) : '',
+        score: Math.random() * 5
+      };
+      return insertArray;
+    }
+
+    const rowsToInsert = generateAllCombos(possibleActions, [], 0, 0); // should return array of insertions
+    return knex(actionsTableName).insert(rowsToInsert);
+    // TODO: write tests
   }
 
   /**
@@ -124,6 +215,10 @@ class PatternRecognizer {
     });
   }
 
+
+  /**
+  Adds this PatternRecognizer's n-dimensional point to the globalPointsTable
+  */
   _addPointToPointsTable() {
     return new Promise((resolve) => {
       this.createPointsTableIfNoneExists().then(() => {
@@ -152,7 +247,9 @@ class PatternRecognizer {
     @return {string} the string representing next action to take
   */
   getBestNextAction() {
-    // TODO: query db for lowest drive score 
+    const actionsTableName = this.patternToString();
+
+    return knex(actionsTableName).orderBy('score').limit(1);
   }
 
   /**
@@ -161,7 +258,7 @@ class PatternRecognizer {
     @return {object} List of all next actions and their scores. Order not guaranteed.
   */
   getNextActionScores() {
-
+    return knex.column('next_action', 'score').select().from(this.patternToString());
   }
 
 
@@ -170,7 +267,7 @@ class PatternRecognizer {
     @param slidingWindow (Object) Slding window of stimesteps.
   */
   reweight(slidingWindow) {
-
+    // look at logic i'm using in ihtai 1, can probably be similar
 
   }
 }
