@@ -142,14 +142,16 @@ class PatternRecognizer {
     -2nd dimension index
     [[-1,1], [-1,1]]
     */
-    const outputs = [];
-    function generateAllCombos(possibleActions, insertArray, firstDimIndex, secondDimIndex) {
-      // iterate through all elements in first index
+
+    function generateAllCombos(possibleActions, insertArray, queries, firstDimIndex, secondDimIndex) {
+      let combinedQueries = _.clone(queries);
+
+      // start by descending to last element in possibleActions array
       if (firstDimIndex < possibleActions.length) {
-        generateAllCombos(possibleActions, insertArray, firstDimIndex + 1, secondDimIndex);
+        combinedQueries = combinedQueries.concat(generateAllCombos(possibleActions, insertArray, firstDimIndex + 1, secondDimIndex));
       }
       if (secondDimIndex < possibleActions[firstDimIndex.length]) {
-        generateAllCombos(possibleActions, insertArray, firstDimIndex, secondDimIndex + 1);
+        combinedQueries = combinedQueries.concat(generateAllCombos(possibleActions, insertArray, firstDimIndex, secondDimIndex + 1));
       }
 
       // TODO: create random score for knex row, insert into table
@@ -163,23 +165,25 @@ class PatternRecognizer {
       insertArray should store a stack of indices, and then generate 0's for rest of 
       indices in list
       */
-
-      
+      // i need previous elements from prior to unwind point
       insertArray.push(secondDimIndex);
+
       const fillerArr = [];
       for (let i = 0; i < (possibleActions.length - insertArray.length); i++) {
         fillerArr.push(0);
       }
 
-      outputs.push = {
+      combinedQueries.push = {
         next_action: insertArray.join('_') + fillerArr.length ? ('_' + fillerArr.join('_')) : '',
         score: Math.random() * 5
       };
-      return insertArray;
+      // return insertArray;
+      return combinedQueries;
     }
 
-    const rowsToInsert = generateAllCombos(possibleActions, [], 0, 0); // should return array of insertions
+    const rowsToInsert = generateAllCombos(possibleActions, [], [], 0, 0); // should return array of insertions
     return knex(actionsTableName).insert(rowsToInsert);
+    
     // TODO: write tests
   }
 

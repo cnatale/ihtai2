@@ -50,12 +50,6 @@ describe('patternRecognizer', () => {
     });
   });
 
-  describe('initializeAllPossibleAction', () => {
-    it('should add fields for all possible actions in patternRecognizer\'s actionsTable', () => {
-
-    });
-  });
-
   describe('dropActionsTable', () => {
     it('should remove the actions table associated with a patternRecognizer', (done) => {
       const patternRecognizer = new PatternRecognizer({
@@ -121,7 +115,7 @@ describe('patternRecognizer', () => {
   });
 
   describe('addPointToPointsTable', () => {
-    it('should add a patternRecognizer\'s n dimensional point to points table', (done) => {
+    it('should add a patternRecognizer\'s n dimensional point to global points table', (done) => {
       const patternRecognizer = new PatternRecognizer({
         inputState: [1, 2],
         actionState: [3, 4],
@@ -142,7 +136,7 @@ describe('patternRecognizer', () => {
   });
 
   describe('_removePointFromPointsTable', () => {
-    it('should remove the patternRecognizer point from the points table', (done) => {
+    it('should remove the patternRecognizer point from the global points table', (done) => {
       const patternRecognizer = new PatternRecognizer({
         inputState: [1, 2],
         actionState: [3, 4],
@@ -163,22 +157,20 @@ describe('patternRecognizer', () => {
   });
 
   describe('initializeAllPossibleActions', () => {
-    it('should initialize all possible actions in database', (done) => {
+    it('should add fields and random weights for all possible actions in patternRecognizer\'s actionsTable', (done) => {
       const patternRecognizer = new PatternRecognizer({
         inputState: [1],
         actionState: [2],
         driveState: [3]
       });
 
-      patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3_4_5_6').then(() => { 
+      patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3_4_5_6').then(() => {
         patternRecognizer.initializeAllPossibleActions([[-1, 1], [-1, 1], [-1, 1]]).then(() => {
           // TODO: check table to see if they're created
-
+          // should be 8 possible action total
 
         });
       });
-    });
-
     });
   });
 
@@ -195,8 +187,6 @@ describe('patternRecognizer', () => {
     });
   });
 
-
-  /////////////////////////////////////////////////////
   it('should delete a patternRecognizer', () => {
     // probably should be integration test since it'll involve db
   });
