@@ -5,6 +5,7 @@ const knex = require('../../../../server/db/knex');
 chai.use(chaiAsPromised);
 const expect = chai.expect;
 const PatternRecognizer = require('../../../../server/pattern-recognition/pattern-recognizer');
+const patternRecUtil = require('util');
 const config = require('config');
 const log = require('../../../../log');
 

@@ -3,7 +3,7 @@ const chai = require('chai');
 const expect = chai.expect;
 const util = require('../../../../server/pattern-recognition/util');
 
-describe.only('pattern recognition utility methods', () => {
+describe('pattern recognition utility methods', () => {
   describe('cartesianProduct', () => {
     it('should generate all possible combinations of a 2x2 signal', () => {
       const sets = [[-1, 1], [-1, 1]];
