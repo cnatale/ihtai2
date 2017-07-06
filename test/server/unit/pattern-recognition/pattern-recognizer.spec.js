@@ -5,15 +5,14 @@ const knex = require('../../../../server/db/knex');
 chai.use(chaiAsPromised);
 const expect = chai.expect;
 const PatternRecognizer = require('../../../../server/pattern-recognition/pattern-recognizer');
-const patternRecUtil = require('util');
 const config = require('config');
-const log = require('../../../../log');
+// const log = require('../../../../log');
+// TODO: look at using chai-as-promised for promise chains
+require('seedrandom');
+Math.seedrandom('hello');
+
 
 describe('patternRecognizer', () => {
-  afterEach(function() {
-    // TODO: clear all tables after every test
-  });
-
   describe('constructor', () => {
 
   });
@@ -158,6 +157,11 @@ describe('patternRecognizer', () => {
   });
 
   describe('initializeAllPossibleActions', () => {
+    function cleanUp() {
+      return knex('pattern_1_2_3')
+        .del();      
+    }
+
     it('should add fields and random weights for all possible actions in patternRecognizer\'s actionsTable', (done) => {
       const patternRecognizer = new PatternRecognizer({
         inputState: [1],
@@ -165,39 +169,94 @@ describe('patternRecognizer', () => {
         driveState: [3]
       });
 
-      patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3_4_5_6').then(() => {
-        patternRecognizer.initializeAllPossibleActions([[-1, 1], [-1, 1], [-1, 1]]).then(() => {
-          // TODO: check table to see if they're created
-          // should be 8 possible action total
+      patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3').then(() => {
+        patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
+          knex.select('next_action', 'score').from('pattern_1_2_3').orderBy('next_action').then((output) => {
+            const expectedOutput = [
+              '-1_a_x',
+              '-1_a_y',
+              '-1_b_x',
+              '-1_b_y',
+              '1_a_x',
+              '1_a_y',
+              '1_b_x',
+              '1_b_y'
+            ];
+            // output is an array of objects selected from db
+            expect(output).to.be.an('array').and.to.not.be.empty;
 
+            output.forEach((element, index) => {
+              expect(element.next_action).to.equal(expectedOutput[index]);
+              expect(element.score).to.be.a('number').at.least(0).and.at.most(1);
+            });
+
+            cleanUp().then(() => {
+              done();
+            });
+          });
         });
       });
     });
   });
 
-  describe('getNextBestAction', () => {
+  describe('getBestNextAction', () => {
+    function cleanUp() {
+      return knex('pattern_1_2_3')
+        .del();      
+    }
+
     it('should return its next action with lowest(best) score', (done) => {
-      // TODO: call initializeAllPossibleActions first to create actions
-      done();
+      /* First eight expected results:
+        0.9782811118900929
+        0.4846980885530663
+        0.6151119931966604
+        0.23079158923818519
+        0.06524674312107269 <= smallest value
+        0.9845504147019434
+        0.6623767463198407
+        0.8629263044557318
+      */
+
+      const patternRecognizer = new PatternRecognizer({
+        inputState: [1],
+        actionState: [2],
+        driveState: [3]
+      });
+
+      patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3').then(() => {
+        patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
+
+          patternRecognizer.getBestNextAction().then((result) => {
+            expect(result).to.be.an('array').lengthOf(1);
+            expect(result[0].score).to.equal(0.06524674312107269);
+            expect(result[0].next_action).to.equal('1_a_x');
+
+            cleanUp().then(() => {
+              done();
+            });
+          });
+        });
+      });
     });
   });
 
   describe('initializeTables', () => {
     it('should initialize actions, points tables if necessary, and add starting data', (done) => {
+      // this is currently handled in class constructor, so probably just add test above
       done();
     });
   });
 
-  it('should delete a patternRecognizer', () => {
-    // probably should be integration test since it'll involve db
-  });
-
-
-  it('should provide access to all next actions scores', () => {
-    // probably should be integration test since it'll involve db
+  it('should be able to delete a patternRecognizer', () => {
+    // TODO: still need logic added to pattern-recognizer
+    // Actually this should probably be handled by whatever pattern recognizer manager I create
   });
 
   it('should update next action scores based on experience', () => {
+    // TODO: still need logic added to pattern-recognizer
+  });
+
+  it('should provide access to all next actions scores', () => {
     // probably should be integration test since it'll involve db
   });
 });

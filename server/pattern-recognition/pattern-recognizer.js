@@ -24,6 +24,7 @@ const knex = require('../db/knex');
 const config = require('config');
 const _ = require('lodash');
 const log = require('../../log');
+const patternRecUtil = require('./util');
 
 class PatternRecognizer {
   /**
@@ -79,9 +80,9 @@ class PatternRecognizer {
     return new Promise((resolve) => {
       knex.schema.hasTable(tableName).then((exists) => {
         if (!exists) {
+          // TODO: create common wrapper function for this and logic below
           knex.schema.createTable(tableName, (table) => {
-            table.increments('id').primary();
-            table.string('next_action');
+            table.string('next_action').primary();
             table.double('score').index();
             table.timestamps();
           }).then(() => {
@@ -92,9 +93,8 @@ class PatternRecognizer {
         }
       }, () => {
         knex.schema.createTable(tableName, (table) => {
-          table.increments('id').primary();
-          table.string('next_action');
-          table.double('score');
+          table.string('next_action').primary();
+          table.double('score').index();
           table.timestamps();
         }).then(() => {
           resolve();
@@ -120,68 +120,12 @@ class PatternRecognizer {
   }
   */
   initializeAllPossibleActions(possibleActions) {
-    /*
-    To do this, I'd need a list of every possible action that could be taken. That's
-    actually not so bad.
-    */
     const actionsTableName = this.patternToString();
 
-    /* TODO: create method that drills down number of dimensions action signal is
-       then recursively generates a random score for every combination.
-      This would be like a for (i = 0 ...) { for (j = 0 ...) { ... } } loop but for arbitrary 
-      dimensionality. Do the row insertion logic once the descent reaches the last element.
-    */
-
-    // BUG: this will generate a row for every signal, not signal combination.
-    // You want an n-fold Cartesian product
-    /*
-    [[-1,1,2,2], [2,3], [1,2,1,1,3,2,1], ... [1,2,1,3,2]]
-    -this is a 2d array. info necessary to recursively determine:
-    -array
-    -1st dimension index
-    -2nd dimension index
-    [[-1,1], [-1,1]]
-    */
-
-    function generateAllCombos(possibleActions, insertArray, queries, firstDimIndex, secondDimIndex) {
-      let combinedQueries = _.clone(queries);
-
-      // start by descending to last element in possibleActions array
-      if (firstDimIndex < possibleActions.length) {
-        combinedQueries = combinedQueries.concat(generateAllCombos(possibleActions, insertArray, firstDimIndex + 1, secondDimIndex));
-      }
-      if (secondDimIndex < possibleActions[firstDimIndex.length]) {
-        combinedQueries = combinedQueries.concat(generateAllCombos(possibleActions, insertArray, firstDimIndex, secondDimIndex + 1));
-      }
-
-      // TODO: create random score for knex row, insert into table
-      // let's assume scores are from 0 - 10 for now
-      // it may make sense to score fairly close to perfect score so that none
-      // get completely ruled out form start.
-      // TODO: Use knex(tablname).insert() with an array of objects, so this look should
-      // append to an array, and then after the loop runs do the insert with array.
-
-      /*
-      insertArray should store a stack of indices, and then generate 0's for rest of 
-      indices in list
-      */
-      // i need previous elements from prior to unwind point
-      insertArray.push(secondDimIndex);
-
-      const fillerArr = [];
-      for (let i = 0; i < (possibleActions.length - insertArray.length); i++) {
-        fillerArr.push(0);
-      }
-
-      combinedQueries.push = {
-        next_action: insertArray.join('_') + fillerArr.length ? ('_' + fillerArr.join('_')) : '',
-        score: Math.random() * 5
-      };
-      // return insertArray;
-      return combinedQueries;
-    }
-
-    const rowsToInsert = generateAllCombos(possibleActions, [], [], 0, 0); // should return array of insertions
+    const allPossibleActions = patternRecUtil.cartesianProduct(possibleActions);
+    const rowsToInsert = allPossibleActions.map((val) => {
+      return { next_action: val, score: Math.random() };
+    });
     return knex(actionsTableName).insert(rowsToInsert);
     
     // TODO: write tests
