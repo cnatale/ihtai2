@@ -6,8 +6,7 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 const PatternRecognizer = require('../../../../server/pattern-recognition/pattern-recognizer');
 const config = require('config');
-// const log = require('../../../../log');
-// TODO: look at using chai-as-promised for promise chains
+
 require('seedrandom');
 Math.seedrandom('hello');
 
@@ -247,16 +246,15 @@ describe('patternRecognizer', () => {
     });
   });
 
-  it('should be able to delete a patternRecognizer', () => {
-    // TODO: still need logic added to pattern-recognizer
-    // Actually this should probably be handled by whatever pattern recognizer manager I create
-  });
-
   it('should update next action scores based on experience', () => {
     // TODO: still need logic added to pattern-recognizer
-  });
 
-  it('should provide access to all next actions scores', () => {
-    // probably should be integration test since it'll involve db
+    // TODO: use sliding window to get next n time instances, get average drive score over 
+    // sliding window period, then update next move score based on this new score in a weighted manner.
+    // Will also need to keep track of total time this next move has been updated to know how much to 
+    // weight existing score vs. new score.
+
+    // TODO: add a diagram in readme to explain how pattern recognition groups relate to pattern recognizers,
+    // how time series average average scores are weighted when updating existing next move score, etc.
   });
 });
