@@ -267,16 +267,12 @@ describe('patternRecognizer', () => {
               expect(result).to.equal(true);
               // get the updated move score from table
               const expectedScore = (0.3684589274859717 * 9 + 10) / 10;
-              console.log('******* expectedScore: ' + expectedScore + ' ******');
 
               knex.column('next_action', 'score')
                 .select('score', 'next_action')
                 .from('pattern_1_2_3')
                 .where('next_action', '-1_a_x')
                 .then((results) => {
-                  console.log('***** result score: ' + results[0].score + ' *******');
-                  console.log('***** result action: ' + results[0].next_action + ' *******');
-
                   expect(results.length).to.equal(1);
                   expect(results[0].score).to.equal(expectedScore);
                   expect(results[0].next_action).to.equal('-1_a_x');

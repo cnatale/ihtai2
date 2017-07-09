@@ -227,7 +227,6 @@ class PatternRecognizer {
       knex.select('score').from(this.patternToString())
         .where('next_action', nextMove)
         .then((results) => {
-          console.log('******* score prior to update: ' + results[0].score + ' ********');
           // update row with weighted average of current score and new score value
           const updatedScore = (results[0].score * 9 + score) / 10;
           knex(this.patternToString())
