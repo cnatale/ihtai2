@@ -11,6 +11,7 @@
     -score is based on the avg of drive scores over whatever the time period is.
     -if time period sliding window isn’t full, skip reweighting
   -has method to get next action with lowest score from db table
+  -handles all database communication
 
 
   Instantiation: pass in an n-dimensional point object. This object has the following properties:
@@ -214,8 +215,32 @@ class PatternRecognizer {
     Reweights the scores in next moves db table
     @param slidingWindow (Object) Slding window of stimesteps.
   */
-  reweight(slidingWindow) {
-    // look at logic i'm using in ihtai 1, can probably be similar
+  updateNextMoveScore(nextMove, score) {
+    /*
+    Steps:
+      -query actions table to get current score for nextMove key
+      -do a weighted avg calculation to update score
+      -save updated score to db 
+    */
+
+    return new Promise((resolve) => {
+      knex.select('score').from(this.patternToString())
+        .where('next_action', nextMove)
+        .then((results) => {
+          console.log('******* score prior to update: ' + results[0].score + ' ********');
+          // update row with weighted average of current score and new score value
+          const updatedScore = (results[0].score * 9 + score) / 10;
+          knex(this.patternToString())
+            .where('next_action', nextMove)
+            .update('score', updatedScore)
+            .then((numberOfRowsUpdated) => {
+              if (!numberOfRowsUpdated) {
+                throw 'ERROR: no rows affected by score update';
+              }
+              resolve(true);
+            });
+        });
+    });
 
   }
 }

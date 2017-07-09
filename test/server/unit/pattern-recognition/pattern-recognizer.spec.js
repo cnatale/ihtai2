@@ -246,15 +246,48 @@ describe('patternRecognizer', () => {
     });
   });
 
-  it('should update next action scores based on experience', () => {
-    // TODO: still need logic added to pattern-recognizer
+  describe('updateNextMoveScore', () => {
+    function cleanUp() {
+      return knex('pattern_1_2_3')
+        .del();      
+    }
 
-    // TODO: use sliding window to get next n time instances, get average drive score over 
-    // sliding window period, then update next move score based on this new score in a weighted manner.
-    // Will also need to keep track of total time this next move has been updated to know how much to 
-    // weight existing score vs. new score.
+    it('should update next action scores based on experience', (done) => {
+      const patternRecognizer = new PatternRecognizer({
+        inputState: [1],
+        actionState: [2],
+        driveState: [3]
+      });
 
-    // TODO: add a diagram in readme to explain how pattern recognition groups relate to pattern recognizers,
-    // how time series average average scores are weighted when updating existing next move score, etc.
+      patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3').then(() => {
+        patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
+
+          patternRecognizer.updateNextMoveScore('-1_a_x', 10)
+            .then((result) => {
+              expect(result).to.equal(true);
+              // get the updated move score from table
+              const expectedScore = (0.3684589274859717 * 9 + 10) / 10;
+              console.log('******* expectedScore: ' + expectedScore + ' ******');
+
+              knex.column('next_action', 'score')
+                .select('score', 'next_action')
+                .from('pattern_1_2_3')
+                .where('next_action', '-1_a_x')
+                .then((results) => {
+                  console.log('***** result score: ' + results[0].score + ' *******');
+                  console.log('***** result action: ' + results[0].next_action + ' *******');
+
+                  expect(results.length).to.equal(1);
+                  expect(results[0].score).to.equal(expectedScore);
+                  expect(results[0].next_action).to.equal('-1_a_x');
+
+                  cleanUp().then(() => {
+                    done();
+                  });
+                });
+            });
+        });
+      });
+    });
   });
 });

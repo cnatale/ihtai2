@@ -1,6 +1,12 @@
 
 
 describe('patternRecognitionGroup', () => {
+  describe('constructor', () => {
+    it('should build a pattern-recognition-group based on a list of starting patterns and their possible drive states', () => {
+
+    });    
+  });
+
   describe('deletePatternRecognizer()', () => {
     it('should be able to delete a patternRecognizer when passed its pattern', () => {
       // TODO: still need logic added to pattern-recognizer
@@ -8,23 +14,53 @@ describe('patternRecognitionGroup', () => {
     });
   });
 
-  describe('populateFromDb()', () => {
-    it('should build a pattern-recognition-group from existing db when passed a pattern', () => {
-      // TODO: populate pattern db tables with pattern recognizer data
-      // TODO: write populateFromDb() method that gets all tables and creates
-      //       1 patternRecognizer per table inside pattern-recognition-group 
+  describe('addPatternRecognizer()', () => {
+    it('should add create a patternRecognizer when passed a pattern', () => {
+      // TODO: maybe i need a pattern class as well for passing as a param here?
+
     });
-  });
-
-  describe('constructor', () => {
-    it('should build a pattern-recognition-group based on a list of patterns and their possible drive states', () => {
-
-    });    
   });
 
   describe('getNearestPatternRecognizer()', () => {
     it('should return nearest neighbor pattern when passed a pattern of matching dimensionality', () => {
 
+    });
+  });
+
+  describe('scanRandomPatternForRemoval()', () => {
+    it(`should select a random child pattern, and scan to see if it has been accessed below threshold
+        minimum for a time period. If yes, return true.`, () => {
+
+    });
+
+    it(`should select a random child pattern, and scan to see if it has been accessed below threshold
+        minimum for a time period. If no, return false.`, () => {
+
+    });
+  });
+
+  describe('checkIfPatternShouldBeSplit()', () => {
+    it(`should return true if the pattern passed in has been accessed above the min number of times in a
+        given time period.`, () => {
+
+    });
+  });
+
+  describe('updatePatternScore()', () => {
+      // TODO: use sliding window to get next n time instances, get average drive score over 
+      // sliding window period, then update next move score based on this new score in a weighted manner.
+      // Will also need to keep track of total time this next move has been updated to know how much to 
+      // weight existing score vs. new score. 
+
+      // updatePatternScore should call the start pattern's updateNextMoveScore() method, passing in 
+      // nextMove and score as params
+  });
+
+  describe('populateFromDb()', () => {
+    it('should build a pattern-recognition-group from existing db when passed a pattern', () => {
+      // TODO: populate pattern db tables with pattern recognizer data
+      // TODO: write populateFromDb() method that gets all tables and creates
+      //       1 patternRecognizer per table inside pattern-recognition-group 
     });
   });
 });

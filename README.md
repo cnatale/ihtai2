@@ -13,6 +13,10 @@ Represents a self-contained Ihtai consciousness unit.
 
 For end users, time steps are added, and next moves gotten, from here.
 
+Capable of dynamically spawning new pattern-recognizers if a specific child pattern-recognizer is 
+accessed more times within a given time period than threshold. Also capable of deleting a pattern recognizer
+if it is not accessed more than minimum threshold within a given time period.
+
 #### sliding-window
 Takes new time-steps, and maintains a variable length window of the past n time-steps
 
