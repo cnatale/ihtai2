@@ -23,8 +23,7 @@
 const when = require('when');
 const knex = require('../db/knex');
 const config = require('config');
-const _ = require('lodash');
-const log = require('../../log');
+// const log = require('../../log');
 const patternRecUtil = require('./util');
 
 class PatternRecognizer {
@@ -35,12 +34,16 @@ class PatternRecognizer {
   constructor(nDimensionalPoint) {
     this.pattern = nDimensionalPoint;
 
+    // TODO: return a promise that resolves when all promises resolve successfully
     // all db access methods return promises
     this.initializeTables = when.lift(this._initializeTables);
     this.createPointsTableIfNoneExists = when.lift(this._createPointsTableIfNoneExists);
     this.addPointToPointsTable = when.lift(this._addPointToPointsTable);
     this.removePointFromPointsTable = when.lift(this._removePointsFromPointsTable);
+  }
 
+  initialize () {
+    // TODO: refactor any promise-based constructor logic here
   }
 
   // TODO: pass in possibleActions
@@ -56,21 +59,10 @@ class PatternRecognizer {
           this.initializeAllPossibleActions(possibleActions),
           this.addPointToPointsTable()
         ]).then(() => {
-          resolve();
+          resolve(true);
         });
-        
       });
     });
-    // TODO: return a when.all of all the promises that need to complete
-    // add to global lookup table
-
-    // create db table holding all possible next moves/scores
-
-    // this.createActionsTableIfNoneExists(tableName).then(() => {
-      // TODO: add random scores to every possible next action
-    // });
-
-    // TODO: add pattern to table of all pattern recognizer ids    
   }
 
   patternToString() {
@@ -138,8 +130,8 @@ class PatternRecognizer {
   dropActionsTable() {
     return new Promise((resolve) => {
       knex.schema.dropTable(this.patternToString()).then(() => {
-        resolve();
-      }, () => { resolve(); });
+        resolve(true);
+      }, () => { resolve(false); });
     });
   }
 

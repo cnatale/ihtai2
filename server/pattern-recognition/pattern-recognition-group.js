@@ -1,7 +1,15 @@
 
+const PatternRecognizer = require('./pattern-recognizer');
+
+
+/**
+  Properties:
+
+  patternRecognizers {Object} Each key is a string representing a stored pattern.
+
+*/
+
 class PatternRecognitionGroup {
-  // TODO: should implement a getNearestNeighbor(nDimPoint) method that searches all child
-  // pattern recognizers for clostest point to nDimPoint param
 
   /**
       @param nDimensionalPoints {array} point used for creating child PatternRecognizers.
@@ -13,11 +21,60 @@ class PatternRecognitionGroup {
         Ex: [[-1, 0, 1], ['a', 'b', 'c'], ['x', 'y', 'z']]
 
   */
-  constructor(nDimensionalPoints, possibleActionValues) {
+  constructor() {
+    this.patternRecognizers = {};
+  }
+
+  initialize (nDimensionalPoints, possibleActionValues) {
     // dimensionality can be determined by using .length of one of the nDimensionalPoints
+    if (!nDimensionalPoints || !Array.isArray(nDimensionalPoints)) {
+      throw 'Error: PatternRecognitionGroup contructor must be passed an array of n dimensional points!';
+    }
+
+    if (!possibleActionValues || !Array.isArray(possibleActionValues)) {
+      throw 'Error: PatternRecognitionGroup contructor must be passed an array of possible action values!';
+    }
+
+    // TODO: create patternRecognizers from lists
+    return Promise.all(nDimensionalPoints.map((nDimensionalPoint) => {
+      console.log(' ******* nDimensionalPoint is array: ' + Array.isArray(nDimensionalPoint) + ' *******');
+      const nDimensionalPointString = nDimensionalPoint.join('_');
+      console.log(' ******* nDimensionalPointString: ' + nDimensionalPointString + ' *******');
+
+      const patternRecognizer =  new PatternRecognizer(nDimensionalPoint);
+      this.patternRecognizers[nDimensionalPointString] = patternRecognizer;
+
+      return new Promise((resolve) => {
+        console.log('******* I HAVE BEEN CALLED **********');
+        patternRecognizer.createActionsTableIfNoneExists(`pattern_${nDimensionalPointString}`).then(() => {
+          patternRecognizer.initializeAllPossibleActions(possibleActionValues).then(() => {
+            // done with initialization at this point
+            resolve(true);
+          });
+        });
+      });
+    }));
+  }
+
+  addPatternRecognizer () {
 
   }
 
+  /*
+    @param pattern {String} A string representing the pattern to delete
+  */
+  deletePatternRecognizer (pattern) {
+    const patternRecognizer = this.patternRecognizers[pattern];
+    patternRecognizer.dropActionsTable()
+      .then((result) => {
+        if (!result) { throw 'Error: pattern recognizer was not dropped from actions table'; }
+
+
+      });
+  }
+
+  // TODO: should implement a getNearestNeighbor(nDimPoint) method that searches all child
+  // pattern recognizers for clostest point to nDimPoint param
 
 }
 

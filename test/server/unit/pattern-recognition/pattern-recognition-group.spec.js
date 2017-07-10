@@ -1,9 +1,22 @@
-
+const PatternRecognitionGroup = require('../../../../server/pattern-recognition/pattern-recognition-group');
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
+const knex = require('../../../../server/db/knex');
+chai.use(chaiAsPromised);
+const expect = chai.expect;
 
 describe('patternRecognitionGroup', () => {
   describe('constructor', () => {
     it('should build a pattern-recognition-group based on a list of starting patterns and their possible drive states', () => {
+      // TODO: refactor PatternRecognitionGroup and PatternRecognizers so that all promises are no
+      // longer in the constructor function but instead a separate initialize function
 
+      const patternRecognitionGroup = new PatternRecognitionGroup(
+        [[0, 'a'], [1, 'b']],
+        [[0, 1], ['a', 'b']]
+      ).then((result) => {
+        expect(result).to.equal(true);
+      });
     });    
   });
 
@@ -54,6 +67,9 @@ describe('patternRecognitionGroup', () => {
 
       // updatePatternScore should call the start pattern's updateNextMoveScore() method, passing in 
       // nextMove and score as params
+
+      // should probably return fulfilled promise value of true when successful, or perhaps the updated
+      // pattern score.s
   });
 
   describe('populateFromDb()', () => {

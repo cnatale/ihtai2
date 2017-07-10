@@ -241,7 +241,7 @@ describe('patternRecognizer', () => {
 
   describe('initializeTables', () => {
     it('should initialize actions, points tables if necessary, and add starting data', (done) => {
-      // this is currently handled in class constructor, so probably just add test above
+
       done();
     });
   });
