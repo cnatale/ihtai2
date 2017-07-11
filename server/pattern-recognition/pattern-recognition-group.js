@@ -14,9 +14,9 @@ class PatternRecognitionGroup {
   /**
       @param nDimensionalPoints {array} point used for creating child PatternRecognizers.
         Length = inputState.length + actionState.length + driveState.length
-        Ex: [{inputState: -1, actionState: 'a', driveState: 'x'},
-             {inputState: 0, actionState: 'b', driveState: 'y'},
-             {inputState: 1, actionState: 'c', driveState: 'z'}]
+        Ex: [{inputState: [-1], actionState: ['a'], driveState: ['x']},
+             {inputState: [0], actionState: ['b'], driveState: ['y']},
+             {inputState: [1], actionState: ['c'], driveState: ['z']}]
 
       @param possibleActionValues {array} an array where each index is an array of all possible
         values for the respective component signal.

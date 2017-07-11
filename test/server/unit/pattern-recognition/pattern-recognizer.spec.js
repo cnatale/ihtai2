@@ -247,6 +247,18 @@ describe('patternRecognizer', () => {
     });
   });
 
+  describe('getPatternAsSingleArray', () => {
+    it('should return a single array with all pattern array indices', () => {
+      const patternRecognizer = new PatternRecognizer({
+        inputState: [1, 2],
+        actionState: [3, 4, 5],
+        driveState: [6]
+      });
+
+      expect(patternRecognizer.getPatternAsSingleArray()).to.deep.equal([1, 2, 3, 4, 5, 6]);
+    });
+  });
+
   describe('updateNextMoveScore', () => {
     it('should update next action scores based on experience', (done) => {
       const patternRecognizer = new PatternRecognizer({

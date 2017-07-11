@@ -34,7 +34,6 @@ class PatternRecognizer {
     this.pattern = nDimensionalPoint;
   }
 
-  // TODO: pass in possibleActions
   initializeTables(possibleActions) {
     const tableName = this.patternToString();
 
@@ -61,11 +60,15 @@ class PatternRecognizer {
     return `pattern_${pattern.inputState.join('_')}_${pattern.actionState.join('_')}_${pattern.driveState.join('_')}`;
   }
 
+  getPatternAsSingleArray() {
+    return [].concat(this.pattern.inputState).concat(this.pattern.actionState).concat(this.pattern.driveState);
+  }
+
   createActionsTableIfNoneExists(tableName) {
     return new Promise((resolve) => {
       knex.schema.hasTable(tableName).then((exists) => {
         if (!exists) {
-          // TODO: create common wrapper function for this and logic below
+          // TODO: create common wrapper function for this and identical logic below
           knex.schema.createTable(tableName, (table) => {
             table.string('next_action').primary();
             table.double('score').index();
@@ -132,20 +135,21 @@ class PatternRecognizer {
     const globalPointsTableName = config.get('db').globalPointsTableName;
 
     return new Promise((resolve) => {
-
       knex.schema.hasTable(globalPointsTableName).then((exists) => {
         if (!exists) {
           knex.schema.createTable(globalPointsTableName, (table) => {
             table.increments('id').primary();
             table.string('point');
             table.timestamps();
+          }).then((result) => {
+            resolve(result);
           });
+        } else {
+          resolve();
         }
-        resolve();
       }, () => {
-        resolve(); // should still be considered successful in a no-op
+        resolve(); // should still be considered successful if promise is rejected due to knex weirdness
       });
-
     });
   }
 
