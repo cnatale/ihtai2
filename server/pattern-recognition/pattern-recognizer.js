@@ -141,6 +141,12 @@ class PatternRecognizer {
             table.increments('id').primary();
             table.string('point');
             table.timestamps();
+            this.getPatternAsSingleArray().map((value, index) => {
+              if (typeof value === 'number') {
+                table.double(`point_index_${index}`);
+              } else { table.string(`point_index_${index}`); }
+            });
+
           }).then((result) => {
             resolve(result);
           });
@@ -158,14 +164,19 @@ class PatternRecognizer {
   Adds this PatternRecognizer's n-dimensional point to the globalPointsTable
   */
   addPointToPointsTable() {
+    const contentToInsert = { point: this.patternToString() };
+
+    this.getPatternAsSingleArray().map((signal, index) => {
+      contentToInsert[`point_index_${index}`] = signal;
+    });
+
     return new Promise((resolve) => {
       this.createPointsTableIfNoneExists().then(() => {
         const globalPointsTableName = config.get('db').globalPointsTableName;
-        knex(globalPointsTableName).insert([
-            { point: this.patternToString() }
-        ]).then((result) => {
-          resolve(result);
-        });
+        knex(globalPointsTableName).insert([contentToInsert])
+          .then((result) => {
+            resolve(result);
+          });
       });
     });
   }

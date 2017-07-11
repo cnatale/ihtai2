@@ -13,7 +13,12 @@ Math.seedrandom('hello.');
 
 describe('patternRecognizer', () => {
   function cleanUp() {
-    return Promise.all([knex('pattern_1_2_3').del(), knex('global_points_table').del()]);
+    return Promise.all([knex('pattern_1_2_3').del(), knex('global_points_table').del()])
+      .then((values) => {
+        return values;
+      }, () => {
+        return; // catch situation where these tables don't exist yet without breaking tests
+      });
   }
 
   beforeEach(function() {
@@ -135,6 +140,12 @@ describe('patternRecognizer', () => {
         patternRecognizer.addPointToPointsTable().then(() => {
           knex(globalPointsTableName).select().where('point', '=', patternRecognizer.patternToString()).then((results) => {
             expect(results).to.be.an('array').and.to.not.be.empty;
+            expect(results[0].point_index_0).to.be.a('number').and.equal(1);
+            expect(results[0].point_index_1).to.be.a('number').and.equal(2);
+            expect(results[0].point_index_2).to.be.a('number').and.equal(3);
+            expect(results[0].point_index_3).to.be.a('number').and.equal(4);
+            expect(results[0].point_index_4).to.be.a('number').and.equal(5);
+            expect(results[0].point_index_5).to.be.a('number').and.equal(6);
             done();
           });
         });
