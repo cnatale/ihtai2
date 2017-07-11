@@ -8,10 +8,18 @@ const PatternRecognizer = require('../../../../server/pattern-recognition/patter
 const config = require('config');
 
 require('seedrandom');
-Math.seedrandom('hello');
+Math.seedrandom('hello.');
 
 
 describe('patternRecognizer', () => {
+  function cleanUp() {
+    return Promise.all([knex('pattern_1_2_3').del(), knex('global_points_table').del()]);
+  }
+
+  beforeEach(function() {
+    return cleanUp();
+  });
+
   describe('constructor', () => {
 
   });
@@ -134,7 +142,7 @@ describe('patternRecognizer', () => {
     });
   });
 
-  describe('_removePointFromPointsTable', () => {
+  describe('removePointFromPointsTable', () => {
     it('should remove the patternRecognizer point from the global points table', (done) => {
       const patternRecognizer = new PatternRecognizer({
         inputState: [1, 2],
@@ -144,7 +152,7 @@ describe('patternRecognizer', () => {
 
       patternRecognizer.createPointsTableIfNoneExists().then(() => {
         patternRecognizer.addPointToPointsTable().then(() => {
-          patternRecognizer._removePointFromPointsTable().then((result) => {
+          patternRecognizer.removePointFromPointsTable().then((result) => {
             // result is the number of rows affected; should be at least 1
             expect(result).to.be.a('number').and.to.be.above(0);
             done();
@@ -156,11 +164,6 @@ describe('patternRecognizer', () => {
   });
 
   describe('initializeAllPossibleActions', () => {
-    function cleanUp() {
-      return knex('pattern_1_2_3')
-        .del();      
-    }
-
     it('should add fields and random weights for all possible actions in patternRecognizer\'s actionsTable', (done) => {
       const patternRecognizer = new PatternRecognizer({
         inputState: [1],
@@ -199,11 +202,6 @@ describe('patternRecognizer', () => {
   });
 
   describe('getBestNextAction', () => {
-    function cleanUp() {
-      return knex('pattern_1_2_3')
-        .del();      
-    }
-
     it('should return its next action with lowest(best) score', (done) => {
       /* First eight expected results:
         0.9782811118900929
@@ -222,12 +220,15 @@ describe('patternRecognizer', () => {
         driveState: [3]
       });
 
+      Math.seedrandom('hello.');
       patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3').then(() => {
         patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
 
           patternRecognizer.getBestNextAction().then((result) => {
             expect(result).to.be.an('array').lengthOf(1);
-            expect(result[0].score).to.equal(0.06524674312107269);
+            // basing this off seeded value, which will change based on number of times
+            // Math.random() is called in this file
+            expect(result[0].score).to.equal(0.06057665448709666);
             expect(result[0].next_action).to.equal('1_a_x');
 
             cleanUp().then(() => {
@@ -247,11 +248,6 @@ describe('patternRecognizer', () => {
   });
 
   describe('updateNextMoveScore', () => {
-    function cleanUp() {
-      return knex('pattern_1_2_3')
-        .del();      
-    }
-
     it('should update next action scores based on experience', (done) => {
       const patternRecognizer = new PatternRecognizer({
         inputState: [1],
@@ -259,6 +255,7 @@ describe('patternRecognizer', () => {
         driveState: [3]
       });
 
+      Math.seedrandom('hello.');
       patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3').then(() => {
         patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
 
@@ -266,7 +263,9 @@ describe('patternRecognizer', () => {
             .then((result) => {
               expect(result).to.equal(true);
               // get the updated move score from table
-              const expectedScore = (0.3684589274859717 * 9 + 10) / 10;
+              // const expectedScore = (0.3684589274859717 * 9 + 10) / 10;
+              // hard-coding for now until I make random number generation less brittle
+              const expectedScore = 1.8354320916213211;
 
               knex.column('next_action', 'score')
                 .select('score', 'next_action')

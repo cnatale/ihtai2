@@ -13,8 +13,10 @@ class PatternRecognitionGroup {
 
   /**
       @param nDimensionalPoints {array} point used for creating child PatternRecognizers.
-        Length = dimensionality of points.
-        Ex: [[-1, 'a', 'x'], [0, 'b', 'y'], [1, 'c', 'z']]
+        Length = inputState.length + actionState.length + driveState.length
+        Ex: [{inputState: -1, actionState: 'a', driveState: 'x'},
+             {inputState: 0, actionState: 'b', driveState: 'y'},
+             {inputState: 1, actionState: 'c', driveState: 'z'}]
 
       @param possibleActionValues {array} an array where each index is an array of all possible
         values for the respective component signal.
@@ -37,21 +39,18 @@ class PatternRecognitionGroup {
 
     // TODO: create patternRecognizers from lists
     return Promise.all(nDimensionalPoints.map((nDimensionalPoint) => {
-      console.log(' ******* nDimensionalPoint is array: ' + Array.isArray(nDimensionalPoint) + ' *******');
-      const nDimensionalPointString = nDimensionalPoint.join('_');
-      console.log(' ******* nDimensionalPointString: ' + nDimensionalPointString + ' *******');
-
-      const patternRecognizer =  new PatternRecognizer(nDimensionalPoint);
+      const nDimensionalPointString = PatternRecognizer.patternToString(nDimensionalPoint);
+      const patternRecognizer = new PatternRecognizer(nDimensionalPoint);
       this.patternRecognizers[nDimensionalPointString] = patternRecognizer;
 
       return new Promise((resolve) => {
-        console.log('******* I HAVE BEEN CALLED **********');
-        patternRecognizer.createActionsTableIfNoneExists(`pattern_${nDimensionalPointString}`).then(() => {
-          patternRecognizer.initializeAllPossibleActions(possibleActionValues).then(() => {
+        patternRecognizer.initializeTables(possibleActionValues)
+          .then((result) => {
+            console.log('******* I HAVE BEEN CALLED **********');
+
             // done with initialization at this point
             resolve(true);
           });
-        });
       });
     }));
   }

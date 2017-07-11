@@ -20,7 +20,6 @@
     -driveState array
 */
 
-const when = require('when');
 const knex = require('../db/knex');
 const config = require('config');
 // const log = require('../../log');
@@ -28,26 +27,15 @@ const patternRecUtil = require('./util');
 
 class PatternRecognizer {
   /**
-    @param nDimensionalPoint {object} string representing the n dimensional point the pattern represents
-    Has inputState, actionState, and driveState props
+    @param nDimensionalPoint {object} Has inputState, actionState, and driveState properties, all of which
+    are arrays.
   */
   constructor(nDimensionalPoint) {
     this.pattern = nDimensionalPoint;
-
-    // TODO: return a promise that resolves when all promises resolve successfully
-    // all db access methods return promises
-    this.initializeTables = when.lift(this._initializeTables);
-    this.createPointsTableIfNoneExists = when.lift(this._createPointsTableIfNoneExists);
-    this.addPointToPointsTable = when.lift(this._addPointToPointsTable);
-    this.removePointFromPointsTable = when.lift(this._removePointsFromPointsTable);
-  }
-
-  initialize () {
-    // TODO: refactor any promise-based constructor logic here
   }
 
   // TODO: pass in possibleActions
-  _initializeTables(possibleActions) {
+  initializeTables(possibleActions) {
     const tableName = this.patternToString();
 
     return new Promise((resolve) => {
@@ -58,8 +46,8 @@ class PatternRecognizer {
         Promise.all([
           this.initializeAllPossibleActions(possibleActions),
           this.addPointToPointsTable()
-        ]).then(() => {
-          resolve(true);
+        ]).then((result) => {
+          resolve(result);
         });
       });
     });
@@ -67,6 +55,10 @@ class PatternRecognizer {
 
   patternToString() {
     return `pattern_${this.pattern.inputState.join('_')}_${this.pattern.actionState.join('_')}_${this.pattern.driveState.join('_')}`;
+  }
+
+  static patternToString(pattern) {
+    return `pattern_${pattern.inputState.join('_')}_${pattern.actionState.join('_')}_${pattern.driveState.join('_')}`;
   }
 
   createActionsTableIfNoneExists(tableName) {
@@ -117,7 +109,8 @@ class PatternRecognizer {
 
     const allPossibleActions = patternRecUtil.cartesianProduct(possibleActions);
     const rowsToInsert = allPossibleActions.map((val) => {
-      return { next_action: val, score: Math.random() };
+      const score = Math.random();
+      return { next_action: val, score };
     });
     return knex(actionsTableName).insert(rowsToInsert);
     
@@ -135,7 +128,7 @@ class PatternRecognizer {
     });
   }
 
-  _createPointsTableIfNoneExists() {
+  createPointsTableIfNoneExists() {
     const globalPointsTableName = config.get('db').globalPointsTableName;
 
     return new Promise((resolve) => {
@@ -160,24 +153,29 @@ class PatternRecognizer {
   /**
   Adds this PatternRecognizer's n-dimensional point to the globalPointsTable
   */
-  _addPointToPointsTable() {
+  addPointToPointsTable() {
     return new Promise((resolve) => {
       this.createPointsTableIfNoneExists().then(() => {
         const globalPointsTableName = config.get('db').globalPointsTableName;
         knex(globalPointsTableName).insert([
             { point: this.patternToString() }
-        ]).then(() => {
-          resolve();
+        ]).then((result) => {
+          resolve(result);
         });
       });
     });
   }
 
-  _removePointFromPointsTable() {
+  removePointFromPointsTable() {
     const globalPointsTableName = config.get('db').globalPointsTableName;
 
-    return knex(globalPointsTableName).where(
-      'point', this.patternToString()).del();    
+    return new Promise((resolve) => {
+      knex(globalPointsTableName).where(
+        'point', this.patternToString()).del()
+        .then((result) => {
+          resolve(result);
+        });
+    });
   }
 
 
