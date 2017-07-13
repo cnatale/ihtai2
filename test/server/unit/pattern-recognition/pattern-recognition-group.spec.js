@@ -9,7 +9,17 @@ Math.seedrandom('hello');
 
 describe('patternRecognitionGroup', () => {
   function cleanUp() {
-    return Promise.all([knex('pattern_1_2_3').del(), knex('global_points_table').del()]);
+    return Promise.all([knex('pattern_1_2_3').del(),
+      knex('global_points_table').del(),
+      knex('pattern_0_a_x').del(),
+      knex('pattern_1_b_y').del()
+    ])
+      .then((values) => {
+        return values;
+      }, () => {
+        return; // catch situation where these tables don't exist yet without breaking tests
+      });
+
   }
 
   beforeEach(function() {
@@ -20,15 +30,12 @@ describe('patternRecognitionGroup', () => {
     // TODO: implement delete table functionality to clear individual pattern_ tables. Right now
     // these aren't cleared so it's causing duplicate row errors
 
-    it.skip('should build a pattern-recognition-group based on a list of starting patterns and their possible drive states', () => {
-      // TODO: refactor PatternRecognitionGroup and PatternRecognizers so that all promises are no
-      // longer in the constructor function but instead a separate initialize function
-
+    it('should build a pattern-recognition-group based on a list of starting patterns and their possible drive states', () => {
       const patternRecognitionGroup = new PatternRecognitionGroup();
       patternRecognitionGroup.initialize(
         [
-          { inputState:[0], actionState: ['a'], driveState: ['x'] },
-          { inputState: [1], actionState: ['b'], driveState: ['y'] }
+          { inputState:[0], actionState: ['10'], driveState: ['100'] },
+          { inputState: [1], actionState: ['11'], driveState: ['101'] }
         ],
         [[0, 1], ['a', 'b'], ['x', 'y']]
       ).then((result) => {
@@ -37,17 +44,17 @@ describe('patternRecognitionGroup', () => {
     });    
   });
 
+  describe('addPatternRecognizer()', () => {
+    it('should add a patternRecognizer when passed a pattern', () => {
+      // TODO: maybe i need a pattern class as well for passing as a param here?
+
+    });
+  });
+
   describe('deletePatternRecognizer()', () => {
     it('should be able to delete a patternRecognizer when passed its pattern', () => {
       // TODO: still need logic added to pattern-recognizer
       // Actually this should probably be handled by a pattern-recognition-group
-    });
-  });
-
-  describe('addPatternRecognizer()', () => {
-    it('should add create a patternRecognizer when passed a pattern', () => {
-      // TODO: maybe i need a pattern class as well for passing as a param here?
-
     });
   });
 
@@ -89,13 +96,18 @@ describe('patternRecognitionGroup', () => {
 
       // should probably return fulfilled promise value of true when successful, or perhaps the updated
       // pattern score.s
+
+      // TODO: need to implement sliding window before this can be completed
   });
 
   describe('populateFromDb()', () => {
-    it('should build a pattern-recognition-group from existing db when passed a pattern', () => {
+    it('should build a pattern-recognition-group from existing db', () => {
       // TODO: populate pattern db tables with pattern recognizer data
       // TODO: write populateFromDb() method that gets all tables and creates
-      //       1 patternRecognizer per table inside pattern-recognition-group 
+      //       1 patternRecognizer per table inside pattern-recognition-group
+      // Can get each pattern recognizer info from global points table.
+      // Probably need some type of equivalent populateFromDb() method in the PatternRecognizer class
+      // as well.
     });
   });
 });

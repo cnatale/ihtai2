@@ -19,6 +19,8 @@ describe('patternRecognizer', () => {
       }, () => {
         return; // catch situation where these tables don't exist yet without breaking tests
       });
+
+    // TODO: also clean up all othre individual pattern_ tables, not just pattern_1_2_3
   }
 
   beforeEach(function() {
