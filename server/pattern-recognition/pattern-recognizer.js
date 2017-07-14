@@ -116,8 +116,6 @@ class PatternRecognizer {
       return { next_action: val, score };
     });
     return knex(actionsTableName).insert(rowsToInsert);
-    
-    // TODO: write tests
   }
 
   /**
@@ -164,6 +162,8 @@ class PatternRecognizer {
   Adds this PatternRecognizer's n-dimensional point to the globalPointsTable
   */
   addPointToPointsTable() {
+    // Create an object representing row to add to global points table.
+    // Add point point column, along with each point index to its own column.
     const contentToInsert = { point: this.patternToString() };
 
     this.getPatternAsSingleArray().map((signal, index) => {

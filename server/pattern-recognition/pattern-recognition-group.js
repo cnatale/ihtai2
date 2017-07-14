@@ -1,6 +1,6 @@
 
 const PatternRecognizer = require('./pattern-recognizer');
-
+const _ = require('lodash');
 
 /**
   Properties:
@@ -42,7 +42,6 @@ class PatternRecognitionGroup {
       throw 'Error: PatternRecognitionGroup contructor must be passed an array of possible action values!';
     }
 
-    // TODO: create patternRecognizers from lists
     return Promise.all(nDimensionalPoints.map((nDimensionalPoint) => {
       const nDimensionalPointString = PatternRecognizer.patternToString(nDimensionalPoint);
       const patternRecognizer = new PatternRecognizer(nDimensionalPoint);
@@ -50,10 +49,19 @@ class PatternRecognitionGroup {
 
       return new Promise((resolve) => {
         patternRecognizer.initializeTables(possibleActionValues)
-          .then((result) => {
-            console.log('******* I HAVE BEEN CALLED **********');
+          .then((results) => {
 
-            // done with initialization at this point
+            // make sure every result returns expected array of mysql table row id's
+            if (!_.every(results.map((result) => {
+              return (Array.isArray(result) && _.every(result, (item) => {
+                // make sure each array element is a row index number
+                return !isNaN(item); 
+              }) && results.length >= 1); 
+            }))) {
+              throw (`Error: PatternRecognitionGroup.initialize: initializeTables() failed
+                on one or more PatternRecognizer`);
+            }
+
             resolve(true);
           });
       });
