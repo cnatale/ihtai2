@@ -2,17 +2,24 @@ const PatternRecognitionGroup = require('../../../../server/pattern-recognition/
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const knex = require('../../../../server/db/knex');
+const _ = require('lodash');
 chai.use(chaiAsPromised);
 const expect = chai.expect;
 require('seedrandom');
 Math.seedrandom('hello');
+
+
+// TODO: validate params passed to this Class using is-my-json-valid npm module
+// (especially the n-dimensional points and possible action values)
 
 describe('patternRecognitionGroup', () => {
   function cleanUp() {
     return Promise.all([knex('pattern_1_2_3').del(),
       knex('global_points_table').del(),
       knex('pattern_0_a_x').del(),
-      knex('pattern_1_b_y').del()
+      knex('pattern_1_b_y').del(),
+      knex('pattern_0_10_100').del(),
+      knex('pattern_1_11_101').del()
     ])
       .then((values) => {
         return values;
@@ -30,7 +37,7 @@ describe('patternRecognitionGroup', () => {
     // TODO: implement delete table functionality to clear individual pattern_ tables. Right now
     // these aren't cleared so it's causing duplicate row errors
 
-    it('should build a pattern-recognition-group based on a list of starting patterns and their possible drive states', () => {
+    it('should build a pattern-recognition-group based on a list of starting patterns and their possible drive states', (done) => {
       const patternRecognitionGroup = new PatternRecognitionGroup();
       patternRecognitionGroup.initialize(
         [
@@ -39,7 +46,8 @@ describe('patternRecognitionGroup', () => {
         ],
         [[0, 1], ['a', 'b'], ['x', 'y']]
       ).then((result) => {
-        expect(result).to.equal(true);
+        expect(_.every(result)).to.equal(true);
+        done();
       });
     });    
   });

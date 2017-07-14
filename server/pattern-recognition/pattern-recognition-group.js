@@ -27,6 +27,11 @@ class PatternRecognitionGroup {
     this.patternRecognizers = {};
   }
 
+
+  /**
+    @returns Array of Promises, one for each point to add.
+    All resolve to true if the operation was successful.
+  */
   initialize (nDimensionalPoints, possibleActionValues) {
     // dimensionality can be determined by using .length of one of the nDimensionalPoints
     if (!nDimensionalPoints || !Array.isArray(nDimensionalPoints)) {
