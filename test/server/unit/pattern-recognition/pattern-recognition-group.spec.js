@@ -1,18 +1,19 @@
 const PatternRecognitionGroup = require('../../../../server/pattern-recognition/pattern-recognition-group');
 const chai = require('chai');
+const expect = chai.expect;
 const chaiAsPromised = require('chai-as-promised');
 const knex = require('../../../../server/db/knex');
 const _ = require('lodash');
 chai.use(chaiAsPromised);
-const expect = chai.expect;
 require('seedrandom');
 Math.seedrandom('hello');
+const config = require('config');
 
 
 // TODO: validate params passed to this Class using is-my-json-valid npm module
 // (especially the n-dimensional points and possible action values)
 
-describe('patternRecognitionGroup', () => {
+describe('PatternRecognitionGroup', () => {
   function cleanUp() {
     return Promise.all([knex('pattern_1_2_3').del(),
       knex('global_points_table').del(),
@@ -33,11 +34,11 @@ describe('patternRecognitionGroup', () => {
     return cleanUp();
   });
 
-  describe('constructor', () => {
+  describe('constructor/initialize()', () => {
     // TODO: implement delete table functionality to clear individual pattern_ tables. Right now
     // these aren't cleared so it's causing duplicate row errors
 
-    it('should build a pattern-recognition-group based on a list of starting patterns and their possible drive states', (done) => {
+    it('should initialize a PatternRecognitionGroup, returning an array of true booleans, one for each PatternRecognizer generated', (done) => {
       const patternRecognitionGroup = new PatternRecognitionGroup();
       patternRecognitionGroup.initialize(
         [
@@ -49,20 +50,72 @@ describe('patternRecognitionGroup', () => {
         expect(_.every(result)).to.equal(true);
         done();
       });
-    });    
+    });
   });
 
   describe('addPatternRecognizer()', () => {
-    it('should add a patternRecognizer when passed a pattern', () => {
-      // TODO: maybe i need a pattern class as well for passing as a param here?
+    it('should add a patternRecognizer when passed a pattern', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [],
+        [[0, 1], ['a', 'b'], ['x', 'y']]
+      ).then((result) => {
+        expect(result).to.be.an('array').and.to.be.empty;
+        patternRecognitionGroup.addPatternRecognizer(
+          { inputState:[0], actionState: ['10'], driveState: ['100'] }
+        ).then((result) => {
+          expect(result).to.equal(true);
+          done();
+        });
+      });
+    });
+
+    it('should return rejected Promise if PatternRecognizer is not initialized first', () => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+
+      return expect(patternRecognitionGroup.addPatternRecognizer(
+        { inputState:[0], actionState: ['10'], driveState: ['100'] }
+      )).to.be.rejectedWith(Error);
+    });
+
+    it('should add pattern recognizer data to appropriate tables when called', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [],
+        [[0, 1], ['a', 'b'], ['x', 'y']]
+      ).then(() => {
+        patternRecognitionGroup.addPatternRecognizer(
+          { inputState:[0], actionState: [10], driveState: [100] }
+        ).then(() => {
+          // check db
+          knex.schema.hasTable('pattern_0_10_100').then(function(exists) {
+            if (!exists) {
+              expect(true).to.equal(false);
+            } else {
+              expect(true).to.equal(true);
+            }
+          }).then(() => {
+            const globalPointsTableName = config.get('db').globalPointsTableName;
+
+            knex(globalPointsTableName).select().where('point', '=', 'pattern_0_10_100').then((results) => {
+              expect(results).to.be.an('array').and.to.not.be.empty;
+              expect(results[0].point_index_0).to.be.a('number').and.equal(0);
+              expect(results[0].point_index_1).to.be.a('number').and.equal(10);
+              expect(results[0].point_index_2).to.be.a('number').and.equal(100);
+              done();
+            });
+          });
+
+        });
+      });
 
     });
   });
 
   describe('deletePatternRecognizer()', () => {
     it('should be able to delete a patternRecognizer when passed its pattern', () => {
-      // TODO: still need logic added to pattern-recognizer
-      // Actually this should probably be handled by a pattern-recognition-group
+      // TODO: the actual db cleanup logic should probably be stored in PatternRecognizer,
+      // in line with where other db access methods are kept
     });
   });
 
@@ -89,6 +142,18 @@ describe('patternRecognitionGroup', () => {
   describe('checkIfPatternShouldBeSplit()', () => {
     it(`should return true if the pattern passed in has been accessed above the min number of times in a
         given time period.`, () => {
+
+    });
+  });
+
+  describe('addTimeStep()', () => {
+    it('should add a timestep to sliding window', () => {
+
+    });
+  });
+
+  describe('averageDriveScoresOverTimePeriod()', () => {
+    it('should return a single number representing the average of all drive scores over the length of sliding window', () => {
 
     });
   });
