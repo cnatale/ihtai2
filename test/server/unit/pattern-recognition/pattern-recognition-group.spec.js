@@ -114,25 +114,32 @@ describe('PatternRecognitionGroup', () => {
   describe('sumOfSquaresQueryString()', () => {
     it('should return a sum of squares sql query string', () => {
       const patternRecognitionGroup = new PatternRecognitionGroup();
+      const testArrays = {
+        one: [1],
+        two: [],
+        three: [2, -3]
+      };
+
+      expect(testArrays.one.map(patternRecognitionGroup.sumOfSquaresQueryString).join(''))
+        .to.equal('SQR(1 - point_index_0)');
+      expect(testArrays.two.map(patternRecognitionGroup.sumOfSquaresQueryString).join(''))
+        .to.equal('');
+      expect(testArrays.three.map(patternRecognitionGroup.sumOfSquaresQueryString).join(''))
+        .to.equal('SQR(2 - point_index_0) + SQR(-3 - point_index_1)');
+    });
+  });
+
+  describe('nearestNeighborQueryString()', () => {
+    it('should return a nearest neighbor sql query string', () => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
       const nDimensionalPoint = {
         inputState: [1],
         actionState: [],
         driveState: [2, -3]
       };
 
-      expect(nDimensionalPoint.inputState.map(patternRecognitionGroup.sumOfSquaresQueryString).join(''))
-        .to.equal('SQR(1 - point_index_0)');
-      expect(nDimensionalPoint.actionState.map(patternRecognitionGroup.sumOfSquaresQueryString).join(''))
-        .to.equal('');
-      expect(nDimensionalPoint.driveState.map(patternRecognitionGroup.sumOfSquaresQueryString).join(''))
-        .to.equal('SQR(2 - point_index_0) + SQR(-3 - point_index_1)');
-    });
-  });
-
-  describe('deletePatternRecognizer()', () => {
-    it('should be able to delete a patternRecognizer when passed its pattern', () => {
-      // TODO: the actual db cleanup logic should probably be stored in PatternRecognizer,
-      // in line with where other db access methods are kept
+      expect(patternRecognitionGroup.nearestNeighborQueryString(nDimensionalPoint))
+        .to.equal('SQR(1 - point_index_0) + SQR(2 - point_index_1) + SQR(-3 - point_index_2)');
     });
   });
 
@@ -141,6 +148,14 @@ describe('PatternRecognitionGroup', () => {
       // TODO: calculate using global_points_table in db, which contains every point
       // May want to add a column for every dimension with naming convention dimension_[dimensionNumber]
 
+      // TODO: add a few n dimensional points to global points table
+    });
+  });
+
+  describe('deletePatternRecognizer()', () => {
+    it('should be able to delete a patternRecognizer when passed its pattern', () => {
+      // TODO: the actual db cleanup logic should probably be stored in PatternRecognizer,
+      // in line with where other db access methods are kept
     });
   });
 

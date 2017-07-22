@@ -137,20 +137,14 @@ class PatternRecognitionGroup {
 
     ex: {inputState: [-1], actionState: [a], driveState: [x]}
   */
-  // TODO: should implement a getNearestNeighbor(nDimPoint) method that searches all child
-  // pattern recognizers for clostest point to nDimPoint param
-  getNearestNeighbor (nDimensionalPoint) {
-    // TODO: add a method to create orderByRaw string with gets the sum of sq dist over all dimensional columns
-    this.sumOfSquaresQueryString(pattern);
-
+  getNearestPatternRecognizer (nDimensionalPoint) {
     // TODO: query global points table for nearest neighbor
     // TODO: orderBy should be a raw query of something like SUM(POW(a.coor - b.coor, 2))
     const globalPointsTableName = config.get('db').globalPointsTableName;
-    knex(globalPointsTableName)
+    return knex(globalPointsTableName)
       .select('point')
-      .orderByRaw('SUM(POW(a.coor - b.coor, 2))')
-      .limit(2);
-
+      .orderByRaw(this.nearestNeighborQueryString(nDimensionalPoint))
+      .limit(1);
   }
 
 
@@ -162,14 +156,14 @@ class PatternRecognitionGroup {
   */
   nearestNeighborQueryString (nDimensionalPoint) {
     // map inputState, actionState, and driveState into a single query string
-    let outputString = 'SUM(';
-
+    // let outputString = 'SUM(';
+    let outputString = '';
     // TODO: need to create one big array out of input, action, and drive states
     const combinedPointArray = nDimensionalPoint.inputState.concat(nDimensionalPoint.actionState.concat(nDimensionalPoint.driveState));
 
     outputString = outputString.concat(combinedPointArray.map(this.sumOfSquaresQueryString).join(''));
 
-    outputString.concat(')');
+    // outputString.concat(')');
 
     return outputString;
   }
