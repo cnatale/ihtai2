@@ -1,6 +1,8 @@
 
 const PatternRecognizer = require('./pattern-recognizer');
 const _ = require('lodash');
+const knex = require('../db/knex');
+const config = require('config');
 
 /**
   Properties:
@@ -115,20 +117,77 @@ class PatternRecognitionGroup {
     @param pattern {String} A string representing the pattern to delete
   */
   deletePatternRecognizer (pattern) {
-    // TODO: drop all necessary table rows. Can't actually drop a table using knex unfortunately.
+    // TODO: add getNearestNeighbor call to find nearest neighbor to pattern
+
     // remove row containing point from global_points_table
     // remove all data from associated pattern_... table
     const patternRecognizer = this.patternRecognizers[pattern];
-    patternRecognizer.dropActionsTable()
-      .then((result) => {
-        if (!result) { throw 'Error: pattern recognizer was not dropped from actions table'; }
-
-
+    patternRecognizer.dropActionsTable().then(() => {
+      patternRecognizer.removePointFromPointsTable().then(() => {
+        delete this.patternRecognizers[pattern];
       });
+    }, () => {
+      throw ('Error: PatternRecognizer.deletePatternRecognizer: there was a problem dropping the table.');
+    });
   }
 
+  /**
+  @param pattern {Object} An n-dimensional point described as three
+    Object properties, each containing an array of numbers.
+
+    ex: {inputState: [-1], actionState: [a], driveState: [x]}
+  */
   // TODO: should implement a getNearestNeighbor(nDimPoint) method that searches all child
   // pattern recognizers for clostest point to nDimPoint param
+  getNearestNeighbor (nDimensionalPoint) {
+    // TODO: add a method to create orderByRaw string with gets the sum of sq dist over all dimensional columns
+    this.sumOfSquaresQueryString(pattern);
+
+    // TODO: query global points table for nearest neighbor
+    // TODO: orderBy should be a raw query of something like SUM(POW(a.coor - b.coor, 2))
+    const globalPointsTableName = config.get('db').globalPointsTableName;
+    knex(globalPointsTableName)
+      .select('point')
+      .orderByRaw('SUM(POW(a.coor - b.coor, 2))')
+      .limit(2);
+
+  }
+
+
+  /**
+  @param pattern {Object} An n-dimensional point described as three
+    Object properties, each containing an array of numbers.
+
+    ex: {inputState: [-1], actionState: [a], driveState: [x]}
+  */
+  nearestNeighborQueryString (nDimensionalPoint) {
+    // map inputState, actionState, and driveState into a single query string
+    let outputString = 'SUM(';
+
+    // TODO: need to create one big array out of input, action, and drive states
+    const combinedPointArray = nDimensionalPoint.inputState.concat(nDimensionalPoint.actionState.concat(nDimensionalPoint.driveState));
+
+    outputString = outputString.concat(combinedPointArray.map(this.sumOfSquaresQueryString).join(''));
+
+    outputString.concat(')');
+
+    return outputString;
+  }
+
+  /**
+  @returns an array that can be join('') to get a portion of square distance mysql query string
+
+  output example: `SQR(10 - point_index_${0}) + SQR (5 - point_index_${1}) + SQR (3 - point_index_${2})`
+  */
+  sumOfSquaresQueryString (val, index, array) {
+    if (array.length === 0) { return ''; }
+    let output = '';
+
+    index !== 0 ? output = output + ' + ' : null;
+    output = output + `SQR(${val} - point_index_${index})`;
+
+    return output;
+  }
 
 }
 

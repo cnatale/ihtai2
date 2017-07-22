@@ -21,12 +21,11 @@ describe('PatternRecognitionGroup', () => {
       knex('pattern_1_b_y').del(),
       knex('pattern_0_10_100').del(),
       knex('pattern_1_11_101').del()
-    ])
-      .then((values) => {
-        return values;
-      }, () => {
-        return; // catch situation where these tables don't exist yet without breaking tests
-      });
+    ]).then((values) => {
+      return values;
+    }, () => {
+      return; // catch situation where these tables don't exist yet without breaking tests
+    });
 
   }
 
@@ -109,6 +108,24 @@ describe('PatternRecognitionGroup', () => {
         });
       });
 
+    });
+  });
+
+  describe('sumOfSquaresQueryString()', () => {
+    it('should return a sum of squares sql query string', () => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      const nDimensionalPoint = {
+        inputState: [1],
+        actionState: [],
+        driveState: [2, -3]
+      };
+
+      expect(nDimensionalPoint.inputState.map(patternRecognitionGroup.sumOfSquaresQueryString).join(''))
+        .to.equal('SQR(1 - point_index_0)');
+      expect(nDimensionalPoint.actionState.map(patternRecognitionGroup.sumOfSquaresQueryString).join(''))
+        .to.equal('');
+      expect(nDimensionalPoint.driveState.map(patternRecognitionGroup.sumOfSquaresQueryString).join(''))
+        .to.equal('SQR(2 - point_index_0) + SQR(-3 - point_index_1)');
     });
   });
 
