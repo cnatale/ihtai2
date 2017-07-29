@@ -2,6 +2,7 @@
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const knex = require('../../../../server/db/knex');
+const dbUtil = require('../../../../server/db/util');
 chai.use(chaiAsPromised);
 const expect = chai.expect;
 const PatternRecognizer = require('../../../../server/pattern-recognition/pattern-recognizer');
@@ -13,14 +14,7 @@ Math.seedrandom('hello.');
 
 describe('patternRecognizer', () => {
   function cleanUp() {
-    return Promise.all([knex('pattern_1_2_3').del(), knex('global_points_table').del()])
-      .then((values) => {
-        return values;
-      }, () => {
-        return; // catch situation where these tables don't exist yet without breaking tests
-      });
-
-    // TODO: also clean up all othre individual pattern_ tables, not just pattern_1_2_3
+    return dbUtil.emptyDb();
   }
 
   beforeEach(function() {

@@ -1,10 +1,7 @@
-const knexCleaner = require('knex-cleaner');
-const knex = require('knex');
-const config = require('config');
-
 const log = require('../log');
+const dbUtil = require('../server/db/util');
 
-knexCleaner.clean(knex({ client: config.db.type, connection: config.get(config.db.type) })).then(function() {
+dbUtil.emptyDb().then(function() {
   log.info('Database successfully cleaned.');
   process.exit(0);
 }).catch((reason) => {
@@ -12,4 +9,3 @@ knexCleaner.clean(knex({ client: config.db.type, connection: config.get(config.d
   log.error('Note that this will happen when knexCleaner.clean is run on nonexistent db.');
   process.exit(1);
 });
-

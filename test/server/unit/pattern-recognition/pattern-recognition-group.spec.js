@@ -2,9 +2,8 @@ const PatternRecognitionGroup = require('../../../../server/pattern-recognition/
 const chai = require('chai');
 const expect = chai.expect;
 const chaiAsPromised = require('chai-as-promised');
-const knexLib = require('knex');
 const knex = require('../../../../server/db/knex');
-const knexCleaner = require('knex-cleaner');
+const dbUtil = require('../../../../server/db/util');
 const _ = require('lodash');
 chai.use(chaiAsPromised);
 require('seedrandom');
@@ -17,7 +16,7 @@ const config = require('config');
 
 describe('PatternRecognitionGroup', () => {
   function cleanUp() {
-    return knexCleaner.clean(knexLib({ client: config.db.type, connection: config.get(config.db.type) }));
+    return dbUtil.emptyDb();
   }
 
   beforeEach(function() {
