@@ -25,9 +25,6 @@ describe('PatternRecognitionGroup', () => {
   });
 
   describe('constructor/initialize()', () => {
-    // TODO: implement delete table functionality to clear individual pattern_ tables. Right now
-    // these aren't cleared so it's causing duplicate row errors
-
     it('should initialize a PatternRecognitionGroup, returning an array of true booleans, one for each PatternRecognizer generated', (done) => {
       const patternRecognitionGroup = new PatternRecognitionGroup();
       patternRecognitionGroup.initialize(
