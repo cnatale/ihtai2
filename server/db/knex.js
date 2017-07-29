@@ -3,7 +3,7 @@ const config = require('config');
 const log = require('../../log');
 const sqlformatter = require('sqlformatter');
 
-const mysqlKnex = knex({ client: 'mysql', connection: config.get('mysql') });
+const mysqlKnex = knex({ client: config.db.type, connection: config.get(config.db.type) });
 
 mysqlKnex.on('query', function logQuery(q) {
   const border = '**********************';

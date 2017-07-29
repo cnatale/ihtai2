@@ -12,6 +12,7 @@ module.exports = {
     }
   },
   db: {
-    globalPointsTableName: 'global_points_table'
+    globalPointsTableName: 'global_points_table',
+    type: 'mysql'
   }
 };

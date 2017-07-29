@@ -2,7 +2,9 @@ const PatternRecognitionGroup = require('../../../../server/pattern-recognition/
 const chai = require('chai');
 const expect = chai.expect;
 const chaiAsPromised = require('chai-as-promised');
+const knexLib = require('knex');
 const knex = require('../../../../server/db/knex');
+const knexCleaner = require('knex-cleaner');
 const _ = require('lodash');
 chai.use(chaiAsPromised);
 require('seedrandom');
@@ -15,18 +17,7 @@ const config = require('config');
 
 describe('PatternRecognitionGroup', () => {
   function cleanUp() {
-    return Promise.all([knex('pattern_1_2_3').del(),
-      knex('global_points_table').del(),
-      knex('pattern_0_a_x').del(),
-      knex('pattern_1_b_y').del(),
-      knex('pattern_0_10_100').del(),
-      knex('pattern_1_11_101').del()
-    ]).then((values) => {
-      return values;
-    }, () => {
-      return; // catch situation where these tables don't exist yet without breaking tests
-    });
-
+    return knexCleaner.clean(knexLib({ client: config.db.type, connection: config.get(config.db.type) }));
   }
 
   beforeEach(function() {
@@ -144,11 +135,12 @@ describe('PatternRecognitionGroup', () => {
   });
 
   describe('getNearestPatternRecognizer()', () => {
-    it('should return nearest neighbor pattern when passed a pattern of matching dimensionality', () => {
+    it('should return nearest neighbor pattern when passed a pattern of matching dimensionality', (done) => {
       // TODO: calculate using global_points_table in db, which contains every point
       // May want to add a column for every dimension with naming convention dimension_[dimensionNumber]
 
       // TODO: add a few n dimensional points to global points table
+      done();
     });
   });
 
