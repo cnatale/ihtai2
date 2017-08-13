@@ -13,12 +13,8 @@ Math.seedrandom('hello.');
 
 
 describe('patternRecognizer', () => {
-  function cleanUp() {
-    return dbUtil.emptyDb();
-  }
-
   beforeEach(function() {
-    return cleanUp();
+    return dbUtil.emptyDb();
   });
 
   describe('constructor', () => {
@@ -199,9 +195,7 @@ describe('patternRecognizer', () => {
               expect(element.score).to.be.a('number').at.least(0).and.at.most(1);
             });
 
-            cleanUp().then(() => {
-              done();
-            });
+            done();
           });
         });
       });
@@ -238,9 +232,7 @@ describe('patternRecognizer', () => {
             expect(result[0].score).to.equal(0.06057665448709666);
             expect(result[0].next_action).to.equal('1_a_x');
 
-            cleanUp().then(() => {
-              done();
-            });
+            done();
           });
         });
       });
@@ -295,9 +287,7 @@ describe('patternRecognizer', () => {
                   expect(results[0].score).to.equal(expectedScore);
                   expect(results[0].next_action).to.equal('-1_a_x');
 
-                  cleanUp().then(() => {
-                    done();
-                  });
+                  done();
                 });
             });
         });

@@ -15,12 +15,8 @@ const config = require('config');
 // (especially the n-dimensional points and possible action values)
 
 describe('PatternRecognitionGroup', () => {
-  function cleanUp() {
-    return dbUtil.emptyDb();
-  }
-
   beforeEach(function() {
-    return cleanUp();
+    return dbUtil.emptyDb();
   });
 
   describe('constructor/initialize()', () => {
