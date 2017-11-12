@@ -19,7 +19,10 @@ class PatternRecognitionGroup {
 
 
   /**
-    @param nDimensionalPoints {array} point used for creating child PatternRecognizers.
+    @param nDimensionalPoints {array} Initialization array of points
+      used for creating child PatternRecognizers. If you don't want to initialize
+      with points, pass an empty array.
+
       Length = inputState.length + actionState.length + driveState.length
       Ex: [{inputState: [-1], actionState: [a], driveState: [x]},
            {inputState: [0], actionState: [b], driveState: [y]},
@@ -35,7 +38,7 @@ class PatternRecognitionGroup {
   initialize (nDimensionalPoints, possibleActionValues) {
     // dimensionality can be determined by using .length of one of the nDimensionalPoints
     if (!nDimensionalPoints || !Array.isArray(nDimensionalPoints)) {
-      throw 'Error: PatternRecognitionGroup contructor must be passed an array of n dimensional points!';
+      throw 'Error: PatternRecognitionGroup contructor must be passed an initialization array of n dimensional points!';
     }
 
     if (!possibleActionValues || !Array.isArray(possibleActionValues)) {
@@ -49,29 +52,7 @@ class PatternRecognitionGroup {
     }
 
     return Promise.all(nDimensionalPoints.map((nDimensionalPoint) => {
-      const nDimensionalPointString = PatternRecognizer.patternToString(nDimensionalPoint);
-      const patternRecognizer = new PatternRecognizer(nDimensionalPoint);
-      this.patternRecognizers[nDimensionalPointString] = patternRecognizer;
-
-
-      return new Promise((resolve) => {
-        patternRecognizer.initializeTables(possibleActionValues)
-          .then((results) => {
-
-            // make sure every result returns expected array of mysql table row id's
-            if (!_.every(results.map((result) => {
-              return (Array.isArray(result) && _.every(result, (item) => {
-                // make sure each array element is a row index number
-                return !isNaN(item);
-              }) && results.length >= 1);
-            }))) {
-              throw (`Error: PatternRecognitionGroup.initialize(): initializeTables() failed
-                on one or more PatternRecognizer`);
-            }
-
-            resolve(true);
-          });
-      });
+      return this.addPatternRecognizer(nDimensionalPoint);
     }));
   }
 
@@ -132,7 +113,9 @@ class PatternRecognitionGroup {
   }
 
   /**
-  @param pattern {Object} An n-dimensional point described as three
+    Takes a pattern, and returns the nearest n-dimensional neighbor
+
+    @param pattern {Object} An n-dimensional point described as three
     Object properties, each containing an array of numbers.
 
     ex: {inputState: [-1], actionState: [a], driveState: [x]}
