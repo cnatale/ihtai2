@@ -70,6 +70,9 @@ class PatternRecognitionGroup {
       return Promise.reject(new Error('PatternRecognitionGroup.addPatternRecognizer: possibleActionValues not initialized.'));
     }
 
+
+    // TODO: think I want to pass in the point after finding nearest neighbor, not the
+    // original point.
     const nDimensionalPointString = PatternRecognizer.patternToString(nDimensionalPoint);
     const patternRecognizer = new PatternRecognizer(nDimensionalPoint);
     this.patternRecognizers[nDimensionalPointString] = patternRecognizer;
@@ -103,6 +106,11 @@ class PatternRecognitionGroup {
     // remove row containing point from global_points_table
     // remove all data from associated pattern_... table
     const patternRecognizer = this.patternRecognizers[pattern];
+
+    if (typeof patternRecognizer === 'undefined') {
+      throw ('Error: PatternRecognizer.deletePatternRecognizer: no matching pattern.');
+    }
+
     patternRecognizer.dropActionsTable().then(() => {
       patternRecognizer.removePointFromPointsTable().then(() => {
         delete this.patternRecognizers[pattern];
@@ -121,8 +129,7 @@ class PatternRecognitionGroup {
     ex: {inputState: [-1], actionState: [a], driveState: [x]}
   */
   getNearestPatternRecognizer (nDimensionalPoint) {
-    // TODO: query global points table for nearest neighbor
-    // TODO: orderBy should be a raw query of something like SUM(POW(a.coor - b.coor, 2))
+    // query global points table for nearest neighbor
     const globalPointsTableName = config.get('db').globalPointsTableName;
     return knex(globalPointsTableName)
       .select('point')
@@ -138,30 +145,28 @@ class PatternRecognitionGroup {
     ex: {inputState: [-1], actionState: [a], driveState: [x]}
   */
   nearestNeighborQueryString (nDimensionalPoint) {
-    // map inputState, actionState, and driveState into a single query string
-    // let outputString = 'SUM(';
     let outputString = '';
-    // TODO: need to create one big array out of input, action, and drive states
+
+    // create one long array of inputState, actionState, and driveState
     const combinedPointArray = nDimensionalPoint.inputState.concat(nDimensionalPoint.actionState.concat(nDimensionalPoint.driveState));
+    // create SQL query that gets sum of squares distance between nDimensionalPoint
+    // and every point in global points table
 
     outputString = outputString.concat(combinedPointArray.map(this.sumOfSquaresQueryString).join(''));
-
-    // outputString.concat(')');
-
     return outputString;
   }
 
   /**
   @returns an array that can be join('') to get a portion of square distance mysql query string
 
-  output example: `SQR(10 - point_index_${0}) + SQR (5 - point_index_${1}) + SQR (3 - point_index_${2})`
+  output example: `POWER(10 - point_index_${0}, 2) + POWER (5 - point_index_${1}, 2) + POWER (3 - point_index_${2}, 2)`
   */
   sumOfSquaresQueryString (val, index, array) {
     if (array.length === 0) { return ''; }
     let output = '';
 
     index !== 0 ? output = output + ' + ' : null;
-    output = output + `SQR(${val} - point_index_${index})`;
+    output = output + `POWER(${val} - point_index_${index}, 2)`;
 
     return output;
   }

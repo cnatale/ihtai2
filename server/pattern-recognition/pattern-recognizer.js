@@ -163,7 +163,7 @@ class PatternRecognizer {
   */
   addPointToPointsTable() {
     // Create an object representing row to add to global points table.
-    // Add point point column, along with each point index to its own column.
+    // Add point column, along with each point index to its own column.
     const contentToInsert = { point: this.patternToString() };
 
     this.getPatternAsSingleArray().map((signal, index) => {

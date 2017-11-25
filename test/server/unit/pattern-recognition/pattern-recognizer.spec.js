@@ -204,7 +204,7 @@ describe('patternRecognizer', () => {
 
   describe('getBestNextAction', () => {
     it('should return its next action with lowest(best) score', (done) => {
-      /* First eight expected results:
+      /* First eight expected results based on random number seed:
         0.9782811118900929
         0.4846980885530663
         0.6151119931966604

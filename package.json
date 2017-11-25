@@ -15,7 +15,7 @@
   "license": "ISC",
   "devDependencies": {
     "chai": "^3.5.0",
-    "eslint": "^3.13.0",
+    "eslint": "^3.19.0",
     "eslint-config-google": "^0.7.1",
     "eslint-config-standard": "^7.1.0",
     "eslint-plugin-filenames": "^1.1.0",
