@@ -171,6 +171,7 @@ class PatternRecognitionGroup {
     return output;
   }
 
+  
 }
 
 module.exports = PatternRecognitionGroup;

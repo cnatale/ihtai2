@@ -4,8 +4,8 @@
   "description": "",
   "main": "server/index.js",
   "scripts": {
-    "start": "node ./server/index.js",
-    "start-debugger": "node --inspect --debug-brk ./server/index.js",
+    "start": "node ./server/main.js",
+    "start-debugger": "node --inspect --debug-brk ./server/main.js",
     "test": "./node_modules/.bin/mocha test/**/*.spec.js",
     "test-cover": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test/**/*.spec.js",
     "report": "./node_modules/.bin/istanbul report --root ./coverage html",
@@ -32,6 +32,7 @@
     "bunyan": "^1.8.10",
     "chai-as-promised": "^7.1.1",
     "config": "^1.25.1",
+    "express": "^4.16.2",
     "istanbul": "^0.4.5",
     "knex": "^0.12.9",
     "knex-cleaner": "^1.1.3",

@@ -228,7 +228,7 @@ describe('PatternRecognitionGroup', () => {
   });
 
   describe('deletePatternRecognizer()', () => {
-    it('should be able to delete a patternRecognizer when passed its pattern', () => {
+    it('should delete a patternRecognizer when passed its pattern', () => {
       // TODO: the actual db cleanup logic should probably be stored in PatternRecognizer,
       // in line with where other db access methods are kept
     });
@@ -253,21 +253,8 @@ describe('PatternRecognitionGroup', () => {
     });
   });
 
-  describe('addTimeStep()', () => {
-    it('should add a timestep to sliding window', () => {
-
-    });
-  });
-
-  describe('averageDriveScoresOverTimePeriod()', () => {
-    it('should return a single number representing the average of all drive scores over the length of sliding window', () => {
-
-    });
-  });
-
   describe('updatePatternScore()', () => {
-      // TODO: use sliding window to get next n time instances, get average drive score over 
-      // sliding window period, then update next move score based on this new score in a weighted manner.
+      // TODO: update next move score based on this new score in a weighted manner.
       // Will also need to keep track of total time this next move has been updated to know how much to 
       // weight existing score vs. new score. 
 
