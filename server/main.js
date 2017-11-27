@@ -5,7 +5,13 @@ const bunyan = require('bunyan');
 const log = bunyan.createLogger({ name: 'Ihtai' });
 
 const express = require('express');
+const bodyParser = require('body-parser');
 const app = express();
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }));
+
+// parse application/json
+app.use(bodyParser.json());
 
 const slidingWindow = new SlidingWindow(5);
 const patternRecognitionGroup = new PatternRecognitionGroup();
@@ -33,7 +39,38 @@ app.get('/initialize', function (req, res) {
   });
 });
 
-app.delete('/clearDB', function (req, res) {
+app.post('/initialize', function (req, res) {
+  // TODO: verify req.body is valid json
+  log.info('initialization request received');
+  log.info(req.body);
+
+  // TODO: take json body format, and format for patternRecognitionGroup.initialize
+
+  patternRecognitionGroup.initialize(
+    req.body.startingData, 
+    req.body.possibleDataValues
+    ).then(() => {
+      log.info('PATTERN RECOGNITION GROUP INITIALIZED');
+      res.send('PATTERN RECOGNITION GROUP INITIALIZED');    
+    }, () => {
+      log.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
+      res.send('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
+    });
+});
+
+// TODO: expose patternRecognitionGroup.getNearestPatternRecognizer()
+//  should return a patternRecognizer
+
+// TODO: expose patternRecognizer.getBestNextAction() when given a patternRecognizer
+
+// TODO: expose patternRecognizer.updateNextMoveScore(nextMove, score) when given a
+//  patternRecognizer
+
+// TODO: expose method to find out if tables have already been created for Ihtai, and
+//  returning true or false
+
+// expose method to clear db
+app.delete('/db', function (req, res) {
   dbUtil.emptyDb().then(() => {
     log.info('DB CLEARED');
     res.send('DB CLEARED');
@@ -43,6 +80,7 @@ app.delete('/clearDB', function (req, res) {
   });  
 });
 
-
+// serve static client files
+app.use(express.static('client'));
 
 app.listen(3800);
