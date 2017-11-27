@@ -226,11 +226,11 @@ describe('patternRecognizer', () => {
         patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
 
           patternRecognizer.getBestNextAction().then((result) => {
-            expect(result).to.be.an('array').lengthOf(1);
+            expect(result).to.be.an('object');
             // basing this off seeded value, which will change based on number of times
             // Math.random() is called in this file
-            expect(result[0].score).to.equal(0.06057665448709666);
-            expect(result[0].next_action).to.equal('1_a_x');
+            expect(result.score).to.equal(0.06057665448709666);
+            expect(result.next_action).to.equal('1_a_x');
 
             done();
           });

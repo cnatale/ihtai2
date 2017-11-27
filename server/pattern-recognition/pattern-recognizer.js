@@ -203,7 +203,8 @@ class PatternRecognizer {
   getBestNextAction() {
     const actionsTableName = this.patternToString();
 
-    return knex(actionsTableName).orderBy('score').limit(1);
+    return knex(actionsTableName).orderBy('score').limit(1)
+      .then((res) => res[0]);
   }
 
   /**
@@ -232,7 +233,9 @@ class PatternRecognizer {
       knex.select('score').from(this.patternToString())
         .where('next_action', nextMove)
         .then((results) => {
-          // update row with weighted average of current score and new score value
+          // Update row with weighted average of current score and new score value.
+          // Right now hardcoding new score to be weighted at 10% of current score
+          // for updated value.
           const updatedScore = (results[0].score * 9 + score) / 10;
           knex(this.patternToString())
             .where('next_action', nextMove)

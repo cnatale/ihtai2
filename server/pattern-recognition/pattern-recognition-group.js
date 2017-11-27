@@ -70,7 +70,6 @@ class PatternRecognitionGroup {
       return Promise.reject(new Error('PatternRecognitionGroup.addPatternRecognizer: possibleActionValues not initialized.'));
     }
 
-
     // TODO: think I want to pass in the point after finding nearest neighbor, not the
     // original point.
     const nDimensionalPointString = PatternRecognizer.patternToString(nDimensionalPoint);
@@ -95,6 +94,24 @@ class PatternRecognitionGroup {
           resolve(true);
         });
     });
+  }
+
+  /**
+    Gets the in-memory patternRecognizer instance with a key equal to
+    the nDimensionalPointString param
+
+    @param nDimensionalPointString {string} takes the form of
+      'pattern_a_b_c_...n-1_n'
+
+    @returns {object} the associated patternRecognizer instance object
+  */
+  getPatternRecognizer(nDimensionalPointString) {
+    if (!this.patternRecognizers[nDimensionalPointString]) {
+      throw (`Error: PatternRecognitionGroup.getPatternRecognizer(): 
+        no patternRecognizer found matching the input string`);
+    }
+
+    return this.patternRecognizers[nDimensionalPointString];
   }
 
   /**
@@ -134,7 +151,8 @@ class PatternRecognitionGroup {
     return knex(globalPointsTableName)
       .select('point')
       .orderByRaw(this.nearestNeighborQueryString(nDimensionalPoint))
-      .limit(1);
+      .limit(1)
+      .then((result) => result[0].point);
   }
 
 
@@ -171,7 +189,7 @@ class PatternRecognitionGroup {
     return output;
   }
 
-  
+
 }
 
 module.exports = PatternRecognitionGroup;

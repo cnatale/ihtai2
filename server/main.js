@@ -44,8 +44,6 @@ app.post('/initialize', function (req, res) {
   log.info('initialization request received');
   log.info(req.body);
 
-  // TODO: take json body format, and format for patternRecognitionGroup.initialize
-
   patternRecognitionGroup.initialize(
     req.body.startingData, 
     req.body.possibleDataValues
@@ -58,10 +56,35 @@ app.post('/initialize', function (req, res) {
     });
 });
 
-// TODO: expose patternRecognitionGroup.getNearestPatternRecognizer()
-//  should return a patternRecognizer
+/*
+  returns the table name of the nearest neighbor pattern
+*/
+app.post('/nearestPatternRecognizer', function (req, res) {
+  log.info('request for nearest patternRecognizer received');
+  log.info(req.body);
+
+  patternRecognitionGroup.getNearestPatternRecognizer(
+    {
+      inputState: req.body.inputState,
+      actionState: req.body.actionState,
+      driveState: req.body.driveState
+    }
+  ).then((nearestPatternRecognizer) => {
+    res.send(nearestPatternRecognizer);
+  });
+});
 
 // TODO: expose patternRecognizer.getBestNextAction() when given a patternRecognizer
+app.post('bestNextAction', function (req, res) {
+  log.info('request for best next action received');
+  log.info(req.body);
+
+  // TODO: first, get the patternRecognizer from patternRecognitionGroup
+  const patternRecognizer = 
+    patternRecognitionGroup.getPatternRecognizer(req.body.patternString);
+
+  
+});
 
 // TODO: expose patternRecognizer.updateNextMoveScore(nextMove, score) when given a
 //  patternRecognizer

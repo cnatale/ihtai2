@@ -1,4 +1,5 @@
 const PatternRecognitionGroup = require('../../../../server/pattern-recognition/pattern-recognition-group');
+const PatternRecognizer = require('../../../../server/pattern-recognition/pattern-recognizer');
 const chai = require('chai');
 const expect = chai.expect;
 const chaiAsPromised = require('chai-as-promised');
@@ -35,8 +36,6 @@ describe('PatternRecognitionGroup', () => {
     });
 
     it('should initialize patternRecognitionGroup and create patternRecognizers', (done) => {
-      // TODO: calculate using global_points_table in db, which contains every point
-      // May want to add a column for every dimension with naming convention dimension_[dimensionNumber]
       const patternRecognitionGroup = new PatternRecognitionGroup();
       patternRecognitionGroup.initialize(
         [
@@ -127,7 +126,54 @@ describe('PatternRecognitionGroup', () => {
       });
 
     });
+  });
 
+  describe('getPatternRecognizer', () => {
+    it('should return a patternRecognizer object when given string key', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] }       
+        ],
+        [
+          [0, 5, 10, 15, 20], 
+          [0, 5, 10, 15, 20],
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => {
+        const expectedPatternString = PatternRecognizer.patternToString(
+          { inputState:[5], actionState: [5], driveState: [5] } 
+        );
+
+        const patternRecognizer = patternRecognitionGroup.
+          getPatternRecognizer(expectedPatternString);
+
+        expect(patternRecognizer).to.be.an('object');
+        done();
+      });
+    });
+
+    it('should throw an error if string key does not match any patternRecognizers', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] }       
+        ],
+        [
+          [0, 5, 10, 15, 20], 
+          [0, 5, 10, 15, 20],
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => {
+        const expectedPatternString = 'notTheRightString';
+
+        expect(() => patternRecognitionGroup.
+          getPatternRecognizer(expectedPatternString)
+        ).to.throw();   
+
+        done();
+      });
+    });
 
   });
 
@@ -188,9 +234,8 @@ describe('PatternRecognitionGroup', () => {
         patternRecognitionGroup.getNearestPatternRecognizer(
           { inputState: [1], actionState: [16], driveState: [1] }
         ).then((result) => {
-          // expected result form:
-          // [ { point: 'pattern_0_15_0' } ]
-          expect(result[0].point).to.equal('pattern_0_15_0');
+          // expected result 'pattern_0_15_0'
+          expect(result).to.equal('pattern_0_15_0');
         },
         (err) => {
           throw (err);
@@ -199,7 +244,7 @@ describe('PatternRecognitionGroup', () => {
         patternRecognitionGroup.getNearestPatternRecognizer(
           { inputState: [4], actionState: [5], driveState: [4] }
         ).then((result) => {
-          expect(result[0].point).to.equal('pattern_5_5_5');
+          expect(result).to.equal('pattern_5_5_5');
         },
         (err) => {
           throw (err);
@@ -208,7 +253,7 @@ describe('PatternRecognitionGroup', () => {
         patternRecognitionGroup.getNearestPatternRecognizer(
           { inputState: [20], actionState: [20], driveState: [20] }
         ).then((result) => {
-          expect(result[0].point).to.equal('pattern_20_20_20');
+          expect(result).to.equal('pattern_20_20_20');
         },
         (err) => {
           throw (err);
@@ -217,7 +262,7 @@ describe('PatternRecognitionGroup', () => {
         patternRecognitionGroup.getNearestPatternRecognizer(
           { inputState: [8], actionState: [12], driveState: [9] }
         ).then((result) => {
-          expect(result[0].point).to.equal('pattern_10_10_10');
+          expect(result).to.equal('pattern_10_10_10');
           done();
         },
         (err) => {
@@ -267,11 +312,11 @@ describe('PatternRecognitionGroup', () => {
       // TODO: need to implement sliding window before this can be completed
   });
 
-  describe('populateFromDb()', () => {
+  describe('populateFromDb/inflate()', () => {
     it('should build a pattern-recognition-group from existing db', () => {
       // TODO: populate pattern db tables with pattern recognizer data
       // TODO: write populateFromDb() method that gets all tables and creates
-      //       1 patternRecognizer per table inside pattern-recognition-group
+      //       1 patternRecognizer instance per table inside pattern-recognition-group
       // Can get each pattern recognizer info from global points table.
       // Probably need some type of equivalent populateFromDb() method in the PatternRecognizer class
       // as well.
