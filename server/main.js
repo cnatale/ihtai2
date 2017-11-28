@@ -75,20 +75,18 @@ app.post('/nearestPatternRecognizer', function (req, res) {
   });
 });
 
-// expose patternRecognizer.getBestNextAction() when given a patternRecognizer
-app.post('bestNextAction', function (req, res) {
-  log.info('request for best next action received');
-  log.info(req.body);
+// expose ability to update sliding window, and return current sliding window
+// state 
+// @param actionTakenString {string}: string representation of action taken.
+//   ex: '1_2_4_3'
+// @param score {number} the average drive score for this slidingWindow action at this point in time 
+app.put('addTimeStep', function (req, res) {
+  log.info('request to addTimeStep received');
+  log.info('req.body');
 
-  // first, get the patternRecognizer from patternRecognitionGroup
-  const patternRecognizer = 
-    patternRecognitionGroup.getPatternRecognizer(req.body.patternString);
-
-  patternRecognizer.getBestNextAction().then((result) => {
-    // result format:
-    // { score: {number}, next_action: {string (ex: '1_3_5')}}
-    res.send(result);
-  });
+  res.send(
+    slidingWindow.addTimeStep(req.body.stateKey, req.body.score)
+  );
 });
 
 // @params none
@@ -116,21 +114,23 @@ app.put('updateScore', function (req, res) {
   });
 });
 
-// expose ability to update sliding window, and return current sliding window
-// state 
-// @param actionTakenString {string}: string representation of action taken.
-//   ex: '1_2_4_3'
-// @param score {number} the average drive score for this slidingWindow action at this point in time 
-app.put('addTimeStep', function (req, res) {
-  log.info('request to addTimeStep received');
-  log.info('req.body');
+// expose patternRecognizer.getBestNextAction() when given a patternRecognizer
+app.post('bestNextAction', function (req, res) {
+  log.info('request for best next action received');
+  log.info(req.body);
 
-  res.send(
-    slidingWindow.addTimeStep(req.body.stateKey, req.body.score)
-  );
+  // first, get the patternRecognizer from patternRecognitionGroup
+  const patternRecognizer = 
+    patternRecognitionGroup.getPatternRecognizer(req.body.patternString);
+
+  patternRecognizer.getBestNextAction().then((result) => {
+    // result format:
+    // { score: {number}, next_action: {string (ex: '1_3_5')}}
+    res.send(result);
+  });
 });
 
-// expose method to find out if tables have already been created for Ihtai, and
+// TODO: expose method to find out if tables have already been created for Ihtai, and
 //  returning true or false
 
 // expose method to clear db
