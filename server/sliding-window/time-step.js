@@ -9,9 +9,9 @@ class TimeStep {
     @param actionTakenKey {string}
     @param driveScore {number} the average drive score
   */
-  constructor (actionTakenKey, driveScore) {
-    this.actionTakenKey = actionTakenKey;
-    this.driveScore = driveScore;
+  constructor (stateKey, score) {
+    this.stateKey = stateKey;
+    this.score = score;
   }
 }
 

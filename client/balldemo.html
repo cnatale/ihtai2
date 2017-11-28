@@ -270,6 +270,16 @@
     }
 
     function mainLoop(t){
+        // TODO: new client/api call loop: ///////////////
+        // -update client side drive scores based on client state
+        // -/nearestPatternRecognizer -> returns pattern recognizer string representing current state
+        // -/updateSlidingWindow -> updates sliding window (with current nearest neighbor pattern state)
+        // -/updateNextMoveScore (with slidingWindow.getAverageDriveScoreForHeadState and slidingWindow.getHead) -> 
+        // -/bestNextAction suggestion (using nearest patternRecognizer)
+        // -act on best next action suggestion
+        // …and loop!
+        // ////////////////////////////////////////
+
         // only enter loop again after getting response back from Ihtai
         // requestAnimationFrame(mainLoop);
 

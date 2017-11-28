@@ -6,10 +6,10 @@ const expect = chai.expect;
 const TimeStep = require('../../../../server/sliding-window/time-step');
 
 describe('TimeStep', () => {
-  it('should instantiate a TimeStep with actionTakenKey and driveScore properties', () => {
+  it('should instantiate a TimeStep with stateKey and score properties', () => {
     const timeStep = new TimeStep('2+1+3', 2.5);
-    expect(timeStep.actionTakenKey).to.equal('2+1+3');
-    expect(timeStep.driveScore).to.equal(2.5);
+    expect(timeStep.stateKey).to.equal('2+1+3');
+    expect(timeStep.score).to.equal(2.5);
   });
 
 });

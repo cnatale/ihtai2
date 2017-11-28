@@ -13,6 +13,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // parse application/json
 app.use(bodyParser.json());
 
+// instantiate with number of timesteps stored
 const slidingWindow = new SlidingWindow(5);
 const patternRecognitionGroup = new PatternRecognitionGroup();
 
@@ -74,22 +75,64 @@ app.post('/nearestPatternRecognizer', function (req, res) {
   });
 });
 
-// TODO: expose patternRecognizer.getBestNextAction() when given a patternRecognizer
+// expose patternRecognizer.getBestNextAction() when given a patternRecognizer
 app.post('bestNextAction', function (req, res) {
   log.info('request for best next action received');
   log.info(req.body);
 
-  // TODO: first, get the patternRecognizer from patternRecognitionGroup
+  // first, get the patternRecognizer from patternRecognitionGroup
   const patternRecognizer = 
     patternRecognitionGroup.getPatternRecognizer(req.body.patternString);
 
-  
+  patternRecognizer.getBestNextAction().then((result) => {
+    // result format:
+    // { score: {number}, next_action: {string (ex: '1_3_5')}}
+    res.send(result);
+  });
 });
 
-// TODO: expose patternRecognizer.updateNextMoveScore(nextMove, score) when given a
-//  patternRecognizer
+// expose patternRecognizer.updateNextMoveScore(nextMove, score) when given a
+// patternRecognizer
+app.put('updateHeadScore', function (req, res) {
+  log.info('request to update sliding window head move score received');
+  log.info('req.body');
 
-// TODO: expose method to find out if tables have already been created for Ihtai, and
+  // expect patternString key, next move string, new score as params:
+  const patternRecognizer = 
+    patternRecognitionGroup.getPatternRecognizer(
+      slidingWindow.head
+    );
+
+  const nextActionStateString = req.body.nextActionStateString;
+
+  // use avg score from sliding-window, not directly from client b/c
+  // client won't know what the new score should be
+  const headMoveScore = slidingWindow.getAverageDriveScoreForHeadState();
+
+
+  // ex. nextMove string: '1_3_5_2'. Similar to patternRecognizer key format, but
+  // no starting 'pattern_'
+  patternRecognizer.updateNextMoveScore(
+    slidingWindow.getHead(),
+    headMoveScore
+  ).then((successOrFailure) => {
+    res.send(successOrFailure);
+  });
+});
+
+// expose ability to update sliding window, and return current sliding window
+// state 
+// @param actionTakenString {string}: string representation of action taken.
+//   ex: '1_2_4_3'
+// @param score {number} the score for this slidingWindow action 
+app.put('updateSlidingWindow', function (req, res) {
+  log.info('request to update sliding window received');
+  log.info('req.body');
+
+  slidingWindow.addTimeStep(req.body.actionTakenString, req.body.score);
+});
+
+// expose method to find out if tables have already been created for Ihtai, and
 //  returning true or false
 
 // expose method to clear db

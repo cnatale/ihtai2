@@ -1,35 +1,54 @@
+const TimeStep = require('./time-step');
+
 /**
   A sliding window representing the last n timesteps.
 */
 
-const TimeStep = require('./time-step');
-
-
 class SlidingWindow {
   constructor(numberOfTimeSteps) {
-    this.numberOfTimeSteps = numberOfTimeSteps;
+    this.numberOfTimeSteps = numberOfTimeSteps || 5;
     this.timeSteps = [];
   }
 
   /**
-    @param actionTakenKey {string} string representing the action taken
+    Adds an action taken to sliding window, alond with its drive score.
+    Note that this assumes client is keeping track of the string representing
+    current Ihtai state that is the starting point for this action
+    @param stateKey {string} string representing the agent state at this moment
     @param driveScore {number} the drive score average of all drives the moment after action
            in actionTakenKey occurred.
   */
-  addTimeStep(actionTakenKey, driveScore) {
-    this.timeSteps.push(new TimeStep(actionTakenKey, driveScore));
+  addTimeStep(stateKey, driveScore) {
+    this.timeSteps.push(new TimeStep(stateKey, driveScore));
+
     if ( this.timeSteps.length > this.numberOfTimeSteps ) {
       this.timeSteps.shift();
     }
+
     return this.timeSteps;
   }
 
+  // @return the average drive score for scores influenced by 
+  //   the tail-head's action. Starts with tail-head because
+  //   we need to be able to figure out, starting with a state,
+  //   how the next action influences average drive scores.
   getAverageDriveScore() {
     return this.timeSteps.reduce((acc, timeStep, index, timeSteps) => {
-      return acc + (timeStep.driveScore / timeSteps.length);
+      // skip the first index because we only want to account for
+      // actions influenced by the action taken by tailHead state
+      return index === 0 ?
+        acc :
+        acc + (timeStep.score / timeSteps.length);
     }, 0);
   }
 
+  getHead() {
+    return this.timeSteps[0];
+  }
+
+  getTailHead() {
+    return this.timeSteps[1];
+  }
 }
 
 module.exports = SlidingWindow;

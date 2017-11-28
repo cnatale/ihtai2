@@ -219,7 +219,6 @@ class PatternRecognizer {
 
   /**
     Reweights the scores in next moves db table
-    @param slidingWindow (Object) Slding window of stimesteps.
   */
   updateNextMoveScore(nextMove, score) {
     /*
