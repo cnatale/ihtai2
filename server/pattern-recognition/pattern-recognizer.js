@@ -220,7 +220,7 @@ class PatternRecognizer {
   /**
     Reweights the scores in next moves db table
   */
-  updateNextMoveScore(nextMove, score) {
+  updateNextMoveScore(nextMoveKey, score) {
     /*
     Steps:
       -query actions table to get current score for nextMove key
@@ -230,14 +230,14 @@ class PatternRecognizer {
 
     return new Promise((resolve) => {
       knex.select('score').from(this.patternToString())
-        .where('next_action', nextMove)
+        .where('next_action', nextMoveKey)
         .then((results) => {
           // Update row with weighted average of current score and new score value.
           // Right now hardcoding new score to be weighted at 10% of current score
           // for updated value.
           const updatedScore = (results[0].score * 9 + score) / 10;
           knex(this.patternToString())
-            .where('next_action', nextMove)
+            .where('next_action', nextMoveKey)
             .update('score', updatedScore)
             .then((numberOfRowsUpdated) => {
               if (!numberOfRowsUpdated) {

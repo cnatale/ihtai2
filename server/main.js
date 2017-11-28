@@ -91,30 +91,26 @@ app.post('bestNextAction', function (req, res) {
   });
 });
 
-// expose patternRecognizer.updateNextMoveScore(nextMove, score) when given a
-// patternRecognizer
-app.put('updateHeadScore', function (req, res) {
-  log.info('request to update sliding window head move score received');
+// @params none
+// given current slidingWindow head, update score for next move that
+// equals the slidingWindow tailHead's key
+// @return promise that resolves to true or false
+app.put('updateScore', function (req, res) {
+  log.info('request to update score for sliding window head received');
   log.info('req.body');
 
-  // expect patternString key, next move string, new score as params:
   const patternRecognizer = 
     patternRecognitionGroup.getPatternRecognizer(
-      slidingWindow.head
+      'pattern_' + slidingWindow.head.stateKey
     );
 
-  const nextActionStateString = req.body.nextActionStateString;
-
-  // use avg score from sliding-window, not directly from client b/c
-  // client won't know what the new score should be
-  const headMoveScore = slidingWindow.getAverageDriveScoreForHeadState();
-
+  const avgScoreOverTimeSeries = slidingWindow.getAverageDriveScore();
 
   // ex. nextMove string: '1_3_5_2'. Similar to patternRecognizer key format, but
   // no starting 'pattern_'
   patternRecognizer.updateNextMoveScore(
-    slidingWindow.getHead(),
-    headMoveScore
+    slidingWindow.getTailHead().stateKey,
+    avgScoreOverTimeSeries
   ).then((successOrFailure) => {
     res.send(successOrFailure);
   });
@@ -124,12 +120,14 @@ app.put('updateHeadScore', function (req, res) {
 // state 
 // @param actionTakenString {string}: string representation of action taken.
 //   ex: '1_2_4_3'
-// @param score {number} the score for this slidingWindow action 
-app.put('updateSlidingWindow', function (req, res) {
-  log.info('request to update sliding window received');
+// @param score {number} the average drive score for this slidingWindow action at this point in time 
+app.put('addTimeStep', function (req, res) {
+  log.info('request to addTimeStep received');
   log.info('req.body');
 
-  slidingWindow.addTimeStep(req.body.actionTakenString, req.body.score);
+  res.send(
+    slidingWindow.addTimeStep(req.body.stateKey, req.body.score)
+  );
 });
 
 // expose method to find out if tables have already been created for Ihtai, and
