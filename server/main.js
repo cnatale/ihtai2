@@ -7,6 +7,9 @@ const log = bunyan.createLogger({ name: 'Ihtai' });
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
+
+module.exports = app;
+
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -17,7 +20,7 @@ app.use(bodyParser.json());
 const slidingWindow = new SlidingWindow(5);
 const patternRecognitionGroup = new PatternRecognitionGroup();
 
-// test initialization. for final version, take json params
+// test initialization. in practice, use the post version
 app.get('/initialize', function (req, res) {
   patternRecognitionGroup.initialize(
     [
@@ -80,7 +83,7 @@ app.post('/nearestPatternRecognizer', function (req, res) {
 // @param actionTakenString {string}: string representation of action taken.
 //   ex: '1_2_4_3'
 // @param score {number} the average drive score for this slidingWindow action at this point in time 
-app.put('addTimeStep', function (req, res) {
+app.put('/addTimeStep', function (req, res) {
   log.info('request to addTimeStep received');
   log.info('req.body');
 
@@ -93,13 +96,13 @@ app.put('addTimeStep', function (req, res) {
 // given current slidingWindow head, update score for next move that
 // equals the slidingWindow tailHead's key
 // @return promise that resolves to true or false
-app.put('updateScore', function (req, res) {
+app.get('/updateScore', function (req, res) {
   log.info('request to update score for sliding window head received');
   log.info('req.body');
 
   const patternRecognizer = 
     patternRecognitionGroup.getPatternRecognizer(
-      'pattern_' + slidingWindow.head.stateKey
+      'pattern_' + slidingWindow.getHead().stateKey
     );
 
   const avgScoreOverTimeSeries = slidingWindow.getAverageDriveScore();
@@ -115,7 +118,7 @@ app.put('updateScore', function (req, res) {
 });
 
 // expose patternRecognizer.getBestNextAction() when given a patternRecognizer
-app.post('bestNextAction', function (req, res) {
+app.post('/bestNextAction', function (req, res) {
   log.info('request for best next action received');
   log.info(req.body);
 
