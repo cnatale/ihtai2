@@ -147,6 +147,8 @@ app.delete('/db', function (req, res) {
   });  
 });
 
+// TODO: expose method to split point
+
 // serve static client files
 app.use(express.static('client'));
 

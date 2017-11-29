@@ -138,6 +138,7 @@ describe('patternRecognizer', () => {
             expect(results[0].point_index_3).to.be.a('number').and.equal(4);
             expect(results[0].point_index_4).to.be.a('number').and.equal(5);
             expect(results[0].point_index_5).to.be.a('number').and.equal(6);
+            expect(results[0].updates_per_minute).to.be.a('number').and.equal(0);
             done();
           });
         });

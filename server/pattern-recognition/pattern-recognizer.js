@@ -31,6 +31,10 @@ class PatternRecognizer {
     are arrays.
   */
   constructor(nDimensionalPoint) {
+    this.setPattern(nDimensionalPoint);
+  }
+
+  setPattern(nDimensionalPoint) {
     this.pattern = nDimensionalPoint;
   }
 
@@ -138,7 +142,10 @@ class PatternRecognizer {
           knex.schema.createTable(globalPointsTableName, (table) => {
             table.increments('id').primary();
             table.string('point');
+            // add created_at and updated_at columns to table
             table.timestamps();
+            table.integer('updates_per_minute');
+
             this.getPatternAsSingleArray().map((value, index) => {
               if (typeof value === 'number') {
                 table.double(`point_index_${index}`);
@@ -165,6 +172,7 @@ class PatternRecognizer {
     // Create an object representing row to add to global points table.
     // Add point column, along with each point index to its own column.
     const contentToInsert = { point: this.patternToString() };
+    contentToInsert.updates_per_minute = 0;
 
     this.getPatternAsSingleArray().map((signal, index) => {
       contentToInsert[`point_index_${index}`] = signal;
@@ -247,7 +255,12 @@ class PatternRecognizer {
             });
         });
     });
+  }
 
+  getThresholdState() {
+    const globalPointsTableName = config.get('db').globalPointsTableName;
+
+    knex.select('').from(globalPointsTableName)
   }
 }
 

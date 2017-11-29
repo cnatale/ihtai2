@@ -6,10 +6,19 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 const main = require('../../../server/main');
 const app = main;
+const dbUtil = require('../../../server/db/util');
 
 
 describe('main', () => {
-  describe('initialization', () => {
+  before(() => {
+    return dbUtil.emptyDb();
+  });
+
+  after(() => {
+    return dbUtil.emptyDb();
+  });
+
+  describe('/initialize', () => {
     it('should instantiate a patternRecognitionGroup and slidingWindow', (done) => {
       request(app)
         .post("/initialize")
@@ -36,7 +45,7 @@ describe('main', () => {
     });
   });
 
-  describe('nearestPatternRecognizer', () => {
+  describe('/nearestPatternRecognizer', () => {
     it('should get the nearest PatternRecognizer, given a pattern', (done) => {
       request(app)
         .post("/nearestPatternRecognizer")
@@ -51,7 +60,7 @@ describe('main', () => {
     });
   });
 
-  describe('addTimeStep', () => {
+  describe('/addTimeStep', () => {
     it('add a timeStep to sliding window', (done) => {
       request(app)
         .put("/addTimeStep")
@@ -65,7 +74,7 @@ describe('main', () => {
   });
 
 
-  describe('updateScore', () => {
+  describe('/updateScore', () => {
     it('updates score', (done) => {
       request(app)
         .put("/addTimeStep")
@@ -86,7 +95,7 @@ describe('main', () => {
     });
   });
 
-  describe('bestNextAction', () => {
+  describe('/bestNextAction', () => {
     it('gets the best next action', (done) => {
       request(app)
         .post("/bestNextAction")
@@ -98,6 +107,18 @@ describe('main', () => {
           expect(responseObject.next_action).to.be.a('string');
           done();
         });
+    });
+  });
+
+  describe('/shouldSplit', () => {
+    it('should return true if a patternRecognizer should be split', () => {
+      // TODO: call patternRecognitionGroup.shouldSplitPattternRecognizer()
+    });
+  });
+
+  describe('/split', () => {
+    it('should return true is the split was successful', () => {
+      // TODO: calll patternRecognitionGroup.splitPatternRecognizer()
     });
   });
 

@@ -272,10 +272,113 @@ describe('PatternRecognitionGroup', () => {
     });
   });
 
+
+  function initDefaultPatternRecognitionGroup(patternRecognitionGroup) {
+    return patternRecognitionGroup.initialize(
+      [
+        { inputState:[5], actionState: [5], driveState: [5] },
+        { inputState: [10], actionState: [10], driveState: [10] },
+        { inputState:[0], actionState: [15], driveState: [0] },
+        { inputState: [20], actionState: [20], driveState: [20] }          
+      ],
+      [
+        [0, 5, 10, 15, 20], 
+        [0, 5, 10, 15, 20],
+        [0, 5, 10, 15, 20]
+      ]
+    );
+  }
+
+  // TODO: priority
+  describe('shouldSplitPatternRecognizer', () => {
+    it.skip('should return true if patternRecognizer meets split conditions', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      initDefaultPatternRecognitionGroup(patternRecognitionGroup).then(() => {
+        const patternString = 'pattern_0_15_0';
+        patternRecognitionGroup.shouldSplitPatternRecognizer(patternString).then((result) => {
+          expect(result).to.equal(true);
+          done();
+        });
+      });
+    });
+
+    it.skip('should return false if patternRecognizer does not meet split conditions', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      initDefaultPatternRecognitionGroup(patternRecognitionGroup).then(() => {
+        const patternString = 'pattern_0_15_0';
+        patternRecognitionGroup.shouldSplitPatternRecognizer(patternString).then((result) => {
+          expect(result).to.equal(false);
+          done();
+        });
+      });
+    });
+  });
+
+  // TODO: priority
+  describe('splitPatternRecognizer', () => {
+    it('should split a patternRecognizer, given existing patternRecognizer and a new pattern key', () => {
+      // TODO: Do an object copy of existing patternRecognizer object, then 
+      // call setPattern with new pattern as param. Use Object.assign()
+    });
+
+    it(`should add a patternRecognizer for new pattern to patternRecognitionGroup's patternRecognizers
+        in-memory Object`, () => {
+
+    });
+
+    it('should have the same properties and functions of patternRecognizer it was split from', () => {
+
+    });
+
+    it('should add a new row in the global points table for new point', () => {
+
+    });
+
+    it(`should add a new row in every existing point actions table representing new pattern, set to
+        value of pattern it is being split from`, () => {
+
+    });
+
+    it('should create a copy of existing pattern action table, including existing scores for each action', () => {
+
+    });
+
+    it('should reset split conditions on patternRecognizer that was split from', () => {
+
+    });
+
+    it('should return promise that resolves to reference of the new patternRecognizer', () => {
+
+    });
+  });
+
+  // TODO: priority
+  describe('populateFromDb/inflate()', () => {
+    it('should build a pattern-recognition-group from existing db', () => {
+      // TODO: write populateFromDb() method that gets all tables and creates
+      //       1 patternRecognizer instance per table inside pattern-recognition-group
+      // Can get each pattern recognizer info from global points table.
+      // Probably need some type of equivalent populateFromDb() method in the PatternRecognizer class
+      // as well.
+    });
+  });
+
   describe('deletePatternRecognizer()', () => {
     it('should delete a patternRecognizer when passed its pattern', () => {
       // TODO: the actual db cleanup logic should probably be stored in PatternRecognizer,
       // in line with where other db access methods are kept
+    });
+
+    it('should remove pattern from global points table', () => {
+
+    });
+
+    it('should remove pattern\'s actions table', () => {
+
+    });
+
+    it('should remove pattern row from every other pattern\'s actions table', () => {
+
     });
   });
 
@@ -288,38 +391,6 @@ describe('PatternRecognitionGroup', () => {
     it(`should select a random child pattern, and scan to see if it has been accessed below threshold
         minimum for a time period. If no, return false.`, () => {
 
-    });
-  });
-
-  describe('checkIfPatternShouldBeSplit()', () => {
-    it(`should return true if the pattern passed in has been accessed above the min number of times in a
-        given time period.`, () => {
-
-    });
-  });
-
-  describe('updatePatternScore()', () => {
-      // TODO: update next move score based on this new score in a weighted manner.
-      // Will also need to keep track of total time this next move has been updated to know how much to 
-      // weight existing score vs. new score. 
-
-      // updatePatternScore should call the start pattern's updateNextMoveScore() method, passing in 
-      // nextMove and score as params
-
-      // should probably return fulfilled promise value of true when successful, or perhaps the updated
-      // pattern score.s
-
-      // TODO: need to implement sliding window before this can be completed
-  });
-
-  describe('populateFromDb/inflate()', () => {
-    it('should build a pattern-recognition-group from existing db', () => {
-      // TODO: populate pattern db tables with pattern recognizer data
-      // TODO: write populateFromDb() method that gets all tables and creates
-      //       1 patternRecognizer instance per table inside pattern-recognition-group
-      // Can get each pattern recognizer info from global points table.
-      // Probably need some type of equivalent populateFromDb() method in the PatternRecognizer class
-      // as well.
     });
   });
 });

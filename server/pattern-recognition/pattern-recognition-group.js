@@ -137,6 +137,14 @@ class PatternRecognitionGroup {
     });
   }
 
+  shouldSplitPatternRecognizer (pattern) {
+    const patternRecognizer = this.patternRecognizers[pattern];
+
+    patternRecognizer.getThresholdState().then((result) => {
+
+    });
+  }
+
   /**
     Takes a pattern, and returns the nearest n-dimensional neighbor
 
@@ -154,7 +162,6 @@ class PatternRecognitionGroup {
       .limit(1)
       .then((result) => result[0].point);
   }
-
 
   /**
   @param pattern {Object} An n-dimensional point described as three
