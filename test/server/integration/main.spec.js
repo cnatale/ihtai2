@@ -117,8 +117,8 @@ describe('main', () => {
   });
 
   describe('/patternRecognizer/split', () => {
-    it('should return true is the split was successful', () => {
-      // TODO: calll patternRecognitionGroup.splitPatternRecognizer()
+    it('should return true if the split was successful', () => {
+      // TODO: call patternRecognitionGroup.splitPatternRecognizer()
     });
   });
 
@@ -127,6 +127,6 @@ describe('main', () => {
   });
 
   describe('delete /db', () => {
-
+    // empties all db tables
   });
 });

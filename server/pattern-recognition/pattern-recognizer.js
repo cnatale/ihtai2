@@ -143,7 +143,7 @@ class PatternRecognizer {
           knex.schema.createTable(globalPointsTableName, (table) => {
             table.increments('id').primary();
             table.string('point');
-            table.integer('update_count');
+            table.bigInteger('update_count');
             table.dateTime('update_count_last_reset');
             this.getPatternAsSingleArray().map((value, index) => {
               if (typeof value === 'number') {
@@ -267,11 +267,6 @@ class PatternRecognizer {
     });
   }
 
-  getThresholdState() {
-    const globalPointsTableName = config.get('db').globalPointsTableName;
-
-    knex.select('').from(globalPointsTableName)
-  }
 }
 
 module.exports = PatternRecognizer;

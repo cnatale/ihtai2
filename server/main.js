@@ -149,6 +149,10 @@ app.delete('/db', function (req, res) {
 
 // TODO: expose method to split point
 
+// TODO: expose method to get updates per minute
+
+// TODO: expose method to delete an individual patternRecognizer
+
 // serve static client files
 app.use(express.static('client'));
 
