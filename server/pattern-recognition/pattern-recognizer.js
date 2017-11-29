@@ -24,6 +24,7 @@ const knex = require('../db/knex');
 const config = require('config');
 // const log = require('../../log');
 const patternRecUtil = require('./util');
+const moment = require('moment');
 
 class PatternRecognizer {
   /**
@@ -142,10 +143,8 @@ class PatternRecognizer {
           knex.schema.createTable(globalPointsTableName, (table) => {
             table.increments('id').primary();
             table.string('point');
-            // add created_at and updated_at columns to table
-            table.timestamps();
-            table.integer('updates_per_minute');
-
+            table.integer('update_count');
+            table.dateTime('update_count_last_reset');
             this.getPatternAsSingleArray().map((value, index) => {
               if (typeof value === 'number') {
                 table.double(`point_index_${index}`);
@@ -172,7 +171,8 @@ class PatternRecognizer {
     // Create an object representing row to add to global points table.
     // Add point column, along with each point index to its own column.
     const contentToInsert = { point: this.patternToString() };
-    contentToInsert.updates_per_minute = 0;
+    contentToInsert.update_count = 0;
+    contentToInsert.update_count_last_reset = moment().format('YYYY-MM-DD HH:mm:ss');
 
     this.getPatternAsSingleArray().map((signal, index) => {
       contentToInsert[`point_index_${index}`] = signal;
@@ -236,8 +236,10 @@ class PatternRecognizer {
       -save updated score to db 
     */
 
+    const patternString = this.patternToString();
+
     return new Promise((resolve) => {
-      knex.select('score').from(this.patternToString())
+      knex.select('score').from(patternString)
         .where('next_action', nextMoveKey)
         .then((results) => {
           // Update row with weighted average of current score and new score value.
@@ -251,7 +253,15 @@ class PatternRecognizer {
               if (!numberOfRowsUpdated) {
                 throw 'ERROR: no rows affected by score update';
               }
-              resolve(true);
+
+              // before resolving, increment update_count in patternRecognizer's globalPointsTable row
+              const globalPointsTableName = config.get('db').globalPointsTableName;
+              knex(globalPointsTableName)
+                .increment('update_count', 1)
+                .where('point', '=', patternString)
+                .then(() => {
+                  resolve(true);
+                });
             });
         });
     });

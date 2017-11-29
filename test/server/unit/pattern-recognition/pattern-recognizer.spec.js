@@ -138,7 +138,7 @@ describe('patternRecognizer', () => {
             expect(results[0].point_index_3).to.be.a('number').and.equal(4);
             expect(results[0].point_index_4).to.be.a('number').and.equal(5);
             expect(results[0].point_index_5).to.be.a('number').and.equal(6);
-            expect(results[0].updates_per_minute).to.be.a('number').and.equal(0);
+            expect(results[0].update_count).to.be.a('number').and.equal(0);
             done();
           });
         });
@@ -287,6 +287,36 @@ describe('patternRecognizer', () => {
                   expect(results.length).to.equal(1);
                   expect(results[0].score).to.equal(expectedScore);
                   expect(results[0].next_action).to.equal('-1_a_x');
+
+                  done();
+                });
+            });
+        });
+      });
+    });
+
+    it('should increment the pattern\'s global points table update_count after an update', (done) => {
+      const patternRecognizer = new PatternRecognizer({
+        inputState: [1],
+        actionState: [2],
+        driveState: [3]
+      });
+
+      Math.seedrandom('hello.');
+      patternRecognizer.createPointsTableIfNoneExists().then(
+      patternRecognizer.addPointToPointsTable()).then(
+      patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3')).then(() => {
+        patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
+
+          patternRecognizer.updateNextMoveScore('-1_a_x', 10)
+            .then((result) => {
+              expect(result).to.equal(true);
+
+              const globalPointsTableName = config.get('db').globalPointsTableName;
+              knex(globalPointsTableName).select().where('point', '=', patternRecognizer.patternToString())
+                .then((results) => {
+                  expect(results.length).to.equal(1);
+                  expect(results[0].update_count).to.equal(1);
 
                   done();
                 });

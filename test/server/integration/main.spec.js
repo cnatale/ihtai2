@@ -110,16 +110,20 @@ describe('main', () => {
     });
   });
 
-  describe('/shouldSplit', () => {
-    it('should return true if a patternRecognizer should be split', () => {
-      // TODO: call patternRecognitionGroup.shouldSplitPattternRecognizer()
-    });
+
+  describe('/patternRecognizer/updatesPerMinute', () => {
+    // TODO: get updates per minute for patternRecognizer
+    // equation: updates/min = (update_count) / (currentTime - update_count_last_reset) 
   });
 
-  describe('/split', () => {
+  describe('/patternRecognizer/split', () => {
     it('should return true is the split was successful', () => {
       // TODO: calll patternRecognitionGroup.splitPatternRecognizer()
     });
+  });
+
+  describe('/patternRecognizer/delete', () => {
+    // TODO: delete a given patternRecognizer
   });
 
   describe('delete /db', () => {
