@@ -259,6 +259,29 @@ describe('patternRecognizer', () => {
     });
   });
 
+  describe('getUpdatesPerMinute', () => {
+    it('should return updates per minute for the pattern recognizer', (done) => {
+      const patternRecognizer = new PatternRecognizer({
+        inputState: [1],
+        actionState: [2],
+        driveState: [3]
+      });
+
+      Math.seedrandom('hello.');
+      patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3').then(() => {
+        patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
+
+          patternRecognizer.updateNextMoveScore('-1_a_x', 10)
+            .then(patternRecognizer.getUpdatesPerMinute())
+            .then((result) => {
+              expect(result).to.be.a('number').and.above(0);
+              done();
+            });
+        });
+      });
+    });
+  });
+
   describe('updateNextMoveScore', () => {
     it('should update next action scores based on experience', (done) => {
       const patternRecognizer = new PatternRecognizer({

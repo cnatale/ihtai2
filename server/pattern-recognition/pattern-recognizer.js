@@ -224,6 +224,29 @@ class PatternRecognizer {
     return knex.column('next_action', 'score').select().from(this.patternToString());
   }
 
+  getUpdatesPerMinute() {
+    const globalPointsTableName = config.get('db').globalPointsTableName;
+    const patternString = this.patternToString();
+
+
+
+    return new Promise((resolve) => {
+      knex.select('update_count', 'update_count_last_reset')
+        .from(globalPointsTableName)
+        .where('point', '=', patternString)
+        .then((results) => {
+          // equation: updates/min = (update_count) / (currentTime - update_count_last_reset) 
+          const currentTime = moment();
+          const updateCountLastReset = moment(results.update_count_last_reset)
+            .format('YYYY-MM-DD HH:mm:ss');
+
+          const timeDelta = currentTime.diff(updateCountLastReset, 'minutes');
+
+          const updatesPerMinute = results.update_count / timeDelta;
+          resolve(updatesPerMinute);
+        });
+    });   
+  }
 
   /**
     Reweights the scores in next moves db table
@@ -246,7 +269,7 @@ class PatternRecognizer {
           // Right now hardcoding new score to be weighted at 10% of current score
           // for updated value.
           const updatedScore = (results[0].score * 9 + score) / 10;
-          knex(this.patternToString())
+          knex(patternString)
             .where('next_action', nextMoveKey)
             .update('score', updatedScore)
             .then((numberOfRowsUpdated) => {
@@ -259,7 +282,7 @@ class PatternRecognizer {
               knex(globalPointsTableName)
                 .increment('update_count', 1)
                 .where('point', '=', patternString)
-                .then(() => {
+                .then((result) => {
                   resolve(true);
                 });
             });

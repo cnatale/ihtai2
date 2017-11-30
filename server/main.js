@@ -150,8 +150,23 @@ app.delete('/db', function (req, res) {
 // TODO: expose method to split point
 
 // TODO: expose method to get updates per minute
+app.post('/updatesPerMinute', function (req, res) {
+  log.info('request for updates per minute received');
+  log.info(req.body);
+
+  // first, get the patternRecognizer from patternRecognitionGroup
+  const patternRecognizer = 
+    patternRecognitionGroup.getPatternRecognizer(req.body.patternString);
+
+  patternRecognizer.getUpdatesPerMinute().then((result) => {
+    res.send(result);
+  });
+});
+
 
 // TODO: expose method to delete an individual patternRecognizer
+
+// TODO: expose method that returns an array of all points in global points table
 
 // serve static client files
 app.use(express.static('client'));

@@ -111,7 +111,7 @@ describe('main', () => {
   });
 
 
-  describe('/patternRecognizer/updatesPerMinute', () => {
+  describe('/updatesPerMinute', () => {
     // TODO: get updates per minute for patternRecognizer
     // equation: updates/min = (update_count) / (currentTime - update_count_last_reset) 
   });
@@ -128,5 +128,9 @@ describe('main', () => {
 
   describe('delete /db', () => {
     // empties all db tables
+  });
+
+  describe('/allPoints', () => {
+    // returns an array of all points in the global points table
   });
 });
