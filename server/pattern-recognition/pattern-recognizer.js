@@ -3,10 +3,11 @@
   -input state
   -action state
   -drive state
-  ...each of which is its own n-dimensional number
+  ...each of which is its own unique or same-dimensional sub-space
 
   -holds a ref to db table containing n-dimensional number which represents its pattern
-  -holds ref to a db table containing all possible action combinations an Ihtai instance could take. 
+  -holds ref to a db table containing all possible state combinations an Ihtai instance could access
+   from the current state. This is used to decide the next action to take.
     -start by randomly weighting them all
     -score is based on the avg of drive scores over whatever the time period is.
     -if time period sliding window isn’t full, skip reweighting
@@ -22,9 +23,10 @@
 
 const knex = require('../db/knex');
 const config = require('config');
-// const log = require('../../log');
 const patternRecUtil = require('./util');
 const moment = require('moment');
+const Joi = require('joi');
+const { nDimensionalPointSchema } = require('../schemas/schemas');
 
 class PatternRecognizer {
   /**
@@ -32,6 +34,10 @@ class PatternRecognizer {
     are arrays.
   */
   constructor(nDimensionalPoint) {
+    if (!Joi.validate(nDimensionalPoint, nDimensionalPointSchema)) {
+      throw (new Error('Error: nDimensionalPoint improper format!'));
+    }
+
     this.setPattern(nDimensionalPoint);
   }
 
@@ -230,7 +236,7 @@ class PatternRecognizer {
 
 
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       knex.select('update_count', 'update_count_last_reset')
         .from(globalPointsTableName)
         .where('point', '=', patternString)
@@ -242,7 +248,7 @@ class PatternRecognizer {
 
           const timeDelta = currentTime.diff(updateCountLastReset, 'minutes');
 
-          const updatesPerMinute = results.update_count / timeDelta;
+          const updatesPerMinute = timeDelta > 0 ? results.update_count / timeDelta : 0;
           resolve(updatesPerMinute);
         });
     });   

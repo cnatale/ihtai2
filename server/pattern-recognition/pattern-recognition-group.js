@@ -196,6 +196,18 @@ class PatternRecognitionGroup {
     return output;
   }
 
+  // TODO #6: possible dynamic dimensionality reduction algorithm:
+  // -normalize all dimensions
+  // -split dimensions into 2 subarrays (i guess just by middle of array)
+  // -average each subbarray. that becomes the 2d point.
+
+  // TODO #4: normalize function
+  // 1) shift so leftmost range value is 0
+  // 2) divide normalization max value (say, 100), by the number to be normalize after shifting
+
+  // TODO #5: de-normalize function
+  // 1) multiply normalize number by max de-normalized value (say, 5)
+  // 2) shift by the opposite value of normalization shift
 
 }
 
