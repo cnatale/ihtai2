@@ -26,7 +26,7 @@ const config = require('config');
 const patternRecUtil = require('./util');
 const moment = require('moment');
 const Joi = require('joi');
-// const { nDimensionalPointSchema } = require('../schemas/schemas');
+const { nDimensionalPointSchema } = require('../schemas/schemas');
 
 class PatternRecognizer {
   /**
@@ -34,9 +34,9 @@ class PatternRecognizer {
     are arrays.
   */
   constructor(nDimensionalPoint) {
-    // if (Joi.validate(nDimensionalPoint, nDimensionalPointSchema)) {
-    //   throw (new Error('Error: nDimensionalPoint improper format!'));
-    // }
+    if (!Joi.validate(nDimensionalPoint, nDimensionalPointSchema)) {
+      throw (new Error('Error: nDimensionalPoint improper format!'));
+    }
 
     this.setPattern(nDimensionalPoint);
   }
