@@ -3,6 +3,8 @@ const PatternRecognizer = require('./pattern-recognizer');
 const _ = require('lodash');
 const knex = require('../db/knex');
 const config = require('config');
+const Joi = require('joi');
+const { nDimensionalPointSchema, nDimensionalPointsSchema } = require('../schemas/schemas');
 
 /**
   Properties:
@@ -17,7 +19,6 @@ class PatternRecognitionGroup {
     this.patternRecognizers = {};
   }
 
-
   /**
     @param nDimensionalPoints {array} Initialization array of points
       used for creating child PatternRecognizers. If you don't want to initialize
@@ -31,18 +32,33 @@ class PatternRecognitionGroup {
     @param possibleActionValues {array} an array where each index is an array of all possible
       values for the respective component signal.
       Ex: [[-1, 0, 1], [a, b, c], [x, y, z]]
+      Length of outer array must equal number of dimensions of n-dimensional points
 
     @returns Array of Promises, one for each point to add.
     All resolve to true if the operation was successful.
   */
   initialize (nDimensionalPoints, possibleActionValues) {
     // dimensionality can be determined by using .length of one of the nDimensionalPoints
-    if (!nDimensionalPoints || !Array.isArray(nDimensionalPoints)) {
-      throw 'Error: PatternRecognitionGroup contructor must be passed an initialization array of n dimensional points!';
+    const nDimensionalPointsSchemaValidation = nDimensionalPointsSchema.validate(nDimensionalPoints);
+    if (nDimensionalPointsSchemaValidation.error !== null) {
+      throw nDimensionalPointsSchemaValidation;
     }
 
-    if (!possibleActionValues || !Array.isArray(possibleActionValues)) {
-      throw 'Error: PatternRecognitionGroup contructor must be passed an array of possible action values!';
+    // defining schema here so it can base element length on n-dimensional points dimensionality
+    const possibleActionValuesSchema =
+      Joi.array().items(
+        Joi.array().items(
+          Joi.number()
+        )
+      ).length(
+        nDimensionalPoints[0].inputState.concat(
+          nDimensionalPoints[0].actionState,
+          nDimensionalPoints[0].driveState).length
+      ); // length must equal n-dimensional point dimensionality
+
+    const actionValuesSchemaValidation = possibleActionValuesSchema.validate(possibleActionValues);
+    if (actionValuesSchemaValidation.error !== null) {
+      throw actionValuesSchemaValidation;
     }
 
     this.possibleActionValues = possibleActionValues;
@@ -66,6 +82,11 @@ class PatternRecognitionGroup {
   */
 
   addPatternRecognizer (nDimensionalPoint) {
+    const schemaValidator = nDimensionalPointSchema.validate(nDimensionalPoint);
+    if (schemaValidator.error !== null) {
+      throw schemaValidator;
+    }
+
     if (!this.possibleActionValues) {
       return Promise.reject(new Error('PatternRecognitionGroup.addPatternRecognizer: possibleActionValues not initialized.'));
     }
@@ -154,6 +175,11 @@ class PatternRecognitionGroup {
     ex: {inputState: [-1], actionState: [a], driveState: [x]}
   */
   getNearestPatternRecognizer (nDimensionalPoint) {
+    const schemaValidator = nDimensionalPointSchema.validate(nDimensionalPoint);
+    if (schemaValidator.error !== null) {
+      throw schemaValidator;
+    }
+
     // query global points table for nearest neighbor
     const globalPointsTableName = config.get('db').globalPointsTableName;
     return knex(globalPointsTableName)
@@ -170,6 +196,11 @@ class PatternRecognitionGroup {
     ex: {inputState: [-1], actionState: [a], driveState: [x]}
   */
   nearestNeighborQueryString (nDimensionalPoint) {
+    const schemaValidator = nDimensionalPointSchema.validate(nDimensionalPoint);
+    if (schemaValidator.error !== null) {
+      throw schemaValidator;
+    }
+
     let outputString = '';
 
     // create one long array of inputState, actionState, and driveState
