@@ -28,7 +28,7 @@ describe('PatternRecognitionGroup', () => {
           { inputState:[0], actionState: ['10'], driveState: ['100'] },
           { inputState: [1], actionState: ['11'], driveState: ['101'] }
         ],
-        [[0, 1], ['a', 'b'], ['x', 'y']]
+        [[0, 1], [2, 3], [4, 5]]
       ).then((result) => {
         expect(_.every(result)).to.equal(true);
         done();
@@ -73,10 +73,14 @@ describe('PatternRecognitionGroup', () => {
     it('should add a patternRecognizer when passed a pattern', (done) => {
       const patternRecognitionGroup = new PatternRecognitionGroup();
       patternRecognitionGroup.initialize(
-        [],
-        [[0, 1], ['a', 'b'], ['x', 'y']]
+        [{
+          inputState: [0],
+          actionState: [2],
+          driveState: [4]
+        }],
+        [[0, 1], [2, 3], [4, 5]]
       ).then((result) => {
-        expect(result).to.be.an('array').and.to.be.empty;
+        expect(result).to.be.an('array').with.length(1);
         patternRecognitionGroup.addPatternRecognizer(
           { inputState:[0], actionState: ['10'], driveState: ['100'] }
         ).then((result) => {
@@ -97,7 +101,11 @@ describe('PatternRecognitionGroup', () => {
     it('should add pattern recognizer data to appropriate tables when called', (done) => {
       const patternRecognitionGroup = new PatternRecognitionGroup();
       patternRecognitionGroup.initialize(
-        [],
+        [{
+          inputState: [0],
+          actionState: [0],
+          driveState: [0]
+        }],
         [[0, 1], [0, 10], [0, 100]]
       ).then(() => {
         patternRecognitionGroup.addPatternRecognizer(

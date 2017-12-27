@@ -34,8 +34,9 @@ class PatternRecognizer {
     are arrays.
   */
   constructor(nDimensionalPoint) {
-    if (!Joi.validate(nDimensionalPoint, nDimensionalPointSchema)) {
-      throw (new Error('Error: nDimensionalPoint improper format!'));
+    const nDimensionalPointValidation = nDimensionalPointSchema.validate(nDimensionalPoint);
+    if (nDimensionalPointValidation.error !== null) {
+      throw nDimensionalPointValidation;
     }
 
     this.setPattern(nDimensionalPoint);
