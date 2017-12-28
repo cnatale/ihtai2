@@ -84,20 +84,18 @@ class PatternRecognitionGroup {
   addPatternRecognizer (nDimensionalPoint) {
     const schemaValidator = nDimensionalPointSchema.validate(nDimensionalPoint);
     if (schemaValidator.error !== null) {
-      throw schemaValidator;
+      return Promise.reject(schemaValidator);
     }
 
     if (!this.possibleActionValues) {
       return Promise.reject(new Error('PatternRecognitionGroup.addPatternRecognizer: possibleActionValues not initialized.'));
     }
 
-    // TODO: think I want to pass in the point after finding nearest neighbor, not the
-    // original point.
     const nDimensionalPointString = PatternRecognizer.patternToString(nDimensionalPoint);
     const patternRecognizer = new PatternRecognizer(nDimensionalPoint);
     this.patternRecognizers[nDimensionalPointString] = patternRecognizer;
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       patternRecognizer.initializeTables(this.possibleActionValues)
         .then((results) => {
 
@@ -108,11 +106,13 @@ class PatternRecognitionGroup {
               return !isNaN(item);
             }) && results.length >= 1);
           }))) {
-            throw (`Error: PatternRecognitionGroup.addPatternRecogizer(): initializeTables() failed
+            reject(`Error: PatternRecognitionGroup.addPatternRecogizer(): initializeTables() failed
               on one or more PatternRecognizer`);
           }
 
           resolve(true);
+        }, (error) => {
+          reject(error);
         });
     });
   }
@@ -136,11 +136,12 @@ class PatternRecognitionGroup {
   }
 
   /**
+    Removes:
+      -row containing point from global_points_table
+      -all data from associated pattern_... table
     @param pattern {String} A string representing the pattern to delete
   */
   deletePatternRecognizer (pattern) {
-    // TODO: add getNearestNeighbor call to find nearest neighbor to pattern
-
     // remove row containing point from global_points_table
     // remove all data from associated pattern_... table
     const patternRecognizer = this.patternRecognizers[pattern];
@@ -149,12 +150,19 @@ class PatternRecognitionGroup {
       throw ('Error: PatternRecognizer.deletePatternRecognizer: no matching pattern.');
     }
 
-    patternRecognizer.dropActionsTable().then(() => {
-      patternRecognizer.removePointFromPointsTable().then(() => {
-        delete this.patternRecognizers[pattern];
-      });
-    }, () => {
-      throw ('Error: PatternRecognizer.deletePatternRecognizer: there was a problem dropping the table.');
+    return new Promise((resolve, reject) => {
+      patternRecognizer.dropActionsTable()
+        .then(() => {
+          patternRecognizer.removePointFromPointsTable()
+            .then(() => {
+              delete this.patternRecognizers[pattern];
+              resolve(true);
+            }, (message) => {
+              reject(message);
+            });
+        }, (message) => {
+          reject(message);
+        });
     });
   }
 

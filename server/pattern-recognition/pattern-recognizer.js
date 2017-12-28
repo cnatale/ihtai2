@@ -49,7 +49,7 @@ class PatternRecognizer {
   initializeTables(possibleActions) {
     const tableName = this.patternToString();
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       Promise.all([
         this.createActionsTableIfNoneExists(tableName),
         this.createPointsTableIfNoneExists()
@@ -59,6 +59,8 @@ class PatternRecognizer {
           this.addPointToPointsTable()
         ]).then((result) => {
           resolve(result);
+        }, (message) => {
+          reject(message);
         });
       });
     });
@@ -77,7 +79,7 @@ class PatternRecognizer {
   }
 
   createActionsTableIfNoneExists(tableName) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       knex.schema.hasTable(tableName).then((exists) => {
         if (!exists) {
           // TODO: create common wrapper function for this and identical logic below
@@ -98,6 +100,8 @@ class PatternRecognizer {
           table.timestamps();
         }).then(() => {
           resolve();
+        }, (message) => {
+          reject(message);
         });
       });
 
@@ -134,11 +138,7 @@ class PatternRecognizer {
     Drops actions table with name string given by this pattern recognizer's patternToString method
   */
   dropActionsTable() {
-    return new Promise((resolve) => {
-      knex.schema.dropTable(this.patternToString()).then(() => {
-        resolve(true);
-      }, () => { resolve(false); });
-    });
+    return knex.schema.dropTable(this.patternToString());
   }
 
   createPointsTableIfNoneExists() {
@@ -185,12 +185,14 @@ class PatternRecognizer {
       contentToInsert[`point_index_${index}`] = signal;
     });
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       this.createPointsTableIfNoneExists().then(() => {
         const globalPointsTableName = config.get('db').globalPointsTableName;
         knex(globalPointsTableName).insert([contentToInsert])
           .then((result) => {
             resolve(result);
+          }, (message) => {
+            reject(message);
           });
       });
     });
@@ -199,13 +201,8 @@ class PatternRecognizer {
   removePointFromPointsTable() {
     const globalPointsTableName = config.get('db').globalPointsTableName;
 
-    return new Promise((resolve) => {
-      knex(globalPointsTableName).where(
-        'point', this.patternToString()).del()
-        .then((result) => {
-          resolve(result);
-        });
-    });
+    return knex(globalPointsTableName).where(
+      'point', this.patternToString()).del();
   }
 
 
@@ -237,7 +234,7 @@ class PatternRecognizer {
 
 
 
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       knex.select('update_count', 'update_count_last_reset')
         .from(globalPointsTableName)
         .where('point', '=', patternString)
@@ -251,6 +248,8 @@ class PatternRecognizer {
 
           const updatesPerMinute = timeDelta > 0 ? results.update_count / timeDelta : 0;
           resolve(updatesPerMinute);
+        }, (message) => {
+          reject(message);
         });
     });   
   }
@@ -268,7 +267,7 @@ class PatternRecognizer {
 
     const patternString = this.patternToString();
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       knex.select('score').from(patternString)
         .where('next_action', nextMoveKey)
         .then((results) => {
@@ -281,7 +280,7 @@ class PatternRecognizer {
             .update('score', updatedScore)
             .then((numberOfRowsUpdated) => {
               if (!numberOfRowsUpdated) {
-                throw 'ERROR: no rows affected by score update';
+                reject('ERROR: no rows affected by score update');
               }
 
               // before resolving, increment update_count in patternRecognizer's globalPointsTable row
@@ -289,7 +288,7 @@ class PatternRecognizer {
               knex(globalPointsTableName)
                 .increment('update_count', 1)
                 .where('point', '=', patternString)
-                .then((result) => {
+                .then(() => {
                   resolve(true);
                 });
             });
