@@ -25,11 +25,12 @@ describe('PatternRecognitionGroup', () => {
       const patternRecognitionGroup = new PatternRecognitionGroup();
       patternRecognitionGroup.initialize(
         [
-          { inputState:[0], actionState: ['10'], driveState: ['100'] },
-          { inputState: [1], actionState: ['11'], driveState: ['101'] }
+          { inputState:[0], actionState: [2], driveState: [4] },
+          { inputState: [1], actionState: [3], driveState: [5] }
         ],
         [[0, 1], [2, 3], [4, 5]]
       ).then((result) => {
+        expect(result.length).to.equal(2);
         expect(_.every(result)).to.equal(true);
         done();
       });
@@ -280,48 +281,6 @@ describe('PatternRecognitionGroup', () => {
     });
   });
 
-
-  function initDefaultPatternRecognitionGroup(patternRecognitionGroup) {
-    return patternRecognitionGroup.initialize(
-      [
-        { inputState:[5], actionState: [5], driveState: [5] },
-        { inputState: [10], actionState: [10], driveState: [10] },
-        { inputState:[0], actionState: [15], driveState: [0] },
-        { inputState: [20], actionState: [20], driveState: [20] }          
-      ],
-      [
-        [0, 5, 10, 15, 20], 
-        [0, 5, 10, 15, 20],
-        [0, 5, 10, 15, 20]
-      ]
-    );
-  }
-
-  // TODO: priority
-  describe('shouldSplitPatternRecognizer', () => {
-    it.skip('should return true if patternRecognizer meets split conditions', (done) => {
-      const patternRecognitionGroup = new PatternRecognitionGroup();
-      initDefaultPatternRecognitionGroup(patternRecognitionGroup).then(() => {
-        const patternString = 'pattern_0_15_0';
-        patternRecognitionGroup.shouldSplitPatternRecognizer(patternString).then((result) => {
-          expect(result).to.equal(true);
-          done();
-        });
-      });
-    });
-
-    it.skip('should return false if patternRecognizer does not meet split conditions', (done) => {
-      const patternRecognitionGroup = new PatternRecognitionGroup();
-      initDefaultPatternRecognitionGroup(patternRecognitionGroup).then(() => {
-        const patternString = 'pattern_0_15_0';
-        patternRecognitionGroup.shouldSplitPatternRecognizer(patternString).then((result) => {
-          expect(result).to.equal(false);
-          done();
-        });
-      });
-    });
-  });
-
   // TODO: priority
   describe('splitPatternRecognizer', () => {
     it('should split a patternRecognizer, given existing patternRecognizer and a new pattern key', () => {
@@ -372,21 +331,81 @@ describe('PatternRecognitionGroup', () => {
   });
 
   describe('deletePatternRecognizer()', () => {
-    it('should delete a patternRecognizer when passed its pattern', () => {
-      // TODO: the actual db cleanup logic should probably be stored in PatternRecognizer,
-      // in line with where other db access methods are kept
+    it('should delete a patternRecognizer when passed its pattern', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[2], actionState: [4], driveState: [6] },
+          { inputState: [3], actionState: [5], driveState: [7] }
+        ],
+        [[2, 3], [4, 5], [6, 7]]
+      ).then((result) => {
+        expect(result.length).to.equal(2);
+        expect(_.every(result)).to.equal(true);
+        
+        patternRecognitionGroup.deletePatternRecognizer('pattern_2_4_6').then((res) => {
+          expect(res).to.equal(true);        
+          done();
+        });
+      });
     });
 
-    it('should remove pattern from global points table', () => {
-
+    it('should remove pattern from global points table', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[2], actionState: [4], driveState: [6] },
+          { inputState: [3], actionState: [5], driveState: [7] }
+        ],
+        [[2, 3], [4, 5], [6, 7]]
+      ).then(() => {
+        patternRecognitionGroup.deletePatternRecognizer('pattern_2_4_6').then(() => {
+          // verify pattern is removed from global points table
+          knex.select().table(config.get('db').globalPointsTableName).where(
+          'point', 'pattern_2_4_6').then((result) => {
+            expect(result.length).to.equal(0);
+            done();
+          });
+        });
+      });
     });
 
-    it('should remove pattern\'s actions table', () => {
-
+    it('should remove pattern\'s actions table', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[2], actionState: [4], driveState: [6] },
+          { inputState: [3], actionState: [5], driveState: [7] }
+        ],
+        [[2, 3], [4, 5], [6, 7]]
+      ).then(() => {
+        patternRecognitionGroup.deletePatternRecognizer('pattern_2_4_6').then(() => {
+          // verify pattern's actions table is removed
+          knex.schema.hasTable('pattern_2_4_6').then((exists) => {
+            expect(exists).to.equal(false);
+            done();
+          });
+        });
+      });
     });
 
-    it('should remove pattern row from every other pattern\'s actions table', () => {
-
+    it('should remove pattern row from every other pattern\'s actions table', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[2], actionState: [4], driveState: [6] },
+          { inputState: [3], actionState: [5], driveState: [7] }
+        ],
+        [[2, 3], [4, 5], [6, 7]]
+      ).then(() => {
+        patternRecognitionGroup.deletePatternRecognizer('pattern_2_4_6').then(() => {
+          // verify pattern is removed from other action's tables
+          knex.select().table('pattern_3_5_7').where('next_action', 'pattern_2_4_6').then((result) => {
+            expect(result.length).to.equal(0);
+            done();
+          });
+        });
+      });
     });
   });
 
