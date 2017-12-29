@@ -65,22 +65,18 @@ class PatternRecognizer {
   /*
     Adds the current instance's pattern to all existing tables.
 
-    @param originalPatternRecognizerString {object} another PatternRecognizer, 
+    @param originalPatternRecognizerStrings {array} a list of PatternRecognizer strings, 
     which has its row in each actions table copied into the calling PatternRecognizer's
     row.
+
+    @returns {array} a promise which is fulfilled when all inserts are complete;
   */
-  addPatternToAllExistingActionsTables(originalPatternRecognizerString) {
-    // look into using an insert...select raw mysql query here to not require
-    // making a select query, getting response, then making another query for
-    // each table
-    // https://dev.mysql.com/doc/refman/5.7/en/insert-select.html
-
-    // also consider using knex.transaction
-
-    // also consider reorganizing next action data to not create a new actions table
-    // for each PatternRecognizer, but store them all in a global actions table,
-    // that has an extra column 'starting_state' that stores the starting state string.
-    // this would make this function much faster.
+  addPatternToExistingActionsTables(originalPatternRecognizerStrings, patternToSplitFrom) {
+    return Promise.all(originalPatternRecognizerStrings.map((originalPatternRecognizerString) =>
+    knex.raw(`INSERT INTO \`${originalPatternRecognizerString}\` (next_action, score)
+      SELECT '${this.patternToString().split('pattern_')[1]}', score
+      FROM \`${originalPatternRecognizerString}\`
+      WHERE  next_action = '${patternToSplitFrom}'`)));
   }
 
 

@@ -259,7 +259,11 @@ class PatternRecognitionGroup {
     Promise.all([
       newPatternRecognizer.copyActionsTable(originalPatternRecognizer.patternToString()),
       newPatternRecognizer.addPointToPointsTable(),
-      newPatternRecognizer.addPatternToAllExistingActionsTables(originalPatternRecognizer.patternToString())
+      newPatternRecognizer.addPatternToExistingActionsTables(
+        _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
+        originalPatternRecognizer.patternToString().split('pattern_')[1]
+      )
+
     ]).then((result) => {
 
     });
