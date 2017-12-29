@@ -378,10 +378,11 @@ describe('patternRecognizer', () => {
         ]);
       }).then((results) => {
         // get rid of extra array wrapper
-        const flattenedResult = _.flatten(results);
-        const originalPatternRecognizerResults = flattenedResult[0];
-        const patternRecognizerCopyResults = flattenedResult[1];
+        const originalPatternRecognizerResults = results[0];
+        const patternRecognizerCopyResults = results[1];
 
+        expect(originalPatternRecognizerResults.length).to.equal(4);
+        expect(patternRecognizerCopyResults.length).to.equal(4);
         // make sure the contents of the original table and the new table are identical.
         expect(_(originalPatternRecognizerResults).differenceWith(patternRecognizerCopyResults, _.isEqual).isEmpty())
           .to.equal(true);
