@@ -4,6 +4,7 @@ const chaiAsPromised = require('chai-as-promised');
 const knex = require('../../../../server/db/knex');
 const dbUtil = require('../../../../server/db/util');
 chai.use(chaiAsPromised);
+const _ = require('lodash');
 const expect = chai.expect;
 const PatternRecognizer = require('../../../../server/pattern-recognition/pattern-recognizer');
 const config = require('config');
@@ -346,6 +347,58 @@ describe('patternRecognizer', () => {
             });
         });
       });
+    });
+  });
+
+  describe('copyActionsTable', () => {
+    it(`should create an actions table for the PatternRecognizer that is an
+        exact copy of the actions table name passed as a param `, (done) => {
+
+      const originalPatternRecognizer = new PatternRecognizer({
+        inputState: [1],
+        actionState: [2],
+        driveState: [3]
+      });
+
+      const patternRecognizerCopy = new PatternRecognizer({
+        inputState: [4],
+        actionState: [5],
+        driveState: [6]        
+      });
+
+      originalPatternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3').then(
+      () => originalPatternRecognizer.initializeAllPossibleActions([[0, 1], [2, 3]])).then( 
+      () => patternRecognizerCopy.createActionsTableIfNoneExists('pattern_4_5_6')).then(
+      () => patternRecognizerCopy.copyActionsTable('pattern_1_2_3')).then((result) => {
+        // should copy over four rows to new table
+        expect(result[0].affectedRows).to.equal(4);
+        return Promise.all([
+          knex.select().from(originalPatternRecognizer.patternToString()),
+          knex.select().from(patternRecognizerCopy.patternToString())
+        ]);
+      }).then((results) => {
+        // get rid of extra array wrapper
+        const flattenedResult = _.flatten(results);
+        const originalPatternRecognizerResults = flattenedResult[0];
+        const patternRecognizerCopyResults = flattenedResult[1];
+
+        // make sure the contents of the original table and the new table are identical.
+        expect(_(originalPatternRecognizerResults).differenceWith(patternRecognizerCopyResults, _.isEqual).isEmpty())
+          .to.equal(true);
+        
+        done();
+      });
+
+    });
+
+  });
+
+  // TODO
+  describe('addPatternToAllExistingActionsTables', () => {
+    it(`should add a new pattern row to all existing actions tables that is
+        a copy of the contents of the pattern name passed in as a param`, (done) => {
+      expect(false).to.equal(true);
+      done();
     });
   });
 });

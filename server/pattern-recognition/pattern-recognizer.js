@@ -31,7 +31,7 @@ const { nDimensionalPointSchema } = require('../schemas/schemas');
 class PatternRecognizer {
   /**
     @param nDimensionalPoint {object} Has inputState, actionState, and driveState properties, all of which
-    are arrays.
+    are arrays. Must follow nDimensionalPointSchema.
   */
   constructor(nDimensionalPoint) {
     const nDimensionalPointValidation = nDimensionalPointSchema.validate(nDimensionalPoint);
@@ -45,6 +45,45 @@ class PatternRecognizer {
   setPattern(nDimensionalPoint) {
     this.pattern = nDimensionalPoint;
   }
+
+  /*
+    Copies the actions table of an existing PatternRecognizer. Creates a new table
+    named after this PatternRecognizer instance, but that is an exact duplicate of
+    the one tied to the originalPatternRecognizer instance.
+
+    @param originalPatternRecognizer {object} a PatternRecognizer that will have
+      its actions db table duplicated for this PatternRecognizer instance
+
+    @returns {array} an array containing the raw mysql response
+  */
+  copyActionsTable(originalPatternRecognizerString) {
+    return knex.raw(`CREATE TABLE IF NOT EXISTS \`${this.patternToString()}\` LIKE \`${originalPatternRecognizerString}\``).then(() => knex.raw(`
+      INSERT INTO \`${this.patternToString()}\` (next_action, score)
+      SELECT next_action, score FROM \`${originalPatternRecognizerString}\``));
+  }
+
+  /*
+    Adds the current instance's pattern to all existing tables.
+
+    @param originalPatternRecognizerString {object} another PatternRecognizer, 
+    which has its row in each actions table copied into the calling PatternRecognizer's
+    row.
+  */
+  addPatternToAllExistingActionsTables(originalPatternRecognizerString) {
+    // look into using an insert...select raw mysql query here to not require
+    // making a select query, getting response, then making another query for
+    // each table
+    // https://dev.mysql.com/doc/refman/5.7/en/insert-select.html
+
+    // also consider using knex.transaction
+
+    // also consider reorganizing next action data to not create a new actions table
+    // for each PatternRecognizer, but store them all in a global actions table,
+    // that has an extra column 'starting_state' that stores the starting state string.
+    // this would make this function much faster.
+  }
+
+
 
   initializeTables(possibleActions) {
     const tableName = this.patternToString();

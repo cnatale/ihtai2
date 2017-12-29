@@ -166,14 +166,6 @@ class PatternRecognitionGroup {
     });
   }
 
-  shouldSplitPatternRecognizer (pattern) {
-    const patternRecognizer = this.patternRecognizers[pattern];
-
-    patternRecognizer.getThresholdState().then((result) => {
-
-    });
-  }
-
   /**
     Takes a pattern, and returns the nearest n-dimensional neighbor
 
@@ -233,6 +225,44 @@ class PatternRecognitionGroup {
     output = output + `POWER(${val} - point_index_${index}, 2)`;
 
     return output;
+  }
+
+
+  /**
+    Splits an existing patternRecognizer. The point split off begins with the 
+    same weights as the originator.
+
+    @param originalPatternRecognizer {object} an existing PatternRecognizer.
+    @param newPoint {object} a new point matching schemas.nDimensionalPointSchema.
+
+    @returns The newly-created PatternRecognizer object.
+  */
+  splitPatternRecognizer (originalPatternRecognizer, newPoint) {
+    const schemaValidator = nDimensionalPointSchema.validate(newPoint);
+    if (schemaValidator.error !== null) {
+      throw schemaValidator;
+    }
+
+    // TODO: Create PatternRecognizer instance, but instead of .initialize,
+    // create a new method that copies actions table from an existing PatternRecognizer.
+    // Method should also add the new point to global points table
+
+    // TODO: Add new point to global points table
+    
+
+    // TODO: Add new point as column to every existing point's actions table.
+    // Set score to the same score as the original PatternRecognizer.
+
+    // TODO: return the new PatternRecognizer instance.
+
+    const newPatternRecognizer = new PatternRecognizer(newPoint);
+    Promise.all([
+      newPatternRecognizer.copyActionsTable(originalPatternRecognizer.patternToString()),
+      newPatternRecognizer.addPointToPointsTable(),
+      newPatternRecognizer.addPatternToAllExistingActionsTables(originalPatternRecognizer.patternToString())
+    ]).then((result) => {
+
+    });
   }
 
   // TODO #6: possible dynamic dimensionality reduction algorithm:
