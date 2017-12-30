@@ -70,6 +70,9 @@ class PatternRecognizer {
     which has its row in each actions table copied into the calling PatternRecognizer's
     row.
 
+    @param patternToSplitFrom {string} name of PatternRecognizer to split from, of form
+      'pattern_x_y_...n'
+
     @returns {array} a promise which is fulfilled when all inserts are complete;
   */
   addPatternToExistingActionsTables(originalPatternRecognizerStrings, patternToSplitFrom) {
@@ -78,6 +81,12 @@ class PatternRecognizer {
       SELECT '${this.patternToString().split('pattern_')[1]}', score
       FROM \`${originalPatternRecognizerString}\`
       WHERE  next_action = '${patternToSplitFrom}'`)));
+  }
+
+  removePatternFromExistingActionsTables(originalPatternRecognizerStrings, patternToRemove) {
+    return Promise.all(originalPatternRecognizerStrings.map((originalPatternRecognizerString) =>
+    knex.raw(`DELETE FROM \`${originalPatternRecognizerString}\`
+      WHERE  next_action = '${patternToRemove}'`)));    
   }
 
 

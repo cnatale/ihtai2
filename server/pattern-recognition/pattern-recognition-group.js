@@ -141,28 +141,27 @@ class PatternRecognitionGroup {
       -all data from associated pattern_... table
     @param pattern {String} A string representing the pattern to delete
   */
+  // TODO: needs to remove pattern ref from all patternRecognizer actions tables
   deletePatternRecognizer (pattern) {
     // remove row containing point from global_points_table
     // remove all data from associated pattern_... table
+    // remove pattern from all actions tables
     const patternRecognizer = this.patternRecognizers[pattern];
 
     if (typeof patternRecognizer === 'undefined') {
       throw ('Error: PatternRecognizer.deletePatternRecognizer: no matching pattern.');
     }
 
-    return new Promise((resolve, reject) => {
-      patternRecognizer.dropActionsTable()
-        .then(() => {
-          patternRecognizer.removePointFromPointsTable()
-            .then(() => {
-              delete this.patternRecognizers[pattern];
-              resolve(true);
-            }, (message) => {
-              reject(message);
-            });
-        }, (message) => {
-          reject(message);
-        });
+    return new Promise((resolve) => {
+      patternRecognizer.removePatternFromExistingActionsTables(
+      _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
+      // Get the next_action string, which is the pattern name without `pattern_` at the beginning.
+      pattern.split('pattern_')[1]).then(() =>
+      patternRecognizer.dropActionsTable()).then(
+      () => patternRecognizer.removePointFromPointsTable()).then(() => {
+        delete this.patternRecognizers[pattern];
+        resolve(true);
+      });
     });
   }
 

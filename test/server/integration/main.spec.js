@@ -21,7 +21,7 @@ describe('main', () => {
   describe('/initialize', () => {
     it('should instantiate a patternRecognitionGroup and slidingWindow', (done) => {
       request(app)
-        .post("/initialize")
+        .post('/initialize')
         .send({
           startingData: [
             { inputState:[5], actionState: [5], driveState: [5] },

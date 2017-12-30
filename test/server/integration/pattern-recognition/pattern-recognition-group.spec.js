@@ -553,6 +553,7 @@ describe('PatternRecognitionGroup', () => {
 
     it('should remove pattern row from every other pattern\'s actions table', (done) => {
       const patternRecognitionGroup = new PatternRecognitionGroup();
+
       patternRecognitionGroup.initialize(
         [
           { inputState:[2], actionState: [4], driveState: [6] },
@@ -562,13 +563,17 @@ describe('PatternRecognitionGroup', () => {
       ).then(() => {
         patternRecognitionGroup.deletePatternRecognizer('pattern_2_4_6').then(() => {
           // verify pattern is removed from other action's tables
-          knex.select().table('pattern_3_5_7').where('next_action', 'pattern_2_4_6').then((result) => {
-            expect(result.length).to.equal(0);
-            done();
-          });
+          return knex.select().table('pattern_3_5_7').where('next_action', '2_4_6');
+        }).then((result) => {
+          expect(result.length).to.equal(0);
+          return knex.select().table('pattern_3_5_7').where('next_action', '3_5_7');
+        }).then((result) => {
+          expect(result.length).to.equal(1);
+          done();
         });
       });
     });
+
   });
 
   describe('scanRandomPatternForRemoval()', () => {
