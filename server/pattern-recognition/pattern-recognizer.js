@@ -31,7 +31,7 @@ const { nDimensionalPointSchema } = require('../schemas/schemas');
 class PatternRecognizer {
   /**
     @param nDimensionalPoint {object} Has inputState, actionState, and driveState properties, all of which
-    are arrays.
+    are arrays. Must follow nDimensionalPointSchema.
   */
   constructor(nDimensionalPoint) {
     const nDimensionalPointValidation = nDimensionalPointSchema.validate(nDimensionalPoint);
@@ -45,6 +45,42 @@ class PatternRecognizer {
   setPattern(nDimensionalPoint) {
     this.pattern = nDimensionalPoint;
   }
+
+  /*
+    Copies the actions table of an existing PatternRecognizer. Creates a new table
+    named after this PatternRecognizer instance, but that is an exact duplicate of
+    the one tied to the originalPatternRecognizer instance.
+
+    @param originalPatternRecognizer {object} a PatternRecognizer that will have
+      its actions db table duplicated for this PatternRecognizer instance
+
+    @returns {array} an array containing the raw mysql response
+  */
+  copyActionsTable(originalPatternRecognizerString) {
+    // create table using same schema as original pattern recognizer's table
+    return knex.raw(`CREATE TABLE IF NOT EXISTS \`${this.patternToString()}\` LIKE \`${originalPatternRecognizerString}\``).then(() => knex.raw(`
+      INSERT INTO \`${this.patternToString()}\` (next_action, score)
+      SELECT next_action, score FROM \`${originalPatternRecognizerString}\``));
+  }
+
+  /*
+    Adds the current instance's pattern to all existing tables.
+
+    @param originalPatternRecognizerStrings {array} a list of PatternRecognizer strings, 
+    which has its row in each actions table copied into the calling PatternRecognizer's
+    row.
+
+    @returns {array} a promise which is fulfilled when all inserts are complete;
+  */
+  addPatternToExistingActionsTables(originalPatternRecognizerStrings, patternToSplitFrom) {
+    return Promise.all(originalPatternRecognizerStrings.map((originalPatternRecognizerString) =>
+    knex.raw(`INSERT INTO \`${originalPatternRecognizerString}\` (next_action, score)
+      SELECT '${this.patternToString().split('pattern_')[1]}', score
+      FROM \`${originalPatternRecognizerString}\`
+      WHERE  next_action = '${patternToSplitFrom}'`)));
+  }
+
+
 
   initializeTables(possibleActions) {
     const tableName = this.patternToString();
@@ -296,6 +332,14 @@ class PatternRecognizer {
     });
   }
 
+  resetUpdateCount() {
+    const globalPointsTableName = config.get('db').globalPointsTableName;
+
+    return knex(globalPointsTableName).update({
+      update_count: 0,
+      update_count_last_reset: moment().format('YYYY-MM-DD HH:mm:ss')
+    }).where('point', this.patternToString());
+  }
 }
 
 module.exports = PatternRecognizer;

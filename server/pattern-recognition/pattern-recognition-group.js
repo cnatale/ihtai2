@@ -166,14 +166,6 @@ class PatternRecognitionGroup {
     });
   }
 
-  shouldSplitPatternRecognizer (pattern) {
-    const patternRecognizer = this.patternRecognizers[pattern];
-
-    patternRecognizer.getThresholdState().then((result) => {
-
-    });
-  }
-
   /**
     Takes a pattern, and returns the nearest n-dimensional neighbor
 
@@ -181,6 +173,8 @@ class PatternRecognitionGroup {
     Object properties, each containing an array of numbers.
 
     ex: {inputState: [-1], actionState: [a], driveState: [x]}
+
+    @returns {string} A string of the form 'pattern_x_y_...n'
   */
   getNearestPatternRecognizer (nDimensionalPoint) {
     const schemaValidator = nDimensionalPointSchema.validate(nDimensionalPoint);
@@ -233,6 +227,38 @@ class PatternRecognitionGroup {
     output = output + `POWER(${val} - point_index_${index}, 2)`;
 
     return output;
+  }
+
+
+  /**
+    Splits an existing patternRecognizer. The point split off begins with the 
+    same weights as the originator.
+
+    @param originalPatternRecognizerString {string} name of an existing PatternRecognizer instance.
+    @param newPoint {object} a new point matching schemas.nDimensionalPointSchema.
+
+    @returns A promise that resolves to the newly-created PatternRecognizer object.
+  */
+  splitPatternRecognizer (originalPatternRecognizerString, newPoint) {
+    const schemaValidator = nDimensionalPointSchema.validate(newPoint);
+    if (schemaValidator.error !== null) {
+      throw schemaValidator;
+    }
+
+    const newPatternRecognizer = new PatternRecognizer(newPoint);
+    return Promise.all([
+      this.patternRecognizers[originalPatternRecognizerString].resetUpdateCount(),
+      newPatternRecognizer.copyActionsTable(originalPatternRecognizerString),
+      newPatternRecognizer.addPointToPointsTable(),
+      newPatternRecognizer.addPatternToExistingActionsTables(
+        _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
+        // Get the next_action string, which is the pattern name without `pattern_` at the beginning.
+        originalPatternRecognizerString.split('pattern_')[1]
+      )
+    ]).then(() => {
+      this.patternRecognizers[newPatternRecognizer.patternToString()] = newPatternRecognizer;
+      return newPatternRecognizer;
+    });
   }
 
   // TODO #6: possible dynamic dimensionality reduction algorithm:
