@@ -6,10 +6,13 @@ const chaiAsPromised = require('chai-as-promised');
 const knex = require('../../../../server/db/knex');
 const dbUtil = require('../../../../server/db/util');
 const _ = require('lodash');
+const moment = require('moment');
 chai.use(chaiAsPromised);
 require('seedrandom');
 Math.seedrandom('hello');
 const config = require('config');
+const util = require('util');
+const setTimeoutPromise = util.promisify(setTimeout);
 
 
 // TODO: validate params passed to this Class using is-my-json-valid npm module
@@ -281,41 +284,200 @@ describe('PatternRecognitionGroup', () => {
     });
   });
 
-  // TODO: priority
   describe('splitPatternRecognizer', () => {
-    it('should split a patternRecognizer, given existing patternRecognizer and a new pattern key', () => {
-      // TODO: Do an object copy of existing patternRecognizer object, then 
-      // call setPattern with new pattern as param. Use Object.assign()
+    it('should split a patternRecognizer, given existing patternRecognizer and a new pattern key', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] },
+          { inputState: [10], actionState: [10], driveState: [10] },
+          { inputState:[0], actionState: [15], driveState: [0] },
+          { inputState: [20], actionState: [20], driveState: [20] }          
+        ],
+        [
+          [0, 5, 10, 15, 20], 
+          [0, 5, 10, 15, 20],
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => patternRecognitionGroup.splitPatternRecognizer(
+        'pattern_5_5_5', { inputState:[6], actionState: [6], driveState: [6] })
+      ).then((result) => {
+        expect(result instanceof PatternRecognizer).to.equal(true);
+        done();
+      });
     });
 
     it(`should add a patternRecognizer for new pattern to patternRecognitionGroup's patternRecognizers
-        in-memory Object`, () => {
-
+        in-memory Object`, (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] },
+          { inputState: [10], actionState: [10], driveState: [10] },
+          { inputState:[0], actionState: [15], driveState: [0] },
+          { inputState: [20], actionState: [20], driveState: [20] }          
+        ],
+        [
+          [0, 5, 10, 15, 20], 
+          [0, 5, 10, 15, 20],
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => patternRecognitionGroup.splitPatternRecognizer(
+        'pattern_5_5_5', { inputState:[6], actionState: [6], driveState: [6] })
+      ).then(() => {
+        const splitPatternRecognizer = patternRecognitionGroup.patternRecognizers['pattern_6_6_6']
+        expect(splitPatternRecognizer instanceof PatternRecognizer).to.equal(true);
+        done();
+      });
     });
 
-    it('should have the same properties and functions of patternRecognizer it was split from', () => {
-
+    it('should add a new row in the global points table for new point', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] },
+          { inputState: [10], actionState: [10], driveState: [10] },
+          { inputState:[0], actionState: [15], driveState: [0] },
+          { inputState: [20], actionState: [20], driveState: [20] }          
+        ],
+        [
+          [0, 5, 10, 15, 20], 
+          [0, 5, 10, 15, 20],
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => patternRecognitionGroup.splitPatternRecognizer(
+        'pattern_5_5_5', { inputState:[6], actionState: [6], driveState: [6] })
+      ).then(() => {
+        const globalPointsTableName = config.get('db').globalPointsTableName;
+        return knex.select('point').from(globalPointsTableName).where('point', 'pattern_6_6_6');
+      }).then((result) => {
+        expect(result[0].point).to.equal('pattern_6_6_6');
+        done();
+      });
     });
 
-    it('should add a new row in the global points table for new point', () => {
-
+    it(`should add a new row in every existing point's actions table representing new pattern, set to
+        value of pattern it is being split from`, (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] }       
+        ],
+        [
+          [0, 5, 10, 15, 20], 
+          [0, 5, 10, 15, 20],
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => patternRecognitionGroup.splitPatternRecognizer(
+        'pattern_5_5_5', { inputState:[6], actionState: [6], driveState: [6] })
+      ).then(() => {
+        return knex.select('next_action', 'score').from('pattern_5_5_5').where(
+          'next_action', '5_5_5').orWhere('next_action', '6_6_6');
+      }).then((result) => {
+        expect(result[0].next_action).to.equal('5_5_5');
+        expect(result[1].next_action).to.equal('6_6_6');
+        expect(result[0].score).to.equal(result[1].score);
+        done();
+      });
     });
 
-    it(`should add a new row in every existing point actions table representing new pattern, set to
-        value of pattern it is being split from`, () => {
+    it('should create a copy of existing pattern action table, including existing scores for each action', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      let originalTableData, newTableData;
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] }       
+        ],
+        [
+          [0, 5, 10, 15, 20], 
+          [0, 5, 10, 15, 20],
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => patternRecognitionGroup.splitPatternRecognizer(
+        'pattern_5_5_5', { inputState:[6], actionState: [6], driveState: [6] })
+      ).then(() => {
+        return knex.select().from('pattern_5_5_5');
+      }).then((originalTableResults) => {
+        expect(originalTableResults.length).to.equal(126);
+        originalTableData = originalTableResults;
+        return knex.select().from('pattern_6_6_6');
+      }).then((newTableResults) => {
+        expect(newTableResults.length).to.equal(126);
+        newTableData = newTableResults;
 
+        _.forEach(originalTableData, (value, index) => {
+          expect(typeof originalTableData[index] === 'object').to.equal(true);
+          expect(typeof newTableData[index] === 'object').to.equal(true);
+
+          for (const key in originalTableData[index]) {
+            if (originalTableData[index].hasOwnProperty(key)) { 
+              expect(originalTableData[index][key]).to.equal(newTableData[index][key]);
+            }
+          }          
+        });
+
+        done();
+      });
     });
 
-    it('should create a copy of existing pattern action table, including existing scores for each action', () => {
+    it('should reset split conditions on patternRecognizer that was split from', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      const startingMoment = moment();
+      const globalPointsTableName = config.get('db').globalPointsTableName;
 
-    });
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] },
+          { inputState: [10], actionState: [10], driveState: [10] },
+          { inputState:[0], actionState: [15], driveState: [0] },
+          { inputState: [20], actionState: [20], driveState: [20] }          
+        ],
+        [
+          [0, 5, 10, 15, 20], 
+          [0, 5, 10, 15, 20],
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => {
+        return knex(globalPointsTableName).update('update_count', 99).where(
+          'point', 'pattern_5_5_5'
+        );
+      }).then(() => {
+        return setTimeoutPromise(2000);
+      }).then(() => patternRecognitionGroup.splitPatternRecognizer(
+        'pattern_5_5_5', { inputState:[6], actionState: [6], driveState: [6] })
+      ).then(() => {
+        return knex.select('update_count', 'update_count_last_reset').from(
+          globalPointsTableName).where('point', 'pattern_5_5_5');
+      }).then((results) => {
+        const result = results[0];
+        expect(result.update_count).to.equal(0);
+        expect(startingMoment.isBefore(moment(result.date_last_reset))).to.equal(
+          true);
 
-    it('should reset split conditions on patternRecognizer that was split from', () => {
+        done();
+      });
+    }).timeout(5000);
 
-    });
-
-    it('should return promise that resolves to reference of the new patternRecognizer', () => {
-
+    it('should return promise that resolves to reference of the new patternRecognizer', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] },
+          { inputState: [10], actionState: [10], driveState: [10] },
+          { inputState:[0], actionState: [15], driveState: [0] },
+          { inputState: [20], actionState: [20], driveState: [20] }          
+        ],
+        [
+          [0, 5, 10, 15, 20], 
+          [0, 5, 10, 15, 20],
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => patternRecognitionGroup.splitPatternRecognizer(
+        'pattern_5_5_5', { inputState:[6], actionState: [6], driveState: [6] })
+      ).then((result) => {
+        expect(result instanceof PatternRecognizer).to.equal(true);
+        done();
+      });
     });
   });
 

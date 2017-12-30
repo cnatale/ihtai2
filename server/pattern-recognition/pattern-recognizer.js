@@ -57,6 +57,7 @@ class PatternRecognizer {
     @returns {array} an array containing the raw mysql response
   */
   copyActionsTable(originalPatternRecognizerString) {
+    // create table using same schema as original pattern recognizer's table
     return knex.raw(`CREATE TABLE IF NOT EXISTS \`${this.patternToString()}\` LIKE \`${originalPatternRecognizerString}\``).then(() => knex.raw(`
       INSERT INTO \`${this.patternToString()}\` (next_action, score)
       SELECT next_action, score FROM \`${originalPatternRecognizerString}\``));
@@ -331,6 +332,14 @@ class PatternRecognizer {
     });
   }
 
+  resetUpdateCount() {
+    const globalPointsTableName = config.get('db').globalPointsTableName;
+
+    return knex(globalPointsTableName).update({
+      update_count: 0,
+      update_count_last_reset: moment().format('YYYY-MM-DD HH:mm:ss')
+    }).where('point', this.patternToString());
+  }
 }
 
 module.exports = PatternRecognizer;

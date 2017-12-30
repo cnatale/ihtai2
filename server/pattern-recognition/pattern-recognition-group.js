@@ -173,6 +173,8 @@ class PatternRecognitionGroup {
     Object properties, each containing an array of numbers.
 
     ex: {inputState: [-1], actionState: [a], driveState: [x]}
+
+    @returns {string} A string of the form 'pattern_x_y_...n'
   */
   getNearestPatternRecognizer (nDimensionalPoint) {
     const schemaValidator = nDimensionalPointSchema.validate(nDimensionalPoint);
@@ -232,40 +234,30 @@ class PatternRecognitionGroup {
     Splits an existing patternRecognizer. The point split off begins with the 
     same weights as the originator.
 
-    @param originalPatternRecognizer {object} an existing PatternRecognizer.
+    @param originalPatternRecognizerString {string} name of an existing PatternRecognizer instance.
     @param newPoint {object} a new point matching schemas.nDimensionalPointSchema.
 
-    @returns The newly-created PatternRecognizer object.
+    @returns A promise that resolves to the newly-created PatternRecognizer object.
   */
-  splitPatternRecognizer (originalPatternRecognizer, newPoint) {
+  splitPatternRecognizer (originalPatternRecognizerString, newPoint) {
     const schemaValidator = nDimensionalPointSchema.validate(newPoint);
     if (schemaValidator.error !== null) {
       throw schemaValidator;
     }
 
-    // TODO: Create PatternRecognizer instance, but instead of .initialize,
-    // create a new method that copies actions table from an existing PatternRecognizer.
-    // Method should also add the new point to global points table
-
-    // TODO: Add new point to global points table
-    
-
-    // TODO: Add new point as column to every existing point's actions table.
-    // Set score to the same score as the original PatternRecognizer.
-
-    // TODO: return the new PatternRecognizer instance.
-
     const newPatternRecognizer = new PatternRecognizer(newPoint);
-    Promise.all([
-      newPatternRecognizer.copyActionsTable(originalPatternRecognizer.patternToString()),
+    return Promise.all([
+      this.patternRecognizers[originalPatternRecognizerString].resetUpdateCount(),
+      newPatternRecognizer.copyActionsTable(originalPatternRecognizerString),
       newPatternRecognizer.addPointToPointsTable(),
       newPatternRecognizer.addPatternToExistingActionsTables(
         _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
-        originalPatternRecognizer.patternToString().split('pattern_')[1]
+        // Get the next_action string, which is the pattern name without `pattern_` at the beginning.
+        originalPatternRecognizerString.split('pattern_')[1]
       )
-
-    ]).then((result) => {
-
+    ]).then(() => {
+      this.patternRecognizers[newPatternRecognizer.patternToString()] = newPatternRecognizer;
+      return newPatternRecognizer;
     });
   }
 
