@@ -133,6 +133,18 @@ app.post('/bestNextAction', function (req, res) {
   });
 });
 
+// expose patternRecognitionGroup.splitPatternRecognizer() when given
+// originalPatternRecognizerString and a new point (fitting nDimensionalPointSchema)
+app.post('/splitPatternRecognizer', function(req, res) {
+  log.info('request to split pattern recognizer received');
+  log.info(req.body);
+
+  patternRecognitionGroup.splitPatternRecognizer(
+    req.body.originalPatternRecognizerString, req.body.newPoint).then((result) => {
+      res.send(result);
+    });
+});
+
 // TODO: expose method to find out if tables have already been created for Ihtai, and
 //  returning true or false
 
