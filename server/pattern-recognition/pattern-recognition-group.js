@@ -139,13 +139,10 @@ class PatternRecognitionGroup {
     Removes:
       -row containing point from global_points_table
       -all data from associated pattern_... table
+      -pattern from all actions tables
     @param pattern {String} A string representing the pattern to delete
   */
-  // TODO: needs to remove pattern ref from all patternRecognizer actions tables
   deletePatternRecognizer (pattern) {
-    // remove row containing point from global_points_table
-    // remove all data from associated pattern_... table
-    // remove pattern from all actions tables
     const patternRecognizer = this.patternRecognizers[pattern];
 
     if (typeof patternRecognizer === 'undefined') {
