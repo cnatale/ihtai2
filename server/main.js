@@ -121,6 +121,11 @@ app.get('/updateScore', function (req, res) {
     slidingWindow.getTailHead().stateKey,
     avgScoreOverTimeSeries
   ).then((successOrFailure) => {
+    res.send({
+      startPattern: patternRecognizer.patternToString(),
+      actionKey: slidingWindow.getTailHead().stateKey,
+      actionAverageScore: avgScoreOverTimeSeries
+    });
     res.send(successOrFailure);
   }).catch((message) => {
     res.status(500).send(message);

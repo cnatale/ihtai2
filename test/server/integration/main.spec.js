@@ -84,9 +84,7 @@ describe('main', () => {
         .then(() => {
           request(app).get('/updateScore')
             .expect(500)
-            .end(function() {
-              done();
-            });
+            .then(() => { done(); });
         });    
     });
 
@@ -109,10 +107,7 @@ describe('main', () => {
           .expect(200))
         .then(() => request(app).get('/updateScore')
           .expect(200))
-        .then((res) => {
-          expect(res.text).to.equal('true');
-          done();
-        });
+        .then(() => { done(); });
     });
   });
 
