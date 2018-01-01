@@ -10,6 +10,10 @@ class SlidingWindow {
     this.timeSteps = [];
   }
 
+  isFull() {
+    return this.timeSteps.length >= this.numberOfTimeSteps;
+  }
+
   /**
     Adds an action taken to sliding window, alond with its drive score.
     Note that this assumes client is keeping track of the string representing
@@ -38,7 +42,7 @@ class SlidingWindow {
       // actions influenced by the action taken by tailHead state
       return index === 0 ?
         acc :
-        acc + (timeStep.score / timeSteps.length);
+        acc + (timeStep.score / (timeSteps.length - 1));
     }, 0);
   }
 

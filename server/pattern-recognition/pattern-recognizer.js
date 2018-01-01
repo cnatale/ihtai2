@@ -99,6 +99,7 @@ class PatternRecognizer {
         this.createActionsTableIfNoneExists(tableName),
         this.createPointsTableIfNoneExists()
       ]).then(() => {
+        // these need to wait until we're sure tables exist
         Promise.all([
           this.initializeAllPossibleActions(possibleActions),
           this.addPointToPointsTable()
@@ -107,7 +108,23 @@ class PatternRecognizer {
         }, (message) => {
           reject(message);
         });
+      }).catch((message) => {
+        // either createActionsTable or createPointsTable was rejected
+        debugger;
+        reject(message);
       });
+    });
+  }
+
+  // called from within initializeTables only
+  setActionsAndPoints(possibleActions) {
+    return Promise.all([
+      this.initializeAllPossibleActions(possibleActions),
+      this.addPointToPointsTable()
+    ]).then((result) => {
+      resolve(result);
+    }, (message) => {
+      reject(message);
     });
   }
 

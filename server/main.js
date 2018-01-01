@@ -34,12 +34,13 @@ app.get('/initialize', function (req, res) {
       [0, 5, 10, 15, 20],
       [0, 5, 10, 15, 20]
     ]
-  ).then(() => {
+  ).then((result) => {
     log.info('PATTERN RECOGNITION GROUP INITIALIZED');
-    res.send('PATTERN RECOGNITION GROUP INITIALIZED');
-  }, () => {
+    res.send(result);
+  }, (message) => {
     log.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
-    res.send('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
+    log.error(message);
+    res.status(500).send(message);
   });
 });
 
@@ -51,13 +52,15 @@ app.post('/initialize', function (req, res) {
   patternRecognitionGroup.initialize(
     req.body.startingData, 
     req.body.possibleDataValues
-    ).then(() => {
-      log.info('PATTERN RECOGNITION GROUP INITIALIZED');
-      res.send('PATTERN RECOGNITION GROUP INITIALIZED');    
-    }, () => {
-      log.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
-      res.send('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
-    });
+  ).then((result) => {
+    log.info('PATTERN RECOGNITION GROUP INITIALIZED');
+    log.info(result);
+    res.send(result);
+  }, (message) => {
+    log.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
+    log.error(message);
+    res.status(500).send(message);
+  });
 });
 
 /*
@@ -78,7 +81,7 @@ app.post('/nearestPatternRecognizer', function (req, res) {
   });
 });
 
-// expose ability to update sliding window, and return current sliding window
+// expose ability to add timestep to sliding window. returns current sliding window
 // state 
 // @param actionTakenString {string}: string representation of action taken.
 //   ex: '1_2_4_3'
@@ -105,6 +108,11 @@ app.get('/updateScore', function (req, res) {
       'pattern_' + slidingWindow.getHead().stateKey
     );
 
+  if (!slidingWindow.isFull()) {
+    res.status(500).send(`Sliding window must be full with
+      ${slidingWindow.numberOfTimeSteps} elements in order to update score!`);
+  }
+
   const avgScoreOverTimeSeries = slidingWindow.getAverageDriveScore();
 
   // ex. nextMove string: '1_3_5_2'. Similar to patternRecognizer key format, but
@@ -114,6 +122,8 @@ app.get('/updateScore', function (req, res) {
     avgScoreOverTimeSeries
   ).then((successOrFailure) => {
     res.send(successOrFailure);
+  }).catch((message) => {
+    res.status(500).send(message);
   });
 });
 
@@ -145,9 +155,6 @@ app.post('/splitPatternRecognizer', function(req, res) {
     });
 });
 
-// TODO: expose method to find out if tables have already been created for Ihtai, and
-//  returning true or false
-
 // expose method to clear db
 app.delete('/db', function (req, res) {
   dbUtil.emptyDb().then(() => {
@@ -159,9 +166,7 @@ app.delete('/db', function (req, res) {
   });  
 });
 
-// TODO: expose method to split point
-
-// TODO: expose method to get updates per minute
+// expose method to get updates per minute
 app.post('/updatesPerMinute', function (req, res) {
   log.info('request for updates per minute received');
   log.info(req.body);
@@ -182,5 +187,5 @@ app.post('/updatesPerMinute', function (req, res) {
 
 // serve static client files
 app.use(express.static('client'));
-
+log.info('Ihtai server running on port 3800');
 app.listen(3800);

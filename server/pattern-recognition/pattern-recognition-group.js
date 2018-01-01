@@ -96,24 +96,23 @@ class PatternRecognitionGroup {
     this.patternRecognizers[nDimensionalPointString] = patternRecognizer;
 
     return new Promise((resolve, reject) => {
-      patternRecognizer.initializeTables(this.possibleActionValues)
-        .then((results) => {
+      // TODO: initializeTables is being rejected if tables already exist. handle this situation
+      patternRecognizer.initializeTables(this.possibleActionValues).then((results) => {
+        // make sure every result returns expected array of mysql table row id's
+        if (!_.every(results.map((result) => {
+          return (Array.isArray(result) && _.every(result, (item) => {
+            // make sure each array element is a row index number
+            return !isNaN(item);
+          }) && results.length >= 1);
+        }))) {
+          reject(`Error: PatternRecognitionGroup.addPatternRecogizer(): initializeTables() failed
+            on one or more PatternRecognizer`);
+        }
 
-          // make sure every result returns expected array of mysql table row id's
-          if (!_.every(results.map((result) => {
-            return (Array.isArray(result) && _.every(result, (item) => {
-              // make sure each array element is a row index number
-              return !isNaN(item);
-            }) && results.length >= 1);
-          }))) {
-            reject(`Error: PatternRecognitionGroup.addPatternRecogizer(): initializeTables() failed
-              on one or more PatternRecognizer`);
-          }
-
-          resolve(true);
-        }, (error) => {
-          reject(error);
-        });
+        resolve(true);
+      }, (error) => {
+        reject(error);
+      });
     });
   }
 

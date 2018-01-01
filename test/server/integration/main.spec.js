@@ -39,7 +39,8 @@ describe('main', () => {
         .end(function(err, res) {
           if (err) throw err;
 
-          expect(res.text).to.equal('PATTERN RECOGNITION GROUP INITIALIZED');
+          // expect(res.text).to.equal('PATTERN RECOGNITION GROUP INITIALIZED');
+          expect(res.text).to.equal('[true,true,true,true]');
           done();
         });
     });
@@ -48,7 +49,7 @@ describe('main', () => {
   describe('/nearestPatternRecognizer', () => {
     it('should get the nearest PatternRecognizer, given a pattern', (done) => {
       request(app)
-        .post("/nearestPatternRecognizer")
+        .post('/nearestPatternRecognizer')
         .send({ inputState:[4], actionState: [6], driveState: [6] })
         .expect(200)
         .end(function(err, res) {
@@ -63,7 +64,7 @@ describe('main', () => {
   describe('/addTimeStep', () => {
     it('add a timeStep to sliding window', (done) => {
       request(app)
-        .put("/addTimeStep")
+        .put('/addTimeStep')
         .send({ stateKey: '5_5_5', score: 1 })
         .expect(200)
         .then((res) => {
@@ -75,30 +76,50 @@ describe('main', () => {
 
 
   describe('/updateScore', () => {
-    it('updates score', (done) => {
+    it('returns 500 until sliding window is full', (done) => {
       request(app)
-        .put("/addTimeStep")
+        .put('/addTimeStep')
         .send({ stateKey: '10_10_10', score: 2 })
         .expect(200)
         .then(() => {
-          request(app)
-            .get("/updateScore")
-            .expect(200)
-            .end(function(err, res) {
-              if (err) throw err;
-
-              expect(res.text).to.equal('true');
+          request(app).get('/updateScore')
+            .expect(500)
+            .end(function() {
               done();
             });
-
         });    
+    });
+
+    it('returns 200 once sliding window is full', (done) => {
+      request(app)
+        .put('/addTimeStep')
+        .send({ stateKey: '10_10_10', score: 2 })
+        .expect(200)
+        .then(() => request(app).put('/addTimeStep')
+          .send({ stateKey: '10_10_10', score: 2 })
+          .expect(200))
+        .then(() => request(app).put('/addTimeStep')
+          .send({ stateKey: '10_10_10', score: 2 })
+          .expect(200))
+        .then(() => request(app).put('/addTimeStep')
+          .send({ stateKey: '10_10_10', score: 2 })
+          .expect(200))
+        .then(() => request(app).put('/addTimeStep')
+          .send({ stateKey: '10_10_10', score: 2 })
+          .expect(200))
+        .then(() => request(app).get('/updateScore')
+          .expect(200))
+        .then((res) => {
+          expect(res.text).to.equal('true');
+          done();
+        });
     });
   });
 
   describe('/bestNextAction', () => {
     it('gets the best next action', (done) => {
       request(app)
-        .post("/bestNextAction")
+        .post('/bestNextAction')
         .send({ patternString: 'pattern_5_5_5' })
         .expect(200)
         .then((res) => {
