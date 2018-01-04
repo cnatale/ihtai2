@@ -141,32 +141,15 @@ class PatternRecognizer {
   }
 
   createActionsTableIfNoneExists(tableName) {
-    return new Promise((resolve, reject) => {
-      knex.schema.hasTable(tableName).then((exists) => {
-        if (!exists) {
-          // TODO: create common wrapper function for this and identical logic below
-          knex.schema.createTable(tableName, (table) => {
-            table.string('next_action').primary();
-            table.double('score').index();
-            table.timestamps();
-          }).then(() => {
-            resolve();
-          });
-        } else {
-          resolve();
-        }
-      }, () => {
-        knex.schema.createTable(tableName, (table) => {
-          table.string('next_action').primary();
-          table.double('score').index();
-          table.timestamps();
-        }).then(() => {
-          resolve();
-        }, (message) => {
-          reject(message);
-        });
-      });
-
+    return knex.schema.createTableIfNotExists(tableName, (table) => {
+      table.increments();
+      table.string('next_action'); // .primary();
+      table.double('score'); // .index();
+      // table.timestamps();
+    }).then(() => {
+      return true;
+    }, (message) => {
+      throw (new Error(message));
     });
   }
 
@@ -206,29 +189,20 @@ class PatternRecognizer {
   createPointsTableIfNoneExists() {
     const globalPointsTableName = config.get('db').globalPointsTableName;
 
-    return new Promise((resolve) => {
-      knex.schema.hasTable(globalPointsTableName).then((exists) => {
-        if (!exists) {
-          knex.schema.createTable(globalPointsTableName, (table) => {
-            table.increments('id').primary();
-            table.string('point');
-            table.bigInteger('update_count').unsigned();
-            table.dateTime('update_count_last_reset');
-            this.getPatternAsSingleArray().map((value, index) => {
-              if (typeof value === 'number') {
-                table.double(`point_index_${index}`);
-              } else { table.string(`point_index_${index}`); }
-            });
-
-          }).then((result) => {
-            resolve(result);
-          });
-        } else {
-          resolve(true);
-        }
-      }); /* , () => {
-        resolve(); // should still be considered successful if promise is rejected due to knex weirdness
-      }) */
+    return knex.schema.createTableIfNotExists(globalPointsTableName, (table) => {
+      table.increments('id').primary();
+      table.string('point');
+      table.bigInteger('update_count').unsigned();
+      table.dateTime('update_count_last_reset');
+      this.getPatternAsSingleArray().map((value, index) => {
+        if (typeof value === 'number') {
+          table.double(`point_index_${index}`);
+        } else { table.string(`point_index_${index}`); }
+      });
+    }).then(() => {
+      return true;
+    }, (message) => {
+      throw (new Error(message));
     });
   }
 
