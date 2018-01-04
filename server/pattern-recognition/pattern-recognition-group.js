@@ -190,6 +190,9 @@ class PatternRecognitionGroup {
   @param pattern {Object} An n-dimensional point described as three
     Object properties, each containing an array of numbers.
 
+    Note that this query assumes that the number of 'point_index' columns
+    in the global points table equals the dimensionality of the n-dimensional point.
+
     ex: {inputState: [-1], actionState: [a], driveState: [x]}
   */
   nearestNeighborQueryString (nDimensionalPoint) {

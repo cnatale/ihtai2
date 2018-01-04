@@ -1,7 +1,7 @@
 const log = require('../log');
 const dbUtil = require('../server/db/util');
 
-dbUtil.emptyDb().then(function() {
+dbUtil.emptyDb(true).then(function() {
   log.info('Database successfully cleaned.');
   process.exit(0);
 }).catch((reason) => {

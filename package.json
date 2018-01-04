@@ -6,10 +6,11 @@
   "scripts": {
     "start": "node ./server/main.js",
     "start-debugger": "node --inspect --debug-brk ./server/main.js",
-    "test": "./node_modules/.bin/mocha test/**/*.spec.js",
+    "test": "NODE_ENV=test ./node_modules/.bin/mocha test/**/*.spec.js",
     "test-cover": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test/**/*.spec.js",
     "report": "./node_modules/.bin/istanbul report --root ./coverage html",
-    "clean-db": "node ./scripts/clean-db.js"
+    "clean-db": "node ./scripts/clean-db.js",
+    "clean-test-db": "NODE_ENV=test node ./scripts/clean-db.js"
   },
   "author": "Chris Natale",
   "license": "ISC",

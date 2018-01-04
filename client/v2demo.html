@@ -86,9 +86,9 @@ fetch('http://localhost:3800/initialize', {
 
 function getNearestPatternRecognizer() {
     var data = JSON.stringify({
-        inputState: [5],
-        actionState: [5],
-        driveState: [5]
+        inputState: [2],
+        actionState: [1],
+        driveState: [1]
     });
 
     return fetch('http://localhost:3800/nearestPatternRecognizer', {

@@ -129,20 +129,19 @@ describe('patternRecognizer', () => {
 
       const globalPointsTableName = config.get('db').globalPointsTableName;
 
-      patternRecognizer.createPointsTableIfNoneExists().then(() => {
-        patternRecognizer.addPointToPointsTable().then(() => {
-          knex(globalPointsTableName).select().where('point', '=', patternRecognizer.patternToString()).then((results) => {
-            expect(results).to.be.an('array').and.to.not.be.empty;
-            expect(results[0].point_index_0).to.be.a('number').and.equal(1);
-            expect(results[0].point_index_1).to.be.a('number').and.equal(2);
-            expect(results[0].point_index_2).to.be.a('number').and.equal(3);
-            expect(results[0].point_index_3).to.be.a('number').and.equal(4);
-            expect(results[0].point_index_4).to.be.a('number').and.equal(5);
-            expect(results[0].point_index_5).to.be.a('number').and.equal(6);
-            expect(results[0].update_count).to.be.a('number').and.equal(0);
-            done();
-          });
-        });
+      knex.schema.dropTableIfExists(config.db.globalPointsTableName).then(() =>
+      patternRecognizer.createPointsTableIfNoneExists()).then(() =>
+      patternRecognizer.addPointToPointsTable()).then(() =>
+      knex(globalPointsTableName).select().where('point', '=', patternRecognizer.patternToString())).then((results) => {
+        expect(results).to.be.an('array').and.to.not.be.empty;
+        expect(results[0].point_index_0).to.be.a('number').and.equal(1);
+        expect(results[0].point_index_1).to.be.a('number').and.equal(2);
+        expect(results[0].point_index_2).to.be.a('number').and.equal(3);
+        expect(results[0].point_index_3).to.be.a('number').and.equal(4);
+        expect(results[0].point_index_4).to.be.a('number').and.equal(5);
+        expect(results[0].point_index_5).to.be.a('number').and.equal(6);
+        expect(results[0].update_count).to.be.a('number').and.equal(0);
+        done();
       });
     });
   });
@@ -155,16 +154,14 @@ describe('patternRecognizer', () => {
         driveState: [5, 6]
       });
 
-      patternRecognizer.createPointsTableIfNoneExists().then(() => {
-        patternRecognizer.addPointToPointsTable().then(() => {
-          patternRecognizer.removePointFromPointsTable().then((result) => {
-            // result is the number of rows affected; should be at least 1
-            expect(result).to.be.a('number').and.to.be.above(0);
-            done();
-          });
-        });
+      knex.schema.dropTableIfExists(config.db.globalPointsTableName).then(() =>
+      patternRecognizer.createPointsTableIfNoneExists()).then(() =>
+      patternRecognizer.addPointToPointsTable()).then(() =>
+      patternRecognizer.removePointFromPointsTable()).then((result) => {
+        // result is the number of rows affected; should be at least 1
+        expect(result).to.be.a('number').and.to.be.above(0);
+        done();
       });
-
     });
   });
 

@@ -224,11 +224,11 @@ class PatternRecognizer {
             resolve(result);
           });
         } else {
-          resolve();
+          resolve(true);
         }
-      }, () => {
+      }); /* , () => {
         resolve(); // should still be considered successful if promise is rejected due to knex weirdness
-      });
+      }) */
     });
   }
 
