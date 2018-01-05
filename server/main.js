@@ -2,8 +2,9 @@ const SlidingWindow = require('./sliding-window/sliding-window');
 const PatternRecognitionGroup = require('./pattern-recognition/pattern-recognition-group');
 const dbUtil = require('./db/util');
 const bunyan = require('bunyan');
+const config = require('config');
 const log = bunyan.createLogger({ name: 'Ihtai' });
-
+log.level(config.log.level);
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
