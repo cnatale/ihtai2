@@ -45,7 +45,6 @@ app.get('/initialize', function (req, res) {
 });
 
 app.post('/initialize', function (req, res) {
-  // TODO: verify req.body is valid json
   log.info('initialization request received');
   log.info(req.body);
 
@@ -55,7 +54,7 @@ app.post('/initialize', function (req, res) {
   ).then((result) => {
     log.info('PATTERN RECOGNITION GROUP INITIALIZED');
     log.info(result);
-    res.send(result);
+    res.status(200).send(result);
   }, (message) => {
     log.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
     log.error(message);
@@ -77,7 +76,7 @@ app.post('/nearestPatternRecognizer', function (req, res) {
       driveState: req.body.driveState
     }
   ).then((nearestPatternRecognizer) => {
-    res.send(nearestPatternRecognizer);
+    res.status(200).send(nearestPatternRecognizer);
   });
 });
 
@@ -90,7 +89,7 @@ app.put('/addTimeStep', function (req, res) {
   log.info('request to addTimeStep received');
   log.info('req.body');
 
-  res.send(
+  res.status(200).send(
     slidingWindow.addTimeStep(req.body.stateKey, req.body.score)
   );
 });
@@ -103,15 +102,15 @@ app.get('/updateScore', function (req, res) {
   log.info('request to update score for sliding window head received');
   log.info('req.body');
 
+  if (!slidingWindow.isFull()) {
+    return res.status(500).send(`Sliding window must be full with
+      ${slidingWindow.numberOfTimeSteps} elements in order to update score!`);
+  }
+
   const patternRecognizer = 
     patternRecognitionGroup.getPatternRecognizer(
       'pattern_' + slidingWindow.getHead().stateKey
     );
-
-  if (!slidingWindow.isFull()) {
-    res.status(500).send(`Sliding window must be full with
-      ${slidingWindow.numberOfTimeSteps} elements in order to update score!`);
-  }
 
   const avgScoreOverTimeSeries = slidingWindow.getAverageDriveScore();
 
@@ -120,13 +119,12 @@ app.get('/updateScore', function (req, res) {
   patternRecognizer.updateNextMoveScore(
     slidingWindow.getTailHead().stateKey,
     avgScoreOverTimeSeries
-  ).then((successOrFailure) => {
-    res.send({
+  ).then(() => {
+    res.status(200).json({
       startPattern: patternRecognizer.patternToString(),
       actionKey: slidingWindow.getTailHead().stateKey,
       actionAverageScore: avgScoreOverTimeSeries
     });
-    res.send(successOrFailure);
   }).catch((message) => {
     res.status(500).send(message);
   });
@@ -144,7 +142,7 @@ app.post('/bestNextAction', function (req, res) {
   patternRecognizer.getBestNextAction().then((result) => {
     // result format:
     // { score: {number}, next_action: {string (ex: '1_3_5')}}
-    res.send(result);
+    res.status(200).send(result);
   });
 });
 
@@ -156,7 +154,7 @@ app.post('/splitPatternRecognizer', function(req, res) {
 
   patternRecognitionGroup.splitPatternRecognizer(
     req.body.originalPatternRecognizerString, req.body.newPoint).then((result) => {
-      res.send(result);
+      res.status(200).send(result);
     });
 });
 
@@ -164,10 +162,10 @@ app.post('/splitPatternRecognizer', function(req, res) {
 app.delete('/db', function (req, res) {
   dbUtil.emptyDb().then(() => {
     log.info('DB CLEARED');
-    res.send('DB CLEARED');
+    res.status(200).send('DB CLEARED');
   }, () => {
     log.error('FAILURE CLEARING DB');
-    res.send('FAILURE CLEARING DB');
+    res.status(500).send('FAILURE CLEARING DB');
   });  
 });
 
@@ -181,7 +179,7 @@ app.post('/updatesPerMinute', function (req, res) {
     patternRecognitionGroup.getPatternRecognizer(req.body.patternString);
 
   patternRecognizer.getUpdatesPerMinute().then((result) => {
-    res.send(result);
+    res.status(200).json({ updatesPerMinute: result });
   });
 });
 

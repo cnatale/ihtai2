@@ -23,6 +23,9 @@ exports.emptyDb = (dropTables = false) => {
   ).then(() => {
     // dropping tables through knex-cleaner doesn't appear to work
     if (dropTables) {
+      // TODO: come up with a way to drop all actions tables as well.
+      // perhaps just turn into a shell script that drops the tables and then
+      // adds them again.
       return knexInstance.schema.dropTableIfExists(config.db.globalPointsTableName);
     }
   });

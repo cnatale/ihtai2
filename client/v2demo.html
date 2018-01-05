@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>rolling ball demo</title>
-    <script src="js/external/p5.min.js"></script>
-    
+    <title>ihtai number picking demo</title>
+
     <style>
     html,body {
         margin:0;
@@ -20,44 +19,28 @@
 </head>
 <body>
 <script type="text/javascript">
-function setup() {
 
-  // Sets the screen to be 720 pixels wide and 400 pixels high
-  createCanvas(720, 400);
-  background(0);
-  noStroke();
+var secretNumber = 7;
+var currentIhtaiNumber = 0;
+var currentActionState = 1; // 0 = move left, 1 = don't move, 2 = move right
+var counter = 0; // used to control number of api call cycles for test purposes
 
-  fill(204);
-  triangle(18, 18, 18, 360, 81, 360);
-
-  fill(102);
-  rect(81, 81, 63, 63);
-
-  fill(204);
-  quad(189, 18, 216, 18, 216, 360, 144, 360);
-
-  fill(255);
-  ellipse(252, 144, 72, 72);
-
-  fill(204);
-  triangle(288, 18, 351, 360, 288, 360); 
-
-  fill(255);
-  arc(479, 300, 280, 280, PI, TWO_PI);
-}
-
-var secretNumber = 4;
 var startingData = JSON.stringify({
     startingData: [
-      { inputState:[0], actionState: [0], driveState: [0] },
-      { inputState: [1], actionState: [1], driveState: [1] },
-      { inputState:[2], actionState: [2], driveState: [2] },
-      { inputState: [3], actionState: [3], driveState: [3] }          
+      { inputState:[secretNumber], actionState: [0], driveState: [0] },
+      { inputState: [secretNumber], actionState: [0], driveState: [1] },
+      { inputState:[secretNumber], actionState: [0], driveState: [2] },
+      { inputState:[secretNumber], actionState: [1], driveState: [0] },
+      { inputState: [secretNumber], actionState: [1], driveState: [1] },
+      { inputState:[secretNumber], actionState: [1], driveState: [2] },
+      { inputState:[secretNumber], actionState: [2], driveState: [0] },
+      { inputState: [secretNumber], actionState: [2], driveState: [1] },
+      { inputState:[secretNumber], actionState: [2], driveState: [2] }
     ],
     possibleDataValues: [
-      [0, 1, 2, 3, 4, 5, 6], 
-      [0, 1, 2, 3, 4, 5, 6],
-      [0, 1, 2, 3, 4, 5, 6]
+      [secretNumber],
+      [0, 1, 2],
+      [0, 1, 2]
     ]
 });
 
@@ -78,36 +61,35 @@ fetch('http://localhost:3800/initialize', {
       'Content-Type': 'application/json'
     },
     body: startingData
-}).then(function(response) {
-    getNearestPatternRecognizer(); 
-}).catch(function(err) {
-
+}).then((response) => {
+    return getNearestPatternRecognizer({
+      inputState: [secretNumber],
+      actionState: [currentActionState],
+      driveState: [getDriveScore(secretNumber, currentIhtaiNumber)]
+    });
+}, (message) => {
+    console.log('initialize failure: ');
+    console.log(message);
 });
 
-function getNearestPatternRecognizer() {
-    var data = JSON.stringify({
-        inputState: [2],
-        actionState: [1],
-        driveState: [1]
-    });
-
+function getNearestPatternRecognizer(ihtaiState) {
     return fetch('http://localhost:3800/nearestPatternRecognizer', {
         method: 'post',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        body: data
-    }).then((result) => {
-        addTimeStep(result);
+        body: JSON.stringify(ihtaiState)
+    }).then((response) => response.text()).then(function (nearestPatternString) {
+        return addTimeStep(nearestPatternString, secretNumber, currentIhtaiNumber);
     });
 }
 
-function addTimeStep(nearestPatternRecognizer) {
+function addTimeStep(nearestPatternString, secretNumber, currentIhtaiNumber) {
     // stateKey must match an existing pattern
     var data = JSON.stringify({
-        stateKey: '3_3_3',
-        score: 5
+        stateKey: nearestPatternString.split('pattern_')[1],
+        score: getDriveScore(secretNumber, currentIhtaiNumber)
     });
 
     return fetch('http://localhost:3800/addTimeStep', {
@@ -118,26 +100,26 @@ function addTimeStep(nearestPatternRecognizer) {
         },
         body: data
     }).then(() => {
-        updateScore();
+        // ordinarily we can ignore the results of this method
+        return updateScore(nearestPatternString);
     });
 }
 
-function updateScore() {
+function updateScore(nearestPatternString) {
     return fetch('http://localhost:3800/updateScore', {
         method: 'get'
     }).then(() => {
-        // todo: use real pattern
-        getBestNextAction('pattern_3_3_3');
-    }).catch((message) => {
+        return getBestNextAction(nearestPatternString);
+    }, (message) => {
         // for this api call it's probably ok to ignore error
         // because this will return 500 if not enough items are in the stack to calculate. could check for message or start including status codes
-        getBestNextAction('pattern_3_3_3');
+        return getBestNextAction(nearestPatternString);
     });
 }
 
-function getBestNextAction(patternString) {
+function getBestNextAction(nearestPatternString) {
     var data = JSON.stringify({
-        patternString: patternString
+        patternString: nearestPatternString
     });
 
     return fetch('http://localhost:3800/bestNextAction', {
@@ -147,13 +129,19 @@ function getBestNextAction(patternString) {
           'Content-Type': 'application/json'
         },
         body: data
-    }).then(() => {
-        getUpdatesPerMinute(patternString);
+    }).then((result) => result.json()).then((bestAction) => {
+      // expect json object with .next_action string.
+      // note that this split technique only works if action is 1 dimension.
+      // come up with a better, more general approach. maybe bestNextAction
+      // should only return the action part of the string.
+      var bestActionString = bestAction.next_action.split('_')[1];
+
+      return getUpdatesPerMinute(nearestPatternString, bestActionString);
     });
 }
 
 // get updates per minute for a given patternRecognizer
-function getUpdatesPerMinute(patternString) {
+function getUpdatesPerMinute(patternString, bestActionString) {
     var data = JSON.stringify({
         patternString: patternString
     });
@@ -172,6 +160,9 @@ function getUpdatesPerMinute(patternString) {
 
         // repeat logic loop, calling getNearestPatternRecognizer
         // getNearestPatternRecognizer();
+
+        // res is a json object: { updatesPerMinute: x }
+        return checkNumber(Number(bestActionString));
     });    
 }
 
@@ -189,10 +180,49 @@ function splitPatternRecognizer(originalPatternRecognizerString, newPoint) {
           'Content-Type': 'application/json'
         },
         body: data
-    }).then(() => {
-        
+    }).then((result) => {
+        return result;
     });
 }
+
+// TODO: add simple number-picker demo logic.
+
+
+function checkNumber (suggestedAction) {
+  console.log('suggestedAction: ' + suggestedAction);
+  // change currentIhtaiNumber based on suggested action
+  if (suggestedAction === 0) {
+    currentIhtaiNumber--;
+  } else if (suggestedAction === 1) {
+    // do nothing
+  } else if (suggestedAction === 2) {
+    currentIhtaiNumber++;
+  }
+
+
+  var ihtaiState = {
+      inputState: [secretNumber],
+      actionState: [suggestedAction],
+      driveState: [getDriveScore(secretNumber, currentIhtaiNumber)]
+  };
+
+  console.log('current Ihtai Number: ' + currentIhtaiNumber);
+
+  if (counter < 100) {
+    counter++;
+    return getNearestPatternRecognizer(ihtaiState);
+  }
+}
+
+var prevScore = Math.abs(secretNumber - currentIhtaiNumber);
+function getDriveScore(secretNumber, currentIhtaiNumber) {
+  // lower score is better
+  var score = Math.abs(secretNumber - currentIhtaiNumber);
+  if (score > prevScore) { return 2; }
+  if (score === prevScore) {return 1; }
+  if (score < prevScore) { return 0; }
+}
+
 
 </script>
 </body>

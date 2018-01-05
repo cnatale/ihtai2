@@ -128,7 +128,7 @@ class PatternRecognitionGroup {
   getPatternRecognizer(nDimensionalPointString) {
     if (!this.patternRecognizers[nDimensionalPointString]) {
       throw (`Error: PatternRecognitionGroup.getPatternRecognizer(): 
-        no patternRecognizer found matching the input string`);
+        no patternRecognizer found matching the input string ${nDimensionalPointString}`);
     }
 
     return this.patternRecognizers[nDimensionalPointString];

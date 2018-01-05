@@ -110,7 +110,6 @@ class PatternRecognizer {
         });
       }).catch((message) => {
         // either createActionsTable or createPointsTable was rejected
-        debugger;
         reject(message);
       });
     });
@@ -169,6 +168,8 @@ class PatternRecognizer {
   }
   */
   initializeAllPossibleActions(possibleActions) {
+    // BUG: this inserts rows to all actions tables every time /initialize is called.
+    // add logic to prevent this.
     const actionsTableName = this.patternToString();
 
     const allPossibleActions = patternRecUtil.cartesianProduct(possibleActions);
@@ -176,7 +177,10 @@ class PatternRecognizer {
       const score = Math.random();
       return { next_action: val, score };
     });
-    return knex(actionsTableName).insert(rowsToInsert);
+    return knex(actionsTableName).count('*').then(result => {
+      return result[0]['count(*)'] === allPossibleActions.length ?
+        true : knex(actionsTableName).insert(rowsToInsert)
+    });
   }
 
   /**
@@ -199,8 +203,8 @@ class PatternRecognizer {
           table.double(`point_index_${index}`);
         } else { table.string(`point_index_${index}`); }
       });
-    }).then(() => {
-      return true;
+    }).then((result) => {
+      return Promise.resolve(true);
     }, (message) => {
       throw (new Error(message));
     });
@@ -224,12 +228,19 @@ class PatternRecognizer {
     return new Promise((resolve, reject) => {
       this.createPointsTableIfNoneExists().then(() => {
         const globalPointsTableName = config.get('db').globalPointsTableName;
-        knex(globalPointsTableName).insert([contentToInsert])
-          .then((result) => {
-            resolve(result);
-          }, (message) => {
-            reject(message);
-          });
+
+        // make sure there isn't already a row for this point in global points table
+        knex(globalPointsTableName).select().where('point', this.patternToString()).then((results) => {
+          if (results.length === 0) {
+            return knex(globalPointsTableName).insert([contentToInsert])
+              .then((results) => {
+                resolve(results);
+              }, (message) => {
+                reject(message);
+              });
+          } else { resolve(results); }
+        });
+
       });
     });
   }
