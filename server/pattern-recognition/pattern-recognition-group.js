@@ -30,7 +30,7 @@ class PatternRecognitionGroup {
            {inputState: [1], actionState: [c], driveState: [z]}]
 
     @param possibleActionValues {array} an array where each index is an array of all possible
-      values for the respective component signal.
+      values for the respective action component signal.
       Ex: [[-1, 0, 1], [a, b, c], [x, y, z]]
       Length of outer array must equal number of dimensions of n-dimensional points
 
@@ -51,10 +51,8 @@ class PatternRecognitionGroup {
           Joi.number()
         )
       ).length(
-        nDimensionalPoints[0].inputState.concat(
-          nDimensionalPoints[0].actionState,
-          nDimensionalPoints[0].driveState).length
-      ); // length must equal n-dimensional point dimensionality
+          nDimensionalPoints[0].actionState.length
+      ); // length must equal dimensionality of actions
 
     const actionValuesSchemaValidation = possibleActionValuesSchema.validate(possibleActionValues);
     if (actionValuesSchemaValidation.error !== null) {
@@ -152,7 +150,7 @@ class PatternRecognitionGroup {
       patternRecognizer.removePatternFromExistingActionsTables(
       _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
       // Get the next_action string, which is the pattern name without `pattern_` at the beginning.
-      pattern.split('pattern_')[1]).then(() =>
+      patternRecognizer.actionPatternToString()).then(() =>
       patternRecognizer.dropActionsTable()).then(
       () => patternRecognizer.removePointFromPointsTable()).then(() => {
         delete this.patternRecognizers[pattern];
@@ -251,7 +249,7 @@ class PatternRecognitionGroup {
       newPatternRecognizer.addPatternToExistingActionsTables(
         _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
         // Get the next_action string, which is the pattern name without `pattern_` at the beginning.
-        originalPatternRecognizerString.split('pattern_')[1]
+        this.patternRecognizers[originalPatternRecognizerString].actionPatternToString()
       )
     ]).then(() => {
       this.patternRecognizers[newPatternRecognizer.patternToString()] = newPatternRecognizer;

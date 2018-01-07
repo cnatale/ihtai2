@@ -25,7 +25,6 @@ const knex = require('../db/knex');
 const config = require('config');
 const patternRecUtil = require('./util');
 const moment = require('moment');
-const Joi = require('joi');
 const { nDimensionalPointSchema } = require('../schemas/schemas');
 
 class PatternRecognizer {
@@ -70,15 +69,15 @@ class PatternRecognizer {
     which has its row in each actions table copied into the calling PatternRecognizer's
     row.
 
-    @param patternToSplitFrom {string} name of PatternRecognizer to split from, of form
-      'pattern_x_y_...n'
+    @param patternToSplitFrom {string} name of action point to copy score from, of form
+      'x_y_...n'
 
     @returns {array} a promise which is fulfilled when all inserts are complete;
   */
   addPatternToExistingActionsTables(originalPatternRecognizerStrings, patternToSplitFrom) {
     return Promise.all(originalPatternRecognizerStrings.map((originalPatternRecognizerString) =>
     knex.raw(`INSERT INTO \`${originalPatternRecognizerString}\` (next_action, score)
-      SELECT '${this.patternToString().split('pattern_')[1]}', score
+      SELECT '${this.actionPatternToString()}', score
       FROM \`${originalPatternRecognizerString}\`
       WHERE  next_action = '${patternToSplitFrom}'`)));
   }
@@ -88,8 +87,6 @@ class PatternRecognizer {
     knex.raw(`DELETE FROM \`${originalPatternRecognizerString}\`
       WHERE  next_action = '${patternToRemove}'`)));    
   }
-
-
 
   initializeTables(possibleActions) {
     const tableName = this.patternToString();
@@ -115,18 +112,6 @@ class PatternRecognizer {
     });
   }
 
-  // called from within initializeTables only
-  setActionsAndPoints(possibleActions) {
-    return Promise.all([
-      this.initializeAllPossibleActions(possibleActions),
-      this.addPointToPointsTable()
-    ]).then((result) => {
-      resolve(result);
-    }, (message) => {
-      reject(message);
-    });
-  }
-
   patternToString() {
     return `pattern_${this.pattern.inputState.join('_')}_${this.pattern.actionState.join('_')}_${this.pattern.driveState.join('_')}`;
   }
@@ -137,6 +122,14 @@ class PatternRecognizer {
 
   getPatternAsSingleArray() {
     return [].concat(this.pattern.inputState).concat(this.pattern.actionState).concat(this.pattern.driveState);
+  }
+
+  getActionState() {
+    return this.pattern.actionState;
+  }
+
+  actionPatternToString() {
+    return this.pattern.actionState.join('_');
   }
 
   createActionsTableIfNoneExists(tableName) {
@@ -168,8 +161,6 @@ class PatternRecognizer {
   }
   */
   initializeAllPossibleActions(possibleActions) {
-    // BUG: this inserts rows to all actions tables every time /initialize is called.
-    // add logic to prevent this.
     const actionsTableName = this.patternToString();
 
     const allPossibleActions = patternRecUtil.cartesianProduct(possibleActions);
@@ -177,6 +168,8 @@ class PatternRecognizer {
       const score = Math.random();
       return { next_action: val, score };
     });
+
+    // only add actions columns if they aren't already in the table
     return knex(actionsTableName).count('*').then(result => {
       return result[0]['count(*)'] === allPossibleActions.length ?
         true : knex(actionsTableName).insert(rowsToInsert)
@@ -203,7 +196,7 @@ class PatternRecognizer {
           table.double(`point_index_${index}`);
         } else { table.string(`point_index_${index}`); }
       });
-    }).then((result) => {
+    }).then(() => {
       return Promise.resolve(true);
     }, (message) => {
       throw (new Error(message));
@@ -293,7 +286,9 @@ class PatternRecognizer {
 
           const timeDelta = currentTime.diff(updateCountLastReset, 'minutes');
 
-          const updatesPerMinute = timeDelta > 0 ? results.update_count / timeDelta : 0;
+          const updatesPerMinute = timeDelta > 0 ? results[0].update_count / timeDelta : 0;
+          // const updatesPerMinute = results[0].update_count;
+
           resolve(updatesPerMinute);
         }, (message) => {
           reject(message);
@@ -304,7 +299,7 @@ class PatternRecognizer {
   /**
     Reweights the scores in next moves db table
   */
-  updateNextMoveScore(nextMoveKey, score) {
+  updateNextMoveScore(nextActionKey, score) {
     /*
     Steps:
       -query actions table to get current score for nextMove key
@@ -316,20 +311,23 @@ class PatternRecognizer {
 
     return new Promise((resolve, reject) => {
       knex.select('score').from(patternString)
-        .where('next_action', nextMoveKey)
+        .where('next_action', nextActionKey)
         .then((results) => {
+          if (!results.length) {
+            reject('ERROR: no rows selected matching pattern string: ' + patternString);
+          }
           // Update row with weighted average of current score and new score value.
           // Right now hardcoding new score to be weighted at 10% of current score
           // for updated value.
           const updatedScore = (results[0].score * 9 + score) / 10;
+          // const updatedScore = (results[0].score + score) / 2;
           knex(patternString)
-            .where('next_action', nextMoveKey)
+            .where('next_action', nextActionKey)
             .update('score', updatedScore)
             .then((numberOfRowsUpdated) => {
               if (!numberOfRowsUpdated) {
                 reject('ERROR: no rows affected by score update');
               }
-
               // before resolving, increment update_count in patternRecognizer's globalPointsTable row
               const globalPointsTableName = config.get('db').globalPointsTableName;
               knex(globalPointsTableName)

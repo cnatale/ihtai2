@@ -20,10 +20,16 @@
 <body>
 <script type="text/javascript">
 
-var secretNumber = 7;
+var secretNumber = 2;
 var currentIhtaiNumber = 0;
 var currentActionState = 1; // 0 = move left, 1 = don't move, 2 = move right
 var counter = 0; // used to control number of api call cycles for test purposes
+
+var possibleDriveValues = [];
+
+for (var i = 0; i <= 10; i++) {
+   possibleDriveValues.push(i);
+}
 
 var startingData = JSON.stringify({
     startingData: [
@@ -41,6 +47,7 @@ var startingData = JSON.stringify({
       [secretNumber],
       [0, 1, 2],
       [0, 1, 2]
+      // possibleDriveValues
     ]
 });
 
@@ -88,6 +95,7 @@ function getNearestPatternRecognizer(ihtaiState) {
 function addTimeStep(nearestPatternString, secretNumber, currentIhtaiNumber) {
     // stateKey must match an existing pattern
     var data = JSON.stringify({
+        actionKey: nearestPatternString.split('_')[2],
         stateKey: nearestPatternString.split('pattern_')[1],
         score: getDriveScore(secretNumber, currentIhtaiNumber)
     });
@@ -134,7 +142,7 @@ function getBestNextAction(nearestPatternString) {
       // note that this split technique only works if action is 1 dimension.
       // come up with a better, more general approach. maybe bestNextAction
       // should only return the action part of the string.
-      var bestActionString = bestAction.next_action.split('_')[1];
+      var bestActionString = bestAction.next_action;
 
       return getUpdatesPerMinute(nearestPatternString, bestActionString);
     });
@@ -162,7 +170,14 @@ function getUpdatesPerMinute(patternString, bestActionString) {
         // getNearestPatternRecognizer();
 
         // res is a json object: { updatesPerMinute: x }
-        return checkNumber(Number(bestActionString));
+        // TODO: i don't think updatesPerMinute is returning correctly
+
+        return res.json().then((resultJson) => {
+          // console.log('updates per minute: ')
+          // console.log(resultJson.updatesPerMinute)
+          return checkNumber(Number(bestActionString));
+        });
+        // TODO: add split logic
     });    
 }
 
@@ -191,11 +206,11 @@ function splitPatternRecognizer(originalPatternRecognizerString, newPoint) {
 function checkNumber (suggestedAction) {
   console.log('suggestedAction: ' + suggestedAction);
   // change currentIhtaiNumber based on suggested action
-  if (suggestedAction === 0) {
+  if (suggestedAction === 0 && currentIhtaiNumber > 0) {
     currentIhtaiNumber--;
   } else if (suggestedAction === 1) {
     // do nothing
-  } else if (suggestedAction === 2) {
+  } else if (suggestedAction === 2 && currentIhtaiNumber < 2) {
     currentIhtaiNumber++;
   }
 
@@ -207,22 +222,25 @@ function checkNumber (suggestedAction) {
   };
 
   console.log('current Ihtai Number: ' + currentIhtaiNumber);
-
+  console.log('current drive score: ');
+  console.log(getDriveScore(secretNumber, currentIhtaiNumber));
   if (counter < 100) {
     counter++;
     return getNearestPatternRecognizer(ihtaiState);
   }
 }
 
-var prevScore = Math.abs(secretNumber - currentIhtaiNumber);
+// var prevScore = Math.abs(secretNumber - currentIhtaiNumber);
+// function getDriveScore(secretNumber, currentIhtaiNumber) {
+//   // lower score is better
+//   var score = Math.abs(secretNumber - currentIhtaiNumber);
+//   if (score > prevScore) { return 2; }
+//   if (score === prevScore) { return 2; }
+//   if (score < prevScore) { return 0; }
+// }
 function getDriveScore(secretNumber, currentIhtaiNumber) {
-  // lower score is better
-  var score = Math.abs(secretNumber - currentIhtaiNumber);
-  if (score > prevScore) { return 2; }
-  if (score === prevScore) {return 1; }
-  if (score < prevScore) { return 0; }
+  return Math.abs(secretNumber - currentIhtaiNumber);
 }
-
 
 </script>
 </body>
