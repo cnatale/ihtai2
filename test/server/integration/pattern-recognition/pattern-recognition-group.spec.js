@@ -31,7 +31,7 @@ describe('PatternRecognitionGroup', () => {
           { inputState:[0], actionState: [2], driveState: [4] },
           { inputState: [1], actionState: [3], driveState: [5] }
         ],
-        [[0, 1], [2, 3], [4, 5]]
+        [[2, 3]]
       ).then((result) => {
         expect(result.length).to.equal(2);
         expect(_.every(result)).to.equal(true);
@@ -49,8 +49,6 @@ describe('PatternRecognitionGroup', () => {
           { inputState: [20], actionState: [20], driveState: [20] }          
         ],
         [
-          [0, 5, 10, 15, 20], 
-          [0, 5, 10, 15, 20],
           [0, 5, 10, 15, 20]
         ]
       ).then(
@@ -82,7 +80,7 @@ describe('PatternRecognitionGroup', () => {
           actionState: [2],
           driveState: [4]
         }],
-        [[0, 1], [2, 3], [4, 5]]
+        [[2, 3]]
       ).then((result) => {
         expect(result).to.be.an('array').with.length(1);
         patternRecognitionGroup.addPatternRecognizer(
@@ -110,7 +108,7 @@ describe('PatternRecognitionGroup', () => {
           actionState: [0],
           driveState: [0]
         }],
-        [[0, 1], [0, 10], [0, 100]]
+        [[0, 10]]
       ).then(() => {
         patternRecognitionGroup.addPatternRecognizer(
           { inputState:[0], actionState: [10], driveState: [100] }
@@ -148,8 +146,6 @@ describe('PatternRecognitionGroup', () => {
           { inputState:[5], actionState: [5], driveState: [5] }       
         ],
         [
-          [0, 5, 10, 15, 20], 
-          [0, 5, 10, 15, 20],
           [0, 5, 10, 15, 20]
         ]
       ).then(() => {
@@ -172,8 +168,6 @@ describe('PatternRecognitionGroup', () => {
           { inputState:[5], actionState: [5], driveState: [5] }       
         ],
         [
-          [0, 5, 10, 15, 20], 
-          [0, 5, 10, 15, 20],
           [0, 5, 10, 15, 20]
         ]
       ).then(() => {
@@ -233,8 +227,6 @@ describe('PatternRecognitionGroup', () => {
           { inputState: [20], actionState: [20], driveState: [20] }          
         ],
         [
-          [0, 5, 10, 15, 20], 
-          [0, 5, 10, 15, 20],
           [0, 5, 10, 15, 20]
         ]
       ).then(
@@ -295,8 +287,6 @@ describe('PatternRecognitionGroup', () => {
           { inputState: [20], actionState: [20], driveState: [20] }          
         ],
         [
-          [0, 5, 10, 15, 20], 
-          [0, 5, 10, 15, 20],
           [0, 5, 10, 15, 20]
         ]
       ).then(() => patternRecognitionGroup.splitPatternRecognizer(
@@ -318,14 +308,12 @@ describe('PatternRecognitionGroup', () => {
           { inputState: [20], actionState: [20], driveState: [20] }          
         ],
         [
-          [0, 5, 10, 15, 20], 
-          [0, 5, 10, 15, 20],
           [0, 5, 10, 15, 20]
         ]
       ).then(() => patternRecognitionGroup.splitPatternRecognizer(
         'pattern_5_5_5', { inputState:[6], actionState: [6], driveState: [6] })
       ).then(() => {
-        const splitPatternRecognizer = patternRecognitionGroup.patternRecognizers['pattern_6_6_6']
+        const splitPatternRecognizer = patternRecognitionGroup.patternRecognizers['pattern_6_6_6'];
         expect(splitPatternRecognizer instanceof PatternRecognizer).to.equal(true);
         done();
       });
@@ -341,8 +329,6 @@ describe('PatternRecognitionGroup', () => {
           { inputState: [20], actionState: [20], driveState: [20] }          
         ],
         [
-          [0, 5, 10, 15, 20], 
-          [0, 5, 10, 15, 20],
           [0, 5, 10, 15, 20]
         ]
       ).then(() => patternRecognitionGroup.splitPatternRecognizer(
@@ -364,18 +350,16 @@ describe('PatternRecognitionGroup', () => {
           { inputState:[5], actionState: [5], driveState: [5] }       
         ],
         [
-          [0, 5, 10, 15, 20], 
-          [0, 5, 10, 15, 20],
           [0, 5, 10, 15, 20]
         ]
       ).then(() => patternRecognitionGroup.splitPatternRecognizer(
         'pattern_5_5_5', { inputState:[6], actionState: [6], driveState: [6] })
       ).then(() => {
         return knex.select('next_action', 'score').from('pattern_5_5_5').where(
-          'next_action', '5_5_5').orWhere('next_action', '6_6_6');
+          'next_action', '5').orWhere('next_action', '6');
       }).then((result) => {
-        expect(result[0].next_action).to.equal('5_5_5');
-        expect(result[1].next_action).to.equal('6_6_6');
+        expect(result[0].next_action).to.equal('5');
+        expect(result[1].next_action).to.equal('6');
         expect(result[0].score).to.equal(result[1].score);
         done();
       });
@@ -389,8 +373,6 @@ describe('PatternRecognitionGroup', () => {
           { inputState:[5], actionState: [5], driveState: [5] }       
         ],
         [
-          [0, 5, 10, 15, 20], 
-          [0, 5, 10, 15, 20],
           [0, 5, 10, 15, 20]
         ]
       ).then(() => patternRecognitionGroup.splitPatternRecognizer(
@@ -398,11 +380,11 @@ describe('PatternRecognitionGroup', () => {
       ).then(() => {
         return knex.select().from('pattern_5_5_5');
       }).then((originalTableResults) => {
-        expect(originalTableResults.length).to.equal(126);
+        expect(originalTableResults.length).to.equal(6);
         originalTableData = originalTableResults;
         return knex.select().from('pattern_6_6_6');
       }).then((newTableResults) => {
-        expect(newTableResults.length).to.equal(126);
+        expect(newTableResults.length).to.equal(6);
         newTableData = newTableResults;
 
         _.forEach(originalTableData, (value, index) => {
@@ -433,8 +415,6 @@ describe('PatternRecognitionGroup', () => {
           { inputState: [20], actionState: [20], driveState: [20] }          
         ],
         [
-          [0, 5, 10, 15, 20], 
-          [0, 5, 10, 15, 20],
           [0, 5, 10, 15, 20]
         ]
       ).then(() => {
@@ -468,8 +448,6 @@ describe('PatternRecognitionGroup', () => {
           { inputState: [20], actionState: [20], driveState: [20] }          
         ],
         [
-          [0, 5, 10, 15, 20], 
-          [0, 5, 10, 15, 20],
           [0, 5, 10, 15, 20]
         ]
       ).then(() => patternRecognitionGroup.splitPatternRecognizer(
@@ -500,7 +478,7 @@ describe('PatternRecognitionGroup', () => {
           { inputState:[2], actionState: [4], driveState: [6] },
           { inputState: [3], actionState: [5], driveState: [7] }
         ],
-        [[2, 3], [4, 5], [6, 7]]
+        [[4, 5]]
       ).then((result) => {
         expect(result.length).to.equal(2);
         expect(_.every(result)).to.equal(true);
@@ -519,7 +497,7 @@ describe('PatternRecognitionGroup', () => {
           { inputState:[2], actionState: [4], driveState: [6] },
           { inputState: [3], actionState: [5], driveState: [7] }
         ],
-        [[2, 3], [4, 5], [6, 7]]
+        [[4, 5]]
       ).then(() => {
         patternRecognitionGroup.deletePatternRecognizer('pattern_2_4_6').then(() => {
           // verify pattern is removed from global points table
@@ -539,7 +517,7 @@ describe('PatternRecognitionGroup', () => {
           { inputState:[2], actionState: [4], driveState: [6] },
           { inputState: [3], actionState: [5], driveState: [7] }
         ],
-        [[2, 3], [4, 5], [6, 7]]
+        [[4, 5]]
       ).then(() => {
         patternRecognitionGroup.deletePatternRecognizer('pattern_2_4_6').then(() => {
           // verify pattern's actions table is removed
@@ -559,14 +537,14 @@ describe('PatternRecognitionGroup', () => {
           { inputState:[2], actionState: [4], driveState: [6] },
           { inputState: [3], actionState: [5], driveState: [7] }
         ],
-        [[2, 3], [4, 5], [6, 7]]
+        [[4, 5]]
       ).then(() => {
         patternRecognitionGroup.deletePatternRecognizer('pattern_2_4_6').then(() => {
           // verify pattern is removed from other action's tables
-          return knex.select().table('pattern_3_5_7').where('next_action', '2_4_6');
+          return knex.select().table('pattern_3_5_7').where('next_action', '4');
         }).then((result) => {
           expect(result.length).to.equal(0);
-          return knex.select().table('pattern_3_5_7').where('next_action', '3_5_7');
+          return knex.select().table('pattern_3_5_7').where('next_action', '5');
         }).then((result) => {
           expect(result.length).to.equal(1);
           done();

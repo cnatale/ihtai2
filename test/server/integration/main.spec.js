@@ -30,14 +30,12 @@ describe('main', () => {
             { inputState: [20], actionState: [20], driveState: [20] }          
           ],
           possibleDataValues: [
-            [0, 5, 10, 15, 20], 
-            [0, 5, 10, 15, 20],
             [0, 5, 10, 15, 20]
           ]
         })
         .expect(200)
         .end(function(err, res) {
-          if (err) throw err;
+          if (err) { throw err; }
 
           // expect(res.text).to.equal('PATTERN RECOGNITION GROUP INITIALIZED');
           expect(res.text).to.equal('[true,true,true,true]');
@@ -53,7 +51,7 @@ describe('main', () => {
         .send({ inputState:[4], actionState: [6], driveState: [6] })
         .expect(200)
         .end(function(err, res) {
-          if (err) throw err;
+          if (err) { throw err; }
 
           expect(res.text).to.equal('pattern_5_5_5');
           done();
@@ -65,10 +63,10 @@ describe('main', () => {
     it('add a timeStep to sliding window', (done) => {
       request(app)
         .put('/addTimeStep')
-        .send({ stateKey: '5_5_5', score: 1 })
+        .send({ actionKey: '5', stateKey: '5_5_5', score: 1 })
         .expect(200)
         .then((res) => {
-          expect(res.text).to.equal('[{"stateKey":"5_5_5","score":1}]');
+          expect(res.text).to.equal('[{"actionKey":"5","stateKey":"5_5_5","score":1}]');
           done();
         });
     });
@@ -79,7 +77,7 @@ describe('main', () => {
     it('returns 500 until sliding window is full', (done) => {
       request(app)
         .put('/addTimeStep')
-        .send({ stateKey: '10_10_10', score: 2 })
+        .send({ actionKey: '10', stateKey: '10_10_10', score: 2 })
         .expect(200)
         .then(() => {
           request(app).get('/updateScore')
@@ -91,19 +89,19 @@ describe('main', () => {
     it('returns 200 once sliding window is full', (done) => {
       request(app)
         .put('/addTimeStep')
-        .send({ stateKey: '10_10_10', score: 2 })
+        .send({ actionKey: '10', stateKey: '10_10_10', score: 2 })
         .expect(200)
         .then(() => request(app).put('/addTimeStep')
-          .send({ stateKey: '10_10_10', score: 2 })
+          .send({ actionKey: '10', stateKey: '10_10_10', score: 2 })
           .expect(200))
         .then(() => request(app).put('/addTimeStep')
-          .send({ stateKey: '10_10_10', score: 2 })
+          .send({ actionKey: '10', stateKey: '10_10_10', score: 2 })
           .expect(200))
         .then(() => request(app).put('/addTimeStep')
-          .send({ stateKey: '10_10_10', score: 2 })
+          .send({ actionKey: '10', stateKey: '10_10_10', score: 2 })
           .expect(200))
         .then(() => request(app).put('/addTimeStep')
-          .send({ stateKey: '10_10_10', score: 2 })
+          .send({ actionKey: '10', stateKey: '10_10_10', score: 2 })
           .expect(200))
         .then(() => request(app).get('/updateScore')
           .expect(200))

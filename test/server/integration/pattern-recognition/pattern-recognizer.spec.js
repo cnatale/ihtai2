@@ -420,18 +420,18 @@ describe('patternRecognizer', () => {
         driveState: [12]        
       });
 
-      patternRecognizer.initializeTables([[0, 1], [2, 3], [4, 5]]).then(() =>
+      patternRecognizer.initializeTables([[2, 3]]).then(() =>
       patternRecognizerCopy.addPatternToExistingActionsTables(
         [patternRecognizer.patternToString()],
-        patternRecognizer.patternToString().split('pattern_')[1]
+        patternRecognizer.actionPatternToString()
       )).then((results) => {
         expect(results[0][0].affectedRows).to.equal(1);
         // get the entire original patternRecognizer actions table
         return Promise.all([
           knex.select('next_action', 'score').table(patternRecognizer.patternToString()).where(
-          'next_action', '1_2_4'),
+          'next_action', '2'),
           knex.select('next_action', 'score').table(patternRecognizer.patternToString()).where(
-          'next_action', '10_11_12'),
+          'next_action', '11'),
         ]);
       }).then((result) => {
         const originalResult = (_.flatten(result)[0]);
@@ -439,8 +439,8 @@ describe('patternRecognizer', () => {
 
         // Ensure that the copied row has an identical score to the row it was
         // copied from.
-        expect(originalResult.next_action).to.equal('1_2_4');
-        expect(copyResult.next_action).to.equal('10_11_12');
+        expect(originalResult.next_action).to.equal('2');
+        expect(copyResult.next_action).to.equal('11');
         expect(originalResult.score).to.equal(copyResult.score);
         done();
       });

@@ -15,15 +15,15 @@ class SlidingWindow {
   }
 
   /**
-    Adds an action taken to sliding window, alond with its drive score.
+    Adds an action taken and entire instance state to sliding window, along with its drive score.
     Note that this assumes client is keeping track of the string representing
     current Ihtai state that is the starting point for this action
     @param stateKey {string} string representing the agent state at this moment
     @param driveScore {number} the drive score average of all drives the moment after action
            in actionTakenKey occurred.
   */
-  addTimeStep(stateKey, driveScore) {
-    this.timeSteps.push(new TimeStep(stateKey, driveScore));
+  addTimeStep(actionKey, stateKey, driveScore) {
+    this.timeSteps.push(new TimeStep(actionKey, stateKey, driveScore));
 
     if ( this.timeSteps.length > this.numberOfTimeSteps ) {
       this.timeSteps.shift();

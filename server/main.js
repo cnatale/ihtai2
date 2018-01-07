@@ -91,7 +91,7 @@ app.put('/addTimeStep', function (req, res) {
   log.info('req.body');
 
   res.status(200).send(
-    slidingWindow.addTimeStep(req.body.stateKey, req.body.score)
+    slidingWindow.addTimeStep(req.body.actionKey, req.body.stateKey, req.body.score)
   );
 });
 
@@ -118,7 +118,7 @@ app.get('/updateScore', function (req, res) {
   // ex. nextMove string: '1_3_5_2'. Similar to patternRecognizer key format, but
   // no starting 'pattern_'
   patternRecognizer.updateNextMoveScore(
-    slidingWindow.getTailHead().stateKey,
+    slidingWindow.getTailHead().actionKey,
     avgScoreOverTimeSeries
   ).then(() => {
     res.status(200).json({
