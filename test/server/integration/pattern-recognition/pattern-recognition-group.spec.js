@@ -297,6 +297,52 @@ describe('PatternRecognitionGroup', () => {
       });
     });
 
+    it('should return a rejected promise if the new point is already a patternRecognizer', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] },
+          { inputState: [10], actionState: [10], driveState: [10] },
+          { inputState:[0], actionState: [15], driveState: [0] },
+          { inputState: [20], actionState: [20], driveState: [20] }
+        ],
+        [
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => patternRecognitionGroup.splitPatternRecognizer(
+        'pattern_5_5_5', { inputState:[10], actionState: [10], driveState: [10] })
+      ).then(() => {
+        expect(false).to.equal(true);
+        done();
+      }, (message) => {
+        expect(message).to.be.an('error');
+        done();
+      });
+    });
+
+    it('should return a rejected promise if the new point does not follow correct format', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] },
+          { inputState: [10], actionState: [10], driveState: [10] },
+          { inputState:[0], actionState: [15], driveState: [0] },
+          { inputState: [20], actionState: [20], driveState: [20] }
+        ],
+        [
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => patternRecognitionGroup.splitPatternRecognizer(
+        'pattern_5_5_5', { })
+      ).then(() => {
+        expect(false).to.equal(true);
+        done();
+      }, (message) => {
+        expect(message).to.be.an('error');
+        done();
+      });
+    });
+
     it(`should add a patternRecognizer for new pattern to patternRecognitionGroup's patternRecognizers
         in-memory Object`, (done) => {
       const patternRecognitionGroup = new PatternRecognitionGroup();

@@ -27,7 +27,7 @@ describe('main', () => {
             { inputState:[5], actionState: [5], driveState: [5] },
             { inputState: [10], actionState: [10], driveState: [10] },
             { inputState:[0], actionState: [15], driveState: [0] },
-            { inputState: [20], actionState: [20], driveState: [20] }          
+            { inputState: [20], actionState: [20], driveState: [20] }
           ],
           possibleDataValues: [
             [0, 5, 10, 15, 20]
@@ -130,9 +130,44 @@ describe('main', () => {
     // equation: updates/min = (update_count) / (currentTime - update_count_last_reset) 
   });
 
-  describe('/patternRecognizer/split', () => {
-    it('should return true if the split was successful', () => {
-      // TODO: call patternRecognitionGroup.splitPatternRecognizer()
+  describe('/splitPatternRecognizer', () => {
+    it('should return true if the split was successful', (done) => {
+      request(app)
+        .post('/splitPatternRecognizer')
+        .send({
+          originalPatternRecognizerString: 'pattern_5_5_5',
+          newPoint: { inputState: [6], actionState: [6], driveState: [6] }
+        })
+        .expect(200)
+        .then(() => {
+          done();
+        });
+    });
+
+    it('should return 500 if newPoint format is incorrect', (done) => {
+      request(app)
+        .post('/splitPatternRecognizer')
+        .send({
+          originalPatternRecognizerString: 'pattern_5_5_5',
+          newPoint: {}
+        })
+        .expect(500)
+        .then(() => {
+          done();
+        });
+    });
+
+    it('should return 500 if split pattern is already a patternRecognizer', (done) => {
+      request(app)
+        .post('/splitPatternRecognizer')
+        .send({
+          originalPatternRecognizerString: 'pattern_5_5_5',
+          newPoint: { inputState: [20], actionState: [20], driveState: [20] }
+        })
+        .expect(500)
+        .then(() => {
+          done();
+        });
     });
   });
 

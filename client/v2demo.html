@@ -20,7 +20,7 @@
 <body>
 <script type="text/javascript">
 
-var secretNumber = 2;
+var secretNumber = 1;
 var currentIhtaiNumber = 0;
 var currentActionState = 1; // 0 = move left, 1 = don't move, 2 = move right
 var counter = 0; // used to control number of api call cycles for test purposes
@@ -33,15 +33,63 @@ for (var i = 0; i <= 10; i++) {
 
 var startingData = JSON.stringify({
     startingData: [
-      { inputState:[secretNumber], actionState: [0], driveState: [0] },
-      { inputState: [secretNumber], actionState: [0], driveState: [1] },
-      { inputState:[secretNumber], actionState: [0], driveState: [2] },
-      { inputState:[secretNumber], actionState: [1], driveState: [0] },
-      { inputState: [secretNumber], actionState: [1], driveState: [1] },
-      { inputState:[secretNumber], actionState: [1], driveState: [2] },
-      { inputState:[secretNumber], actionState: [2], driveState: [0] },
-      { inputState: [secretNumber], actionState: [2], driveState: [1] },
-      { inputState:[secretNumber], actionState: [2], driveState: [2] }
+      { inputState:[0], actionState: [0], driveState: [0] },
+      { inputState: [0], actionState: [0], driveState: [1] },
+      { inputState:[0], actionState: [0], driveState: [2] },
+      { inputState:[0], actionState: [0], driveState: [3] },
+      { inputState: [0], actionState: [0], driveState: [4] },
+      { inputState:[0], actionState: [0], driveState: [5] },
+      { inputState:[1], actionState: [0], driveState: [0] },
+      { inputState: [1], actionState: [0], driveState: [1] },
+      { inputState:[1], actionState: [0], driveState: [2] },
+      { inputState:[1], actionState: [0], driveState: [3] },
+      { inputState: [1], actionState: [0], driveState: [4] },
+      { inputState:[1], actionState: [0], driveState: [5] },
+      { inputState:[2], actionState: [0], driveState: [0] },
+      { inputState: [2], actionState: [0], driveState: [1] },
+      { inputState:[2], actionState: [0], driveState: [2] },
+      { inputState:[2], actionState: [0], driveState: [3] },
+      { inputState: [2], actionState: [0], driveState: [4] },
+      { inputState:[2], actionState: [0], driveState: [5] },
+
+      { inputState:[0], actionState: [1], driveState: [0] },
+      { inputState: [0], actionState: [1], driveState: [1] },
+      { inputState:[0], actionState: [1], driveState: [2] },
+      { inputState:[0], actionState: [1], driveState: [3] },
+      { inputState: [0], actionState: [1], driveState: [4] },
+      { inputState:[0], actionState: [1], driveState: [5] },
+      { inputState:[1], actionState: [1], driveState: [0] },
+      { inputState: [1], actionState: [1], driveState: [1] },
+      { inputState:[1], actionState: [1], driveState: [2] },
+      { inputState:[1], actionState: [1], driveState: [3] },
+      { inputState: [1], actionState: [1], driveState: [4] },
+      { inputState:[1], actionState: [1], driveState: [5] },
+      { inputState:[1], actionState: [1], driveState: [0] },
+      { inputState: [2], actionState: [1], driveState: [1] },
+      { inputState:[2], actionState: [1], driveState: [2] },
+      { inputState:[2], actionState: [1], driveState: [3] },
+      { inputState: [2], actionState: [1], driveState: [4] },
+      { inputState:[2], actionState: [1], driveState: [5] },
+
+      { inputState:[0], actionState: [2], driveState: [0] },
+      { inputState: [0], actionState: [2], driveState: [1] },
+      { inputState:[0], actionState: [2], driveState: [2] },
+      { inputState:[0], actionState: [2], driveState: [3] },
+      { inputState: [0], actionState: [2], driveState: [4] },
+      { inputState:[0], actionState: [2], driveState: [5] },
+      { inputState:[1], actionState: [2], driveState: [0] },
+      { inputState: [1], actionState: [2], driveState: [1] },
+      { inputState:[1], actionState: [2], driveState: [2] },
+      { inputState:[1], actionState: [2], driveState: [3] },
+      { inputState: [1], actionState: [2], driveState: [4] },
+      { inputState:[1], actionState: [2], driveState: [5] },
+      { inputState:[1], actionState: [2], driveState: [0] },
+      { inputState: [2], actionState: [2], driveState: [1] },
+      { inputState:[2], actionState: [2], driveState: [2] },
+      { inputState:[2], actionState: [2], driveState: [3] },
+      { inputState: [2], actionState: [2], driveState: [4] },
+      { inputState:[2], actionState: [2], driveState: [5] },
+
     ],
     possibleDataValues: [
       [0, 1, 2]
@@ -67,7 +115,7 @@ fetch('http://localhost:3800/initialize', {
     body: startingData
 }).then((response) => {
     return getNearestPatternRecognizer({
-      inputState: [secretNumber],
+      inputState: [currentIhtaiNumber],
       actionState: [currentActionState],
       driveState: [getDriveScore(secretNumber, currentIhtaiNumber)]
     });
@@ -201,7 +249,7 @@ function splitPatternRecognizer(originalPatternRecognizerString, newPoint) {
 
 
 function checkNumber (suggestedAction) {
-  console.log('suggestedAction: ' + suggestedAction);
+  console.log('suggestedAction acted upon: ' + suggestedAction);
   // change currentIhtaiNumber based on suggested action
   if (suggestedAction === 0 && currentIhtaiNumber > 0) {
     currentIhtaiNumber--;
@@ -213,7 +261,7 @@ function checkNumber (suggestedAction) {
 
 
   var ihtaiState = {
-      inputState: [secretNumber],
+      inputState: [currentIhtaiNumber],
       actionState: [suggestedAction],
       driveState: [getDriveScore(secretNumber, currentIhtaiNumber)]
   };

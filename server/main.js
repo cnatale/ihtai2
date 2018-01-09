@@ -156,6 +156,8 @@ app.post('/splitPatternRecognizer', function(req, res) {
   patternRecognitionGroup.splitPatternRecognizer(
     req.body.originalPatternRecognizerString, req.body.newPoint).then((result) => {
       res.status(200).send(result);
+    }, (message) => {
+      res.status(500).send(message);
     });
 });
 

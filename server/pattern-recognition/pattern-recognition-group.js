@@ -238,10 +238,15 @@ class PatternRecognitionGroup {
   splitPatternRecognizer (originalPatternRecognizerString, newPoint) {
     const schemaValidator = nDimensionalPointSchema.validate(newPoint);
     if (schemaValidator.error !== null) {
-      throw schemaValidator;
+      return Promise.reject(new Error('splitPatternRecognizer: incorrect format for newPoint!'));
     }
 
     const newPatternRecognizer = new PatternRecognizer(newPoint);
+
+    if (typeof this.patternRecognizers[newPatternRecognizer.patternToString()] !== 'undefined') {
+      return Promise.reject(new Error('splitPatternRecognizer: split point is already a PatternRecognizer!'));
+    }
+
     return Promise.all([
       this.patternRecognizers[originalPatternRecognizerString].resetUpdateCount(),
       newPatternRecognizer.copyActionsTable(originalPatternRecognizerString),
