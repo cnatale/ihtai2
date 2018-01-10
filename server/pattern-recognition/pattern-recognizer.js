@@ -56,6 +56,9 @@ class PatternRecognizer {
     @returns {array} an array containing the raw mysql response
   */
   copyActionsTable(originalPatternRecognizerString) {
+    // TODO: issue #16: add check so that a new row isn't created if
+    // the action row already exists in the table
+
     // create table using same schema as original pattern recognizer's table
     return knex.raw(`CREATE TABLE IF NOT EXISTS \`${this.patternToString()}\` LIKE \`${originalPatternRecognizerString}\``).then(() => knex.raw(`
       INSERT INTO \`${this.patternToString()}\` (next_action, score)
@@ -75,6 +78,9 @@ class PatternRecognizer {
     @returns {array} a promise which is fulfilled when all inserts are complete;
   */
   addPatternToExistingActionsTables(originalPatternRecognizerStrings, patternToSplitFrom) {
+    // TODO: issue #16: add check so that a new row isn't created if
+    // the action row already exists in the table
+
     return Promise.all(originalPatternRecognizerStrings.map((originalPatternRecognizerString) =>
     knex.raw(`INSERT INTO \`${originalPatternRecognizerString}\` (next_action, score)
       SELECT '${this.actionPatternToString()}', score
@@ -196,6 +202,8 @@ class PatternRecognizer {
           table.double(`point_index_${index}`);
         } else { table.string(`point_index_${index}`); }
       });
+      table.integer('first_action_index');
+      table.integer('first_drive_index');
     }).then(() => {
       return Promise.resolve(true);
     }, (message) => {
@@ -217,6 +225,9 @@ class PatternRecognizer {
     this.getPatternAsSingleArray().map((signal, index) => {
       contentToInsert[`point_index_${index}`] = signal;
     });
+
+    contentToInsert.first_action_index = this.pattern.inputState.length;
+    contentToInsert.first_drive_index = this.pattern.inputState.length + this.pattern.actionState.length;
 
     return new Promise((resolve, reject) => {
       this.createPointsTableIfNoneExists().then(() => {
@@ -271,8 +282,6 @@ class PatternRecognizer {
   getUpdatesPerMinute() {
     const globalPointsTableName = config.get('db').globalPointsTableName;
     const patternString = this.patternToString();
-
-
 
     return new Promise((resolve, reject) => {
       knex.select('update_count', 'update_count_last_reset')
