@@ -141,6 +141,8 @@ describe('patternRecognizer', () => {
         expect(results[0].point_index_4).to.be.a('number').and.equal(5);
         expect(results[0].point_index_5).to.be.a('number').and.equal(6);
         expect(results[0].update_count).to.be.a('number').and.equal(0);
+        expect(results[0].first_action_index).to.be.a('number').and.equal(2);
+        expect(results[0].first_drive_index).to.be.a('number').and.equal(4);
         done();
       });
     });

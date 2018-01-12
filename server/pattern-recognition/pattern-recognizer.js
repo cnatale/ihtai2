@@ -56,11 +56,10 @@ class PatternRecognizer {
     @returns {array} an array containing the raw mysql response
   */
   copyActionsTable(originalPatternRecognizerString) {
-    // TODO: issue #16: add check so that a new row isn't created if
-    // the action row already exists in the table
-
     // create table using same schema as original pattern recognizer's table
-    return knex.raw(`CREATE TABLE IF NOT EXISTS \`${this.patternToString()}\` LIKE \`${originalPatternRecognizerString}\``).then(() => knex.raw(`
+    return knex.raw(`CREATE TABLE IF NOT EXISTS
+      \`${this.patternToString()}\` LIKE \`${originalPatternRecognizerString}\``
+      ).then(() => knex.raw(`
       INSERT INTO \`${this.patternToString()}\` (next_action, score)
       SELECT next_action, score FROM \`${originalPatternRecognizerString}\``));
   }
@@ -77,15 +76,18 @@ class PatternRecognizer {
 
     @returns {array} a promise which is fulfilled when all inserts are complete;
   */
-  addPatternToExistingActionsTables(originalPatternRecognizerStrings, patternToSplitFrom) {
+  addPatternToExistingActionsTables(originalPatternRecognizerStrings, actionPatternToSplitFrom) {
     // TODO: issue #16: add check so that a new row isn't created if
     // the action row already exists in the table
 
-    return Promise.all(originalPatternRecognizerStrings.map((originalPatternRecognizerString) =>
-    knex.raw(`INSERT INTO \`${originalPatternRecognizerString}\` (next_action, score)
-      SELECT '${this.actionPatternToString()}', score
-      FROM \`${originalPatternRecognizerString}\`
-      WHERE  next_action = '${patternToSplitFrom}'`)));
+    return Promise.all(
+      originalPatternRecognizerStrings.map((originalPatternRecognizerString) => 
+        knex.raw(`INSERT INTO \`${originalPatternRecognizerString}\` (next_action, score)
+          SELECT '${this.actionPatternToString()}', score
+          FROM \`${originalPatternRecognizerString}\`
+          WHERE next_action = '${actionPatternToSplitFrom}'
+          AND next_action <> '${this.actionPatternToString()}'`))
+    );
   }
 
   removePatternFromExistingActionsTables(originalPatternRecognizerStrings, patternToRemove) {

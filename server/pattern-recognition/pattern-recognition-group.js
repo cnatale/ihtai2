@@ -24,6 +24,11 @@ class PatternRecognitionGroup {
       used for creating child PatternRecognizers. If you don't want to initialize
       with points, pass an empty array.
 
+      TODO: add logic that does a query for all rows in global points table, and also
+        generates PatternRecognizers based on the results. Will need to add three extra
+        rows to global_points_table that hold the index for first input, index for first action, and
+        input for first drive.
+
       Length = inputState.length + actionState.length + driveState.length
       Ex: [{inputState: [-1], actionState: [a], driveState: [x]},
            {inputState: [0], actionState: [b], driveState: [y]},
@@ -250,16 +255,15 @@ class PatternRecognitionGroup {
     return Promise.all([
       this.patternRecognizers[originalPatternRecognizerString].resetUpdateCount(),
       newPatternRecognizer.copyActionsTable(originalPatternRecognizerString),
-      newPatternRecognizer.addPointToPointsTable(),
+      newPatternRecognizer.addPointToPointsTable()
+    ]).then(() =>
+      this.patternRecognizers[newPatternRecognizer.patternToString()] = newPatternRecognizer
+    ).then(() =>
       newPatternRecognizer.addPatternToExistingActionsTables(
         _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
-        // Get the next_action string, which is the pattern name without `pattern_` at the beginning.
         this.patternRecognizers[originalPatternRecognizerString].actionPatternToString()
       )
-    ]).then(() => {
-      this.patternRecognizers[newPatternRecognizer.patternToString()] = newPatternRecognizer;
-      return newPatternRecognizer;
-    });
+    ).then(() => newPatternRecognizer);
   }
 
   // TODO #6: possible dynamic dimensionality reduction algorithm:
