@@ -57,11 +57,12 @@ class PatternRecognizer {
   */
   copyActionsTable(originalPatternRecognizerString) {
     // create table using same schema as original pattern recognizer's table
-    return knex.raw(`CREATE TABLE IF NOT EXISTS
-      \`${this.patternToString()}\` LIKE \`${originalPatternRecognizerString}\``
-      ).then(() => knex.raw(`
-      INSERT INTO \`${this.patternToString()}\` (next_action, score)
-      SELECT next_action, score FROM \`${originalPatternRecognizerString}\``));
+    return knex.raw(
+      `CREATE TABLE IF NOT EXISTS
+      \`${this.patternToString()}\` LIKE \`${originalPatternRecognizerString}\``)
+      .then(() =>
+      knex.raw(`INSERT INTO \`${this.patternToString()}\` (next_action, score)
+        SELECT next_action, score FROM \`${originalPatternRecognizerString}\``));
   }
 
   /*
@@ -77,16 +78,16 @@ class PatternRecognizer {
     @returns {array} a promise which is fulfilled when all inserts are complete;
   */
   addPatternToExistingActionsTables(originalPatternRecognizerStrings, actionPatternToSplitFrom) {
-    // TODO: issue #16: add check so that a new row isn't created if
-    // the action row already exists in the table
-
     return Promise.all(
       originalPatternRecognizerStrings.map((originalPatternRecognizerString) => 
-        knex.raw(`INSERT INTO \`${originalPatternRecognizerString}\` (next_action, score)
+        knex.raw(`INSERT IGNORE INTO \`${originalPatternRecognizerString}\` (next_action, score)
           SELECT '${this.actionPatternToString()}', score
           FROM \`${originalPatternRecognizerString}\`
           WHERE next_action = '${actionPatternToSplitFrom}'
           AND next_action <> '${this.actionPatternToString()}'`))
+    ).then(
+      (result) => result,
+      (message) => message
     );
   }
 
@@ -297,8 +298,8 @@ class PatternRecognizer {
 
           const timeDelta = currentTime.diff(updateCountLastReset, 'minutes');
 
-          const updatesPerMinute = timeDelta > 0 ? results[0].update_count / timeDelta : 0;
-          // const updatesPerMinute = results[0].update_count;
+          //const updatesPerMinute = timeDelta > 0 ? results[0].update_count / timeDelta : 0;
+          const updatesPerMinute = results[0].update_count;
 
           resolve(updatesPerMinute);
         }, (message) => {
@@ -330,8 +331,8 @@ class PatternRecognizer {
           // Update row with weighted average of current score and new score value.
           // Right now hardcoding new score to be weighted at 10% of current score
           // for updated value.
-          const updatedScore = (results[0].score * 9 + score) / 10;
-          // const updatedScore = (results[0].score + score) / 2;
+          //const updatedScore = (results[0].score * 9 + score) / 10;
+          const updatedScore = (results[0].score + score) / 2;
           knex(patternString)
             .where('next_action', nextActionKey)
             .update('score', updatedScore)

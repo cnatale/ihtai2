@@ -2,6 +2,7 @@ const PatternRecognitionGroup = require('../../../../server/pattern-recognition/
 const PatternRecognizer = require('../../../../server/pattern-recognition/pattern-recognizer');
 const chai = require('chai');
 const expect = chai.expect;
+const assert = chai.assert;
 const chaiAsPromised = require('chai-as-promised');
 const knex = require('../../../../server/db/knex');
 const dbUtil = require('../../../../server/db/util');
@@ -39,6 +40,25 @@ describe('PatternRecognitionGroup', () => {
       });
     });
 
+    it('should not create multiple of the same action rows in the same actions table', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[0], actionState: [2], driveState: [4] },
+          { inputState: [0], actionState: [2], driveState: [4] },
+          { inputState: [0], actionState: [2], driveState: [4] }
+        ],
+        [[2, 3]]
+      ).then((result) => {
+        expect(result.length).to.equal(3);
+        expect(result).to.deep.equal([true, false, false]);
+        done();
+      }, (message) => {
+        expect(message).to.equal(true);
+        done();
+      });
+    });
+
     it('should initialize patternRecognitionGroup and create patternRecognizers', (done) => {
       const patternRecognitionGroup = new PatternRecognitionGroup();
       patternRecognitionGroup.initialize(
@@ -67,6 +87,37 @@ describe('PatternRecognitionGroup', () => {
           expect(results[0].point_index_2).to.be.a('number').and.equal(5);
           done();
         });
+      });
+    });
+
+    describe('initializeFromDb()', () => {
+      it('should create patternRecognizers for all patterns in global points table', (done) => {
+        const patternRecognitionGroup = new PatternRecognitionGroup();
+        const patternRecognitionGroup2 = new PatternRecognitionGroup();
+        patternRecognitionGroup.initialize(
+          [
+            { inputState:[0], actionState: [2], driveState: [4] },
+            { inputState: [1], actionState: [3], driveState: [5] }
+          ],
+          [[2, 3]]
+        ).then((results) => {
+          expect(results.length).to.equal(2);
+          expect(_.every(results)).to.equal(true);
+          done();
+        }).then(() => {
+          patternRecognitionGroup2.initializeFromDb([2, 3])
+            .then((results) => {
+              expect(results.length).to.equal(2); 
+              // TODO: better error handling for initializeFromDb().
+              // right now, individual results return false if table creation
+              // fails, which it always will with patterns initialized from db
+              expect(_.every(results)).to.equal(false);
+              done();           
+            });
+        });
+
+
+
       });
     });
   });
@@ -273,6 +324,58 @@ describe('PatternRecognitionGroup', () => {
           throw (err);
         });
       });
+    });
+  });
+
+  describe('doesActionsPatternExist()', () => {
+    it('should return true if action pattern exists in patternRecognizers list', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] },
+          { inputState: [10], actionState: [10], driveState: [10] },
+          { inputState:[0], actionState: [15], driveState: [0] },
+          { inputState: [20], actionState: [20], driveState: [20] }
+        ],
+        [
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => {
+        const patternString = PatternRecognizer.patternToString(
+          { inputState:[5], actionState: [5], driveState: [5] } 
+        );
+
+        patternRecognitionGroup.doesActionsPatternExist('5', patternString)
+        .then((result) => {
+          expect(result).to.equal(true);
+          done();
+        });
+      });
+    });
+
+    it('should return false if action pattern does not exist in patternRecognizers list', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] },
+          { inputState: [10], actionState: [10], driveState: [10] },
+          { inputState:[0], actionState: [15], driveState: [0] },
+          { inputState: [20], actionState: [20], driveState: [20] }
+        ],
+        [
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => {
+        const patternString = PatternRecognizer.patternToString(
+          { inputState:[5], actionState: [5], driveState: [5] } 
+        );
+
+        patternRecognitionGroup.doesActionsPatternExist('6', patternString)
+        .then((result) => {
+          expect(result).to.equal(false);
+          done();
+        });
+      });    
     });
   });
 

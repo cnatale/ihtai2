@@ -6,7 +6,7 @@ const TimeStep = require('./time-step');
 
 class SlidingWindow {
   constructor(numberOfTimeSteps) {
-    this.numberOfTimeSteps = numberOfTimeSteps || 5;
+    this.numberOfTimeSteps = numberOfTimeSteps || 2;
     this.timeSteps = [];
   }
 
@@ -40,9 +40,9 @@ class SlidingWindow {
     return this.timeSteps.reduce((acc, timeStep, index, timeSteps) => {
       // skip the first index because we only want to account for
       // actions influenced by the action taken by tailHead state
-      return index === 0 ?
-        acc :
-        acc + (timeStep.score / (timeSteps.length - 1));
+      // return index === 0 ?
+      //   acc :
+      return  acc + (timeStep.score / (timeSteps.length - 1));
     }, 0);
   }
 

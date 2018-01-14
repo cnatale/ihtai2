@@ -70,31 +70,94 @@ class PatternRecognitionGroup {
       return Promise.resolve([]);
     }
 
+    // add all patternRecognizers in nDimensionalPoints list
     return Promise.all(nDimensionalPoints.map((nDimensionalPoint) => {
       return this.addPatternRecognizer(nDimensionalPoint);
     }));
+  }
+
+  /** 
+    Add rows from global points table to this group's patternRecognizers list.
+
+    @param possibleActionValues {array} an array where each index is an array of all possible
+      values for the respective action component signal.
+      Ex: [[-1, 0, 1], [a, b, c], [x, y, z]]
+      Length of outer array must equal number of dimensions of n-dimensional points
+
+    @returns {array} An array of booleans expressing if pattern was added to patternRecognizers list.
+   */
+  initializeFromDb(possibleActionValues) {
+    // defining schema here so it can base element length on n-dimensional points dimensionality
+    const possibleActionValuesSchema =
+      Joi.array().items(
+        Joi.array().items(
+          Joi.number()
+        )
+      );
+
+    const actionValuesSchemaValidation = possibleActionValuesSchema.validate(possibleActionValues);
+    if (actionValuesSchemaValidation.error !== null) {
+      throw actionValuesSchemaValidation;
+    }
+
+    this.possibleActionValues = possibleActionValues;
+
+    const globalPointsTableName = config.get('db').globalPointsTableName;
+    return knex(globalPointsTableName)
+      .select('point', 'first_action_index', 'first_drive_index')
+      .then((results) => {
+        // turn results into an array of nDimensionalPoints
+        return results.map((result) => {
+          const prefixRemoved = result.point.replace('pattern_', '');
+          const allPoints = prefixRemoved.split('_').map((numberString) => {
+            return parseInt(numberString, 10);
+          });
+
+          // return an nDimensionalPoints object
+          const nDimensionalPoint = {
+            inputState: allPoints.slice(0, result.first_action_index),
+            actionState: allPoints.slice(result.first_action_index, result.first_drive_index),
+            driveState: allPoints.slice(result.first_drive_index)
+          };
+          return nDimensionalPoint;
+        });
+        // return an array of nDimensionalPoints representing existing points
+      })
+      .then((nDimensionalPoints) => {
+        const nDimensionalPointsSchemaValidation = nDimensionalPointsSchema.validate(nDimensionalPoints);
+        if (nDimensionalPointsSchemaValidation.error !== null) {
+          throw nDimensionalPointsSchemaValidation;
+        }
+
+        // add all patternRecognizers in nDimensionalPoints list
+        return Promise.all(nDimensionalPoints.map((nDimensionalPoint) => {
+          return this.addPatternRecognizer(nDimensionalPoint);
+        }));
+      });
   }
 
   /**
     @param nDimensionalPoint {Object} An n-dimensional point described as three
     Object properties, each containing an array of numbers.
 
-    ex: {inputState: [-1], actionState: [a], driveState: [x]}
+    ex: {inputState: [-1, 2], actionState: [a], driveState: [x]}
 
     @returns {Promise} A promise resolving to true or false, depending on if action was successful
   */
-
   addPatternRecognizer (nDimensionalPoint) {
     const schemaValidator = nDimensionalPointSchema.validate(nDimensionalPoint);
     if (schemaValidator.error !== null) {
       return Promise.reject(schemaValidator);
     }
-
     if (!this.possibleActionValues) {
       return Promise.reject(new Error('PatternRecognitionGroup.addPatternRecognizer: possibleActionValues not initialized.'));
     }
 
-    const nDimensionalPointString = PatternRecognizer.patternToString(nDimensionalPoint);
+    const nDimensionalPointString = PatternRecognizer.patternToString(nDimensionalPoint); 
+    if (this.patternRecognizers[nDimensionalPointString]) {
+      return Promise.resolve(false);
+    }
+
     const patternRecognizer = new PatternRecognizer(nDimensionalPoint);
     this.patternRecognizers[nDimensionalPointString] = patternRecognizer;
 
@@ -256,14 +319,33 @@ class PatternRecognitionGroup {
       this.patternRecognizers[originalPatternRecognizerString].resetUpdateCount(),
       newPatternRecognizer.copyActionsTable(originalPatternRecognizerString),
       newPatternRecognizer.addPointToPointsTable()
-    ]).then(() =>
-      this.patternRecognizers[newPatternRecognizer.patternToString()] = newPatternRecognizer
-    ).then(() =>
-      newPatternRecognizer.addPatternToExistingActionsTables(
+    ]).then(() => {
+      this.patternRecognizers[newPatternRecognizer.patternToString()] = newPatternRecognizer;
+
+      return this.doesActionsPatternExist(
+        newPatternRecognizer.actionPatternToString(),
+        originalPatternRecognizerString
+      );
+    }).then((isActionPatternAlreadyInTables) => {
+      // BUG FIX TODO: add check here to not addPatternToExistingActionsTables
+      // when the new pattern's actions pattern matches any existing actions pattern.
+      // maybe do it before adding the new pattern to this.patternRecognizers
+
+      // if (action pattern does not already exist in patternRecognizers list)
+      if (isActionPatternAlreadyInTables) { return true; }
+
+      return newPatternRecognizer.addPatternToExistingActionsTables(
         _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
         this.patternRecognizers[originalPatternRecognizerString].actionPatternToString()
-      )
-    ).then(() => newPatternRecognizer);
+      );
+    }).then(() => newPatternRecognizer);
+  }
+
+  doesActionsPatternExist(patternRecognizerActionString, patternTableName) {
+    return knex.select('next_action')
+      .from(patternTableName)
+      .where('next_action', patternRecognizerActionString)
+      .then((results) => { return results.length ? true : false; });
   }
 
   // TODO #6: possible dynamic dimensionality reduction algorithm:

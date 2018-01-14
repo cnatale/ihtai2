@@ -25,18 +25,13 @@ var currentIhtaiNumber = 0;
 var currentActionState = 1; // 0 = move left, 1 = don't move, 2 = move right
 var counter = 0; // used to control number of api call cycles for test purposes
 
-var possibleDriveValues = [];
-
-for (var i = 0; i <= 10; i++) {
-   possibleDriveValues.push(i);
-}
-
+const possibleDataValues = [0, 1, 2];
 var startingData = JSON.stringify({
     startingData: [
       { inputState:[0], actionState: [0], driveState: [0] }
     ],
     possibleDataValues: [
-      [0, 1, 2]
+      possibleDataValues
     ]
 });
 
@@ -50,6 +45,17 @@ function clearDb() {
 // clearDb();
 
 //////// START DATA FETCH CHAIN ////////
+
+fetch('http://localhost:3800/initializeFromDb', {
+    method: 'post',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      possibleDataValues: [possibleDataValues]
+    })
+}).then((response) =>
 fetch('http://localhost:3800/initialize', {
     method: 'post',
     headers: {
@@ -57,7 +63,7 @@ fetch('http://localhost:3800/initialize', {
       'Content-Type': 'application/json'
     },
     body: startingData
-}).then((response) => {
+})).then((response) => {
     return getNearestPatternRecognizer({
       inputState: [currentIhtaiNumber],
       actionState: [currentActionState],
@@ -184,7 +190,8 @@ function getUpdatesPerMinute(patternString, bestActionString) {
 
           console.log('updates per minute: ');
           console.log(resultJson);
-          if (resultJson.updatesPerMinute > 50) {
+
+          if (resultJson.updatesPerMinute > 0) {
             shouldSplitPatternRecognizer = true;
           }
 
@@ -211,12 +218,19 @@ function splitPatternRecognizer(nearestPatternString, newPoint, timeStepData) {
         },
         body: data
     }).then((result) => {
-        return addTimeStep(
-          timeStepData.nearestPatternString,
-          timeStepData.secretNumber,
-          timeStepData.currentIhtaiNumber
-        );
-
+      console.log('SPLIT PATTERN RECOGNIZER SUCCESS!')
+      return addTimeStep(
+        timeStepData.nearestPatternString,
+        timeStepData.secretNumber,
+        timeStepData.currentIhtaiNumber
+      );
+    }, () => {
+      console.log('SPLIT PATTERN RECOGNIZER FAILURE')
+      return addTimeStep(
+        timeStepData.nearestPatternString,
+        timeStepData.secretNumber,
+        timeStepData.currentIhtaiNumber
+      );
     });
 }
 
@@ -224,7 +238,7 @@ function splitPatternRecognizer(nearestPatternString, newPoint, timeStepData) {
 
 
 function checkNumber (suggestedAction) {
-  console.log('suggestedAction acted upon: ' + suggestedAction);
+  console.log('suggestedAction to be acted on: ' + suggestedAction);
   // change currentIhtaiNumber based on suggested action
   if (suggestedAction === 0 && currentIhtaiNumber > 0) {
     currentIhtaiNumber--;
@@ -241,10 +255,10 @@ function checkNumber (suggestedAction) {
       driveState: [getDriveScore(secretNumber, currentIhtaiNumber)]
   };
 
-  console.log('current Ihtai Number: ' + currentIhtaiNumber);
-  console.log('current drive score: ');
+  console.log('current Ihtai Number after action (inputState: ' + currentIhtaiNumber);
+  console.log('drive score after action: ');
   console.log(getDriveScore(secretNumber, currentIhtaiNumber));
-  if (counter < 100) {
+  if (counter < 500) {
     counter++;
     return getNearestPatternRecognizer(ihtaiState);
   }

@@ -36,12 +36,33 @@ describe('main', () => {
         .expect(200)
         .end(function(err, res) {
           if (err) { throw err; }
-
-          // expect(res.text).to.equal('PATTERN RECOGNITION GROUP INITIALIZED');
+          console.log('*****initialize*****')
+          console.log(res.text);
           expect(res.text).to.equal('[true,true,true,true]');
           done();
         });
     });
+  });
+
+  describe('/initializeFromDb', () => {
+    it('should instantiate a patternRecognitionGroup and slidingWindow', (done) => {
+      request(app)
+        .post('/initializeFromDb')
+        .send({
+          possibleDataValues: [
+            [0, 5, 10, 15, 20]
+          ]
+        })
+        .expect(200)
+        .end(function(err, res) {
+          if (err) { throw err; }
+          // TODO: better error handling for initializeFromDb().
+          // right now, individual results return false if table creation
+          // fails, which it always will with patterns initialized from db
+          expect(res.text).to.equal('[false,false,false,false]');
+          done();
+        });
+    });    
   });
 
   describe('/nearestPatternRecognizer', () => {

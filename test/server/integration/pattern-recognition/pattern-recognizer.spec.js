@@ -272,7 +272,7 @@ describe('patternRecognizer', () => {
   });
 
   describe('getUpdatesPerMinute', () => {
-    it('should return updates per minute for the pattern recognizer', (done) => {
+    it.skip('should return updates per minute for the pattern recognizer', (done) => {
       const patternRecognizer = new PatternRecognizer({
         inputState: [1],
         actionState: [2],
