@@ -327,11 +327,7 @@ class PatternRecognitionGroup {
         originalPatternRecognizerString
       );
     }).then((isActionPatternAlreadyInTables) => {
-      // BUG FIX TODO: add check here to not addPatternToExistingActionsTables
-      // when the new pattern's actions pattern matches any existing actions pattern.
-      // maybe do it before adding the new pattern to this.patternRecognizers
-
-      // if (action pattern does not already exist in patternRecognizers list)
+      // if action pattern does not already exist in patternRecognizers list
       if (isActionPatternAlreadyInTables) { return true; }
 
       return newPatternRecognizer.addPatternToExistingActionsTables(

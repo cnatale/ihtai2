@@ -115,9 +115,6 @@ describe('PatternRecognitionGroup', () => {
               done();           
             });
         });
-
-
-
       });
     });
   });

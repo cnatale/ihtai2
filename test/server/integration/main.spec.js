@@ -36,8 +36,6 @@ describe('main', () => {
         .expect(200)
         .end(function(err, res) {
           if (err) { throw err; }
-          console.log('*****initialize*****')
-          console.log(res.text);
           expect(res.text).to.equal('[true,true,true,true]');
           done();
         });
