@@ -174,7 +174,7 @@ class PatternRecognizer {
 
     const allPossibleActions = patternRecUtil.cartesianProduct(possibleActions);
     const rowsToInsert = allPossibleActions.map((val) => {
-      const score = Math.random();
+      const score = 0;
       return { next_action: val, score };
     });
 
