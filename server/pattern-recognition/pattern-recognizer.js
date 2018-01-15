@@ -57,9 +57,12 @@ class PatternRecognizer {
   */
   copyActionsTable(originalPatternRecognizerString) {
     // create table using same schema as original pattern recognizer's table
-    return knex.raw(`CREATE TABLE IF NOT EXISTS \`${this.patternToString()}\` LIKE \`${originalPatternRecognizerString}\``).then(() => knex.raw(`
-      INSERT INTO \`${this.patternToString()}\` (next_action, score)
-      SELECT next_action, score FROM \`${originalPatternRecognizerString}\``));
+    return knex.raw(
+      `CREATE TABLE IF NOT EXISTS
+      \`${this.patternToString()}\` LIKE \`${originalPatternRecognizerString}\``)
+      .then(() =>
+      knex.raw(`INSERT INTO \`${this.patternToString()}\` (next_action, score)
+        SELECT next_action, score FROM \`${originalPatternRecognizerString}\``));
   }
 
   /*
@@ -74,12 +77,18 @@ class PatternRecognizer {
 
     @returns {array} a promise which is fulfilled when all inserts are complete;
   */
-  addPatternToExistingActionsTables(originalPatternRecognizerStrings, patternToSplitFrom) {
-    return Promise.all(originalPatternRecognizerStrings.map((originalPatternRecognizerString) =>
-    knex.raw(`INSERT INTO \`${originalPatternRecognizerString}\` (next_action, score)
-      SELECT '${this.actionPatternToString()}', score
-      FROM \`${originalPatternRecognizerString}\`
-      WHERE  next_action = '${patternToSplitFrom}'`)));
+  addPatternToExistingActionsTables(originalPatternRecognizerStrings, actionPatternToSplitFrom) {
+    return Promise.all(
+      originalPatternRecognizerStrings.map((originalPatternRecognizerString) => 
+        knex.raw(`INSERT IGNORE INTO \`${originalPatternRecognizerString}\` (next_action, score)
+          SELECT '${this.actionPatternToString()}', score
+          FROM \`${originalPatternRecognizerString}\`
+          WHERE next_action = '${actionPatternToSplitFrom}'
+          AND next_action <> '${this.actionPatternToString()}'`))
+    ).then(
+      (result) => result,
+      (message) => message
+    );
   }
 
   removePatternFromExistingActionsTables(originalPatternRecognizerStrings, patternToRemove) {
@@ -165,7 +174,7 @@ class PatternRecognizer {
 
     const allPossibleActions = patternRecUtil.cartesianProduct(possibleActions);
     const rowsToInsert = allPossibleActions.map((val) => {
-      const score = Math.random();
+      const score = 0;
       return { next_action: val, score };
     });
 
@@ -196,6 +205,8 @@ class PatternRecognizer {
           table.double(`point_index_${index}`);
         } else { table.string(`point_index_${index}`); }
       });
+      table.integer('first_action_index');
+      table.integer('first_drive_index');
     }).then(() => {
       return Promise.resolve(true);
     }, (message) => {
@@ -217,6 +228,9 @@ class PatternRecognizer {
     this.getPatternAsSingleArray().map((signal, index) => {
       contentToInsert[`point_index_${index}`] = signal;
     });
+
+    contentToInsert.first_action_index = this.pattern.inputState.length;
+    contentToInsert.first_drive_index = this.pattern.inputState.length + this.pattern.actionState.length;
 
     return new Promise((resolve, reject) => {
       this.createPointsTableIfNoneExists().then(() => {
@@ -272,8 +286,6 @@ class PatternRecognizer {
     const globalPointsTableName = config.get('db').globalPointsTableName;
     const patternString = this.patternToString();
 
-
-
     return new Promise((resolve, reject) => {
       knex.select('update_count', 'update_count_last_reset')
         .from(globalPointsTableName)
@@ -286,8 +298,8 @@ class PatternRecognizer {
 
           const timeDelta = currentTime.diff(updateCountLastReset, 'minutes');
 
-          const updatesPerMinute = timeDelta > 0 ? results[0].update_count / timeDelta : 0;
-          // const updatesPerMinute = results[0].update_count;
+          //const updatesPerMinute = timeDelta > 0 ? results[0].update_count / timeDelta : 0;
+          const updatesPerMinute = results[0].update_count;
 
           resolve(updatesPerMinute);
         }, (message) => {

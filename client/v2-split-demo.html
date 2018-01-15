@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ihtai number picking demo</title>
+
+    <style>
+    html,body {
+        margin:0;
+        padding:0;
+        width:100%;
+        height:100%;
+        overflow: hidden;
+    }
+    </style>
+
+    <meta name="description" content="Ihtai 2 demo">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+</head>
+<body>
+<script type="text/javascript">
+
+var secretNumber = 1;
+var currentIhtaiNumber = 0;
+var currentActionState = 1; // 0 = move left, 1 = don't move, 2 = move right
+var counter = 0; // used to control number of api call cycles for test purposes
+
+const possibleDataValues = [0, 1, 2];
+var startingData = JSON.stringify({
+    startingData: [
+      { inputState:[0], actionState: [0], driveState: [0] }
+    ],
+    possibleDataValues: [
+      possibleDataValues
+    ]
+});
+
+// WARNING: WIPES OUT ALL SAVED IHTAI DATA
+function clearDb() {
+    return fetch('http://localhost:3800/db', {
+        method: 'delete'
+    });
+};
+
+// clearDb();
+
+//////// START DATA FETCH CHAIN ////////
+
+fetch('http://localhost:3800/initializeFromDb', {
+    method: 'post',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      possibleDataValues: [possibleDataValues]
+    })
+}).then((response) =>
+fetch('http://localhost:3800/initialize', {
+    method: 'post',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: startingData
+})).then((response) => {
+    return getNearestPatternRecognizer({
+      inputState: [currentIhtaiNumber],
+      actionState: [currentActionState],
+      driveState: [getDriveScore(secretNumber, currentIhtaiNumber)]
+    });
+}, (message) => {
+    console.log('initialize failure: ');
+    console.log(message);
+});
+
+function getNearestPatternRecognizer(ihtaiState) {
+    return fetch('http://localhost:3800/nearestPatternRecognizer', {
+        method: 'post',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(ihtaiState)
+    }).then((response) => response.text()).then(function (nearestPatternString) {
+
+      if (shouldSplitPatternRecognizer) {
+        shouldSplitPatternRecognizer = false;
+        splitPatternRecognizer(
+          nearestPatternString,
+          ihtaiState,
+          {
+            nearestPatternString: nearestPatternString,
+            secretNumber: secretNumber,
+            currentIhtaiNumber: currentIhtaiNumber
+          }
+        );
+      } else {
+        return addTimeStep(
+          nearestPatternString,
+          secretNumber,
+          currentIhtaiNumber
+        );
+      }
+
+    });
+}
+
+function addTimeStep(nearestPatternString, secretNumber, currentIhtaiNumber) {
+    // stateKey must match an existing pattern
+    var data = JSON.stringify({
+        actionKey: nearestPatternString.split('_')[2],
+        stateKey: nearestPatternString.split('pattern_')[1],
+        score: getDriveScore(secretNumber, currentIhtaiNumber)
+    });
+
+    return fetch('http://localhost:3800/addTimeStep', {
+        method: 'put',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: data
+    }).then(() => {
+        // ordinarily we can ignore the results of this method
+        return updateScore(nearestPatternString);
+    });
+}
+
+function updateScore(nearestPatternString) {
+    return fetch('http://localhost:3800/updateScore', {
+        method: 'get'
+    }).then(() => {
+        return getBestNextAction(nearestPatternString);
+    }, (message) => {
+        // for this api call it's probably ok to ignore error
+        // because this will return 500 if not enough items are in the stack to calculate. could check for message or start including status codes
+        return getBestNextAction(nearestPatternString);
+    });
+}
+
+function getBestNextAction(nearestPatternString) {
+    var data = JSON.stringify({
+        patternString: nearestPatternString
+    });
+
+    return fetch('http://localhost:3800/bestNextAction', {
+        method: 'post',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: data
+    }).then((result) => result.json()).then((bestAction) => {
+      // expect json object with .next_action string.
+      // note that this split technique only works if action is 1 dimension.
+      // come up with a better, more general approach. maybe bestNextAction
+      // should only return the action part of the string.
+      var bestActionString = bestAction.next_action;
+
+      return getUpdatesPerMinute(nearestPatternString, bestActionString);
+    });
+}
+
+// get updates per minute for a given patternRecognizer
+function getUpdatesPerMinute(patternString, bestActionString) {
+    var data = JSON.stringify({
+        patternString: patternString
+    });
+
+    return fetch('http://localhost:3800/updatesPerMinute', {
+        method: 'post',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: data
+    }).then((res) => {
+        // TODO: if res > arbitrary number, call splitPatternRecognizer
+        // passing patternString and the new point based on current client state
+        // if (...) { splitPatternRecognizer(patternString, {...}) }
+
+        // repeat logic loop, calling getNearestPatternRecognizer
+        // getNearestPatternRecognizer();
+
+        // res is a json object: { updatesPerMinute: x }
+        // TODO: i don't think updatesPerMinute is returning correctly
+
+        return res.json().then((resultJson) => {
+
+          console.log('updates per minute: ');
+          console.log(resultJson);
+
+          if (resultJson.updatesPerMinute > 0) {
+            shouldSplitPatternRecognizer = true;
+          }
+
+          return checkNumber(Number(bestActionString));
+        });
+        // TODO: add split logic
+    });    
+}
+
+var shouldSplitPatternRecognizer = false;
+
+// make this method only run if pattern access velocity > than arbitrary cutoff
+function splitPatternRecognizer(nearestPatternString, newPoint, timeStepData) {
+    var data = JSON.stringify({
+        originalPatternRecognizerString: nearestPatternString,
+        newPoint: newPoint
+    });
+
+    return fetch('http://localhost:3800/splitPatternRecognizer', {
+        method: 'post',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: data
+    }).then((result) => {
+      console.log('SPLIT PATTERN RECOGNIZER SUCCESS!')
+      return addTimeStep(
+        timeStepData.nearestPatternString,
+        timeStepData.secretNumber,
+        timeStepData.currentIhtaiNumber
+      );
+    }, () => {
+      console.log('SPLIT PATTERN RECOGNIZER FAILURE')
+      return addTimeStep(
+        timeStepData.nearestPatternString,
+        timeStepData.secretNumber,
+        timeStepData.currentIhtaiNumber
+      );
+    });
+}
+
+// TODO: add simple number-picker demo logic.
+
+
+function checkNumber (suggestedAction) {
+  console.log('suggestedAction to be acted on: ' + suggestedAction);
+  // change currentIhtaiNumber based on suggested action
+  if (suggestedAction === 0 && currentIhtaiNumber > 0) {
+    currentIhtaiNumber--;
+  } else if (suggestedAction === 1) {
+    // do nothing
+  } else if (suggestedAction === 2 && currentIhtaiNumber < 2) {
+    currentIhtaiNumber++;
+  }
+
+  // the suggestedAction value leads to inputState and driveScore
+  var ihtaiState = {
+      inputState: [currentIhtaiNumber],
+      actionState: [suggestedAction],
+      driveState: [getDriveScore(secretNumber, currentIhtaiNumber)]
+  };
+
+  console.log('current Ihtai Number after action (inputState: ' + currentIhtaiNumber);
+  console.log('drive score after action: ');
+  console.log(getDriveScore(secretNumber, currentIhtaiNumber));
+  if (counter < 300) {
+    counter++;
+    return getNearestPatternRecognizer(ihtaiState);
+  }
+}
+
+// var prevScore = Math.abs(secretNumber - currentIhtaiNumber);
+// function getDriveScore(secretNumber, currentIhtaiNumber) {
+//   // lower score is better
+//   var score = Math.abs(secretNumber - currentIhtaiNumber);
+//   if (score > prevScore) { return 2; }
+//   if (score === prevScore) { return 2; }
+//   if (score < prevScore) { return 0; }
+// }
+function getDriveScore(secretNumber, currentIhtaiNumber) {
+  return Math.abs(secretNumber - currentIhtaiNumber);
+}
+
+</script>
+</body>
+</html>

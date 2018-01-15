@@ -2,6 +2,7 @@ const PatternRecognitionGroup = require('../../../../server/pattern-recognition/
 const PatternRecognizer = require('../../../../server/pattern-recognition/pattern-recognizer');
 const chai = require('chai');
 const expect = chai.expect;
+const assert = chai.assert;
 const chaiAsPromised = require('chai-as-promised');
 const knex = require('../../../../server/db/knex');
 const dbUtil = require('../../../../server/db/util');
@@ -39,6 +40,25 @@ describe('PatternRecognitionGroup', () => {
       });
     });
 
+    it('should not create multiple of the same action rows in the same actions table', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[0], actionState: [2], driveState: [4] },
+          { inputState: [0], actionState: [2], driveState: [4] },
+          { inputState: [0], actionState: [2], driveState: [4] }
+        ],
+        [[2, 3]]
+      ).then((result) => {
+        expect(result.length).to.equal(3);
+        expect(result).to.deep.equal([true, false, false]);
+        done();
+      }, (message) => {
+        expect(message).to.equal(true);
+        done();
+      });
+    });
+
     it('should initialize patternRecognitionGroup and create patternRecognizers', (done) => {
       const patternRecognitionGroup = new PatternRecognitionGroup();
       patternRecognitionGroup.initialize(
@@ -66,6 +86,34 @@ describe('PatternRecognitionGroup', () => {
           expect(results[0].point_index_1).to.be.a('number').and.equal(5);
           expect(results[0].point_index_2).to.be.a('number').and.equal(5);
           done();
+        });
+      });
+    });
+
+    describe('initializeFromDb()', () => {
+      it('should create patternRecognizers for all patterns in global points table', (done) => {
+        const patternRecognitionGroup = new PatternRecognitionGroup();
+        const patternRecognitionGroup2 = new PatternRecognitionGroup();
+        patternRecognitionGroup.initialize(
+          [
+            { inputState:[0], actionState: [2], driveState: [4] },
+            { inputState: [1], actionState: [3], driveState: [5] }
+          ],
+          [[2, 3]]
+        ).then((results) => {
+          expect(results.length).to.equal(2);
+          expect(_.every(results)).to.equal(true);
+          done();
+        }).then(() => {
+          patternRecognitionGroup2.initializeFromDb([2, 3])
+            .then((results) => {
+              expect(results.length).to.equal(2); 
+              // TODO: better error handling for initializeFromDb().
+              // right now, individual results return false if table creation
+              // fails, which it always will with patterns initialized from db
+              expect(_.every(results)).to.equal(false);
+              done();           
+            });
         });
       });
     });
@@ -276,7 +324,59 @@ describe('PatternRecognitionGroup', () => {
     });
   });
 
-  describe('splitPatternRecognizer', () => {
+  describe('doesActionsPatternExist()', () => {
+    it('should return true if action pattern exists in patternRecognizers list', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] },
+          { inputState: [10], actionState: [10], driveState: [10] },
+          { inputState:[0], actionState: [15], driveState: [0] },
+          { inputState: [20], actionState: [20], driveState: [20] }
+        ],
+        [
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => {
+        const patternString = PatternRecognizer.patternToString(
+          { inputState:[5], actionState: [5], driveState: [5] } 
+        );
+
+        patternRecognitionGroup.doesActionsPatternExist('5', patternString)
+        .then((result) => {
+          expect(result).to.equal(true);
+          done();
+        });
+      });
+    });
+
+    it('should return false if action pattern does not exist in patternRecognizers list', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] },
+          { inputState: [10], actionState: [10], driveState: [10] },
+          { inputState:[0], actionState: [15], driveState: [0] },
+          { inputState: [20], actionState: [20], driveState: [20] }
+        ],
+        [
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => {
+        const patternString = PatternRecognizer.patternToString(
+          { inputState:[5], actionState: [5], driveState: [5] } 
+        );
+
+        patternRecognitionGroup.doesActionsPatternExist('6', patternString)
+        .then((result) => {
+          expect(result).to.equal(false);
+          done();
+        });
+      });    
+    });
+  });
+
+  describe('splitPatternRecognizer()', () => {
     it('should split a patternRecognizer, given existing patternRecognizer and a new pattern key', (done) => {
       const patternRecognitionGroup = new PatternRecognitionGroup();
       patternRecognitionGroup.initialize(
@@ -284,7 +384,7 @@ describe('PatternRecognitionGroup', () => {
           { inputState:[5], actionState: [5], driveState: [5] },
           { inputState: [10], actionState: [10], driveState: [10] },
           { inputState:[0], actionState: [15], driveState: [0] },
-          { inputState: [20], actionState: [20], driveState: [20] }          
+          { inputState: [20], actionState: [20], driveState: [20] }
         ],
         [
           [0, 5, 10, 15, 20]
@@ -365,6 +465,44 @@ describe('PatternRecognitionGroup', () => {
       });
     });
 
+    it('should not create duplicate action row keys in any tables', (done) => {
+      const patternRecognitionGroup = new PatternRecognitionGroup();
+      patternRecognitionGroup.initialize(
+        [
+          { inputState:[5], actionState: [5], driveState: [5] },
+          { inputState: [10], actionState: [10], driveState: [10] },
+          { inputState:[0], actionState: [15], driveState: [0] },
+          { inputState: [20], actionState: [20], driveState: [20] }          
+        ],
+        [
+          [0, 5, 10, 15, 20]
+        ]
+      ).then(() => patternRecognitionGroup.splitPatternRecognizer(
+        'pattern_5_5_5', { inputState:[6], actionState: [5], driveState: [6] })
+      ).then(() =>
+        knex.select('next_action').from('pattern_5_5_5')
+      ).then((results) => {
+        expect(_.uniq(results).length).to.equal(results.length);
+      }).then(() =>
+        knex.select('next_action').from('pattern_6_6_6')
+      ).then((results) => {
+        expect(_.uniq(results).length).to.equal(results.length);
+      }).then(() =>
+        knex.select('next_action').from('pattern_10_10_10')
+      ).then((results) => {
+        expect(_.uniq(results).length).to.equal(results.length);
+      }).then(() =>
+        knex.select('next_action').from('pattern_0_15_0')
+      ).then((results) => {
+        expect(_.uniq(results).length).to.equal(results.length);
+      }).then(() =>
+        knex.select('next_action').from('pattern_20_20_20')
+      ).then((results) => {
+        expect(_.uniq(results).length).to.equal(results.length);
+        done();
+      });
+    });
+
     it('should add a new row in the global points table for new point', (done) => {
       const patternRecognitionGroup = new PatternRecognitionGroup();
       patternRecognitionGroup.initialize(
@@ -424,11 +562,11 @@ describe('PatternRecognitionGroup', () => {
       ).then(() => patternRecognitionGroup.splitPatternRecognizer(
         'pattern_5_5_5', { inputState:[6], actionState: [6], driveState: [6] })
       ).then(() => {
-        return knex.select().from('pattern_5_5_5');
+        return knex.select('next_action', 'score').from('pattern_5_5_5');
       }).then((originalTableResults) => {
         expect(originalTableResults.length).to.equal(6);
         originalTableData = originalTableResults;
-        return knex.select().from('pattern_6_6_6');
+        return knex.select('next_action', 'score').from('pattern_6_6_6');
       }).then((newTableResults) => {
         expect(newTableResults.length).to.equal(6);
         newTableData = newTableResults;

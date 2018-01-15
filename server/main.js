@@ -63,6 +63,23 @@ app.post('/initialize', function (req, res) {
   });
 });
 
+app.post('/initializeFromDb', function (req, res) {
+  log.info('initialize from db request received');
+  log.info(req.body);
+
+  patternRecognitionGroup.initializeFromDb(
+    req.body.possibleDataValues
+  ).then((result) => {
+    log.info('PATTERN RECOGNITION GROUP INITIALIZED FROM DB');
+    log.info(result);
+    res.status(200).send(result);
+  }, (message) => {
+    log.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP FROM DB');
+    log.error(message);
+    res.status(500).send(message);
+  });
+});
+
 /*
   returns the table name of the nearest neighbor pattern
 */
@@ -135,7 +152,7 @@ app.get('/updateScore', function (req, res) {
 app.post('/bestNextAction', function (req, res) {
   log.info('request for best next action received');
   log.info(req.body);
-
+  
   // first, get the patternRecognizer from patternRecognitionGroup
   const patternRecognizer = 
     patternRecognitionGroup.getPatternRecognizer(req.body.patternString);
@@ -156,8 +173,8 @@ app.post('/splitPatternRecognizer', function(req, res) {
   patternRecognitionGroup.splitPatternRecognizer(
     req.body.originalPatternRecognizerString, req.body.newPoint).then((result) => {
       res.status(200).send(result);
-    }, (message) => {
-      res.status(500).send(message);
+    }, (message, err) => {
+      res.status(500).send(String(message));
     });
 });
 
