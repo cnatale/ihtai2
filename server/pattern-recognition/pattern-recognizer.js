@@ -298,7 +298,7 @@ class PatternRecognizer {
 
           const timeDelta = currentTime.diff(updateCountLastReset, 'minutes');
 
-          //const updatesPerMinute = timeDelta > 0 ? results[0].update_count / timeDelta : 0;
+          // const updatesPerMinute = timeDelta > 0 ? results[0].update_count / timeDelta : 0;
           const updatesPerMinute = results[0].update_count;
 
           resolve(updatesPerMinute);
@@ -351,6 +351,30 @@ class PatternRecognizer {
             });
         });
     });
+  }
+
+  /**
+    Pulls all action scores for a PatternRecognizer towards a target score.
+   */
+  rubberBandActionScores(dampeningValue, targetScore) {
+    if(isNaN(dampeningValue) || isNaN(targetScore)) {
+      throw new Error('Error: both parameters must be numbers!');
+    }
+
+    const patternTableName = this.patternToString();
+    return knex.raw(
+      `UPDATE \`${patternTableName}\`
+       SET \`score\` = (\`score\` * ${dampeningValue} + ${targetScore}) / (${dampeningValue} + 1)
+       WHERE \`next_action\` IN
+       (
+         SELECT \`next_action\` FROM
+         (
+           SELECT \`next_action\`
+           FROM \`${patternTableName}\`
+           WHERE \`next_action\` = \`next_action\`
+         ) as \`tmp\`
+       )`
+    );
   }
 
   resetUpdateCount() {
