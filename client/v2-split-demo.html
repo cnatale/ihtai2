@@ -20,7 +20,7 @@
 <body>
 <script type="text/javascript">
 
-var secretNumber = 1;
+var secretNumber = 7;
 var currentIhtaiNumber = 0;
 var currentActionState = 1; // 0 = move left, 1 = don't move, 2 = move right
 var counter = 0; // used to control number of api call cycles for test purposes
@@ -176,28 +176,18 @@ function getUpdatesPerMinute(patternString, bestActionString) {
         },
         body: data
     }).then((res) => {
-        // TODO: if res > arbitrary number, call splitPatternRecognizer
-        // passing patternString and the new point based on current client state
-        // if (...) { splitPatternRecognizer(patternString, {...}) }
-
-        // repeat logic loop, calling getNearestPatternRecognizer
-        // getNearestPatternRecognizer();
-
-        // res is a json object: { updatesPerMinute: x }
-        // TODO: i don't think updatesPerMinute is returning correctly
-
         return res.json().then((resultJson) => {
 
           console.log('updates per minute: ');
           console.log(resultJson);
 
+          // split anytime the pattern has more than 1 update
           if (resultJson.updatesPerMinute > 0) {
             shouldSplitPatternRecognizer = true;
           }
 
           return checkNumber(Number(bestActionString));
         });
-        // TODO: add split logic
     });    
 }
 
@@ -244,7 +234,7 @@ function checkNumber (suggestedAction) {
     currentIhtaiNumber--;
   } else if (suggestedAction === 1) {
     // do nothing
-  } else if (suggestedAction === 2 && currentIhtaiNumber < 2) {
+  } else if (suggestedAction === 2 && currentIhtaiNumber < 10) {
     currentIhtaiNumber++;
   }
 

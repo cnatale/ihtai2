@@ -24,6 +24,216 @@
     <canvas width="1000" height="400" id="myCanvas"></canvas>    
     <script>
 
+
+///////////////// start ihtai logic //////////////////
+
+var secretNumber = 7;
+var currentIhtaiNumber = 0;
+var currentActionState = 1; // 0 = move left, 1 = don't move, 2 = move right
+var counter = 0; // used to control number of api call cycles for test purposes
+
+const possibleDataValues = [0, 1, 2];
+var startingData = JSON.stringify({
+    startingData: [
+      { inputState:[0], actionState: [0], driveState: [0] }
+    ],
+    possibleDataValues: [
+      possibleDataValues
+    ]
+});
+
+// WARNING: WIPES OUT ALL SAVED IHTAI DATA
+function clearDb() {
+    return fetch('http://localhost:3800/db', {
+        method: 'delete'
+    });
+};
+
+// clearDb();
+
+//////// START DATA FETCH CHAIN ////////
+
+fetch('http://localhost:3800/initializeFromDb', {
+    method: 'post',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      possibleDataValues: [possibleDataValues]
+    })
+}).then((response) =>
+fetch('http://localhost:3800/initialize', {
+    method: 'post',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: startingData
+})).then((response) => {
+    return getNearestPatternRecognizer({
+      inputState: [currentIhtaiNumber],
+      actionState: [currentActionState],
+      driveState: [getDriveScore(secretNumber, currentIhtaiNumber)]
+    });
+}, (message) => {
+    console.log('initialize failure: ');
+    console.log(message);
+});
+
+function getNearestPatternRecognizer(ihtaiState) {
+    return fetch('http://localhost:3800/nearestPatternRecognizer', {
+        method: 'post',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(ihtaiState)
+    }).then((response) => response.text()).then(function (nearestPatternString) {
+
+      if (shouldSplitPatternRecognizer) {
+        shouldSplitPatternRecognizer = false;
+        splitPatternRecognizer(
+          nearestPatternString,
+          ihtaiState,
+          {
+            nearestPatternString: nearestPatternString,
+            secretNumber: secretNumber,
+            currentIhtaiNumber: currentIhtaiNumber
+          }
+        );
+      } else {
+        return addTimeStep(
+          nearestPatternString,
+          secretNumber,
+          currentIhtaiNumber
+        );
+      }
+
+    });
+}
+
+function addTimeStep(nearestPatternString, secretNumber, currentIhtaiNumber) {
+    // stateKey must match an existing pattern
+    var data = JSON.stringify({
+        actionKey: nearestPatternString.split('_')[2],
+        stateKey: nearestPatternString.split('pattern_')[1],
+        score: getDriveScore(secretNumber, currentIhtaiNumber)
+    });
+
+    return fetch('http://localhost:3800/addTimeStep', {
+        method: 'put',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: data
+    }).then(() => {
+        // ordinarily we can ignore the results of this method
+        return updateScore(nearestPatternString);
+    });
+}
+
+function updateScore(nearestPatternString) {
+    return fetch('http://localhost:3800/updateScore', {
+        method: 'get'
+    }).then(() => {
+        return getBestNextAction(nearestPatternString);
+    }, (message) => {
+        // for this api call it's probably ok to ignore error
+        // because this will return 500 if not enough items are in the stack to calculate. could check for message or start including status codes
+        return getBestNextAction(nearestPatternString);
+    });
+}
+
+function getBestNextAction(nearestPatternString) {
+    var data = JSON.stringify({
+        patternString: nearestPatternString
+    });
+
+    return fetch('http://localhost:3800/bestNextAction', {
+        method: 'post',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: data
+    }).then((result) => result.json()).then((bestAction) => {
+      // expect json object with .next_action string.
+      // note that this split technique only works if action is 1 dimension.
+      // come up with a better, more general approach. maybe bestNextAction
+      // should only return the action part of the string.
+      var bestActionString = bestAction.next_action;
+
+      return getUpdatesPerMinute(nearestPatternString, bestActionString);
+    });
+}
+
+// get updates per minute for a given patternRecognizer
+function getUpdatesPerMinute(patternString, bestActionString) {
+    var data = JSON.stringify({
+        patternString: patternString
+    });
+
+    return fetch('http://localhost:3800/updatesPerMinute', {
+        method: 'post',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: data
+    }).then((res) => {
+        return res.json().then((resultJson) => {
+
+          console.log('updates per minute: ');
+          console.log(resultJson);
+
+          // split anytime the pattern has more than 1 update
+          if (resultJson.updatesPerMinute > 0) {
+            shouldSplitPatternRecognizer = true;
+          }
+
+          return checkNumber(Number(bestActionString));
+        });
+    });    
+}
+
+var shouldSplitPatternRecognizer = false;
+
+// make this method only run if pattern access velocity > than arbitrary cutoff
+function splitPatternRecognizer(nearestPatternString, newPoint, timeStepData) {
+    var data = JSON.stringify({
+        originalPatternRecognizerString: nearestPatternString,
+        newPoint: newPoint
+    });
+
+    return fetch('http://localhost:3800/splitPatternRecognizer', {
+        method: 'post',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: data
+    }).then((result) => {
+      console.log('SPLIT PATTERN RECOGNIZER SUCCESS!')
+      return addTimeStep(
+        timeStepData.nearestPatternString,
+        timeStepData.secretNumber,
+        timeStepData.currentIhtaiNumber
+      );
+    }, () => {
+      console.log('SPLIT PATTERN RECOGNIZER FAILURE')
+      return addTimeStep(
+        timeStepData.nearestPatternString,
+        timeStepData.secretNumber,
+        timeStepData.currentIhtaiNumber
+      );
+    });
+}
+
+    /////////////// end ihtai logic///////////////
+
+
     p2.Plane.prototype.computeAABB = function(out, position, angle){
         var a = angle % (2 * Math.PI);
         var set = p2.vec2.set;
