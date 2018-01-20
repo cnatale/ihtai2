@@ -138,6 +138,13 @@ app.get('/updateScore', function (req, res) {
     slidingWindow.getTailHead().actionKey,
     avgScoreOverTimeSeries
   ).then(() => {
+    // apply rubber banding if enabled
+    return config.rubberBanding.enabled ?
+      patternRecognizer.rubberBandActionScores(
+        config.rubberBanding.dampeningValue,
+        config.rubberBanding.targetScore
+      ) : null;
+  }).then(() => {
     res.status(200).json({
       startPattern: patternRecognizer.patternToString(),
       actionKey: slidingWindow.getTailHead().stateKey,

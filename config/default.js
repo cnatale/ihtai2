@@ -20,6 +20,6 @@ module.exports = {
     // The larger the dampening value, the weaker rubber banding effect is.
     dampeningValue: 20,
     // The score that all action scores are pulled towards.
-    targetScore: 1
+    targetScore: 0
   }
 };
