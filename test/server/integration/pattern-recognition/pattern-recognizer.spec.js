@@ -364,7 +364,7 @@ describe('patternRecognizer', () => {
     });
   });
 
-  describe.only('rubberBandActionScores', () => {
+  describe('rubberBandActionScores', () => {
     it('should throw an error if both parameters are not numbers', () => {
       const patternRecognizer = new PatternRecognizer({
         inputState: [1],
