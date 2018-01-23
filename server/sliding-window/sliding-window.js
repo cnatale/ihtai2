@@ -14,6 +14,10 @@ class SlidingWindow {
     return this.timeSteps.length >= this.numberOfTimeSteps;
   }
 
+  flush() {
+    this.timeSteps = [];
+  }
+
   /**
     Adds an action taken and entire instance state to sliding window, along with its drive score.
     Note that this assumes client is keeping track of the string representing

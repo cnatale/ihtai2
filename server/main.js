@@ -49,6 +49,8 @@ app.post('/initialize', function (req, res) {
   log.info('initialization request received');
   log.info(req.body);
 
+  slidingWindow.flush();
+
   patternRecognitionGroup.initialize(
     req.body.startingData, 
     req.body.possibleDataValues
@@ -66,6 +68,8 @@ app.post('/initialize', function (req, res) {
 app.post('/initializeFromDb', function (req, res) {
   log.info('initialize from db request received');
   log.info(req.body);
+
+  slidingWindow.flush();
 
   patternRecognitionGroup.initializeFromDb(
     req.body.possibleDataValues
