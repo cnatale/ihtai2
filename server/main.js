@@ -18,7 +18,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // instantiate with number of timesteps stored
-const slidingWindow = new SlidingWindow(5);
+const slidingWindow = new SlidingWindow(60);
 const patternRecognitionGroup = new PatternRecognitionGroup();
 
 // test initialization. in practice, use the post version
@@ -51,6 +51,10 @@ app.post('/initialize', function (req, res) {
 
   slidingWindow.flush();
 
+  if (patternRecognitionGroup.isInitialized) {
+    return res.status(200).send('already initialized');
+  }
+
   patternRecognitionGroup.initialize(
     req.body.startingData, 
     req.body.possibleDataValues
@@ -70,6 +74,10 @@ app.post('/initializeFromDb', function (req, res) {
   log.info(req.body);
 
   slidingWindow.flush();
+
+  if (patternRecognitionGroup.isInitialized) {
+    return res.status(200).send('already initialized');
+  }
 
   patternRecognitionGroup.initializeFromDb(
     req.body.possibleDataValues
@@ -139,7 +147,7 @@ app.get('/updateScore', function (req, res) {
   // ex. nextMove string: '1_3_5_2'. Similar to patternRecognizer key format, but
   // no starting 'pattern_'
   patternRecognizer.updateNextMoveScore(
-    slidingWindow.getTailHead().actionKey,
+    slidingWindow.getTailHead().actionKey, // this might just need to be getHead().actionKey?
     avgScoreOverTimeSeries
   ).then(() => {
     // apply rubber banding if enabled
@@ -151,7 +159,7 @@ app.get('/updateScore', function (req, res) {
   }).then(() => {
     res.status(200).json({
       startPattern: patternRecognizer.patternToString(),
-      actionKey: slidingWindow.getTailHead().stateKey,
+      actionKey: slidingWindow.getTailHead().actionKey,
       actionAverageScore: avgScoreOverTimeSeries
     });
   }).catch((message) => {
@@ -180,6 +188,10 @@ app.post('/bestNextAction', function (req, res) {
 app.post('/splitPatternRecognizer', function(req, res) {
   log.info('request to split pattern recognizer received');
   log.info(req.body);
+
+  if (patternRecognitionGroup.getNumberOfPatterns() > config.maxPatterns) {
+    return res.status(500).send('Maximum number of patterns already created!');
+  }
 
   patternRecognitionGroup.splitPatternRecognizer(
     req.body.originalPatternRecognizerString, req.body.newPoint).then((result) => {

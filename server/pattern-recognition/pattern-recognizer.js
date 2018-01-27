@@ -331,7 +331,7 @@ class PatternRecognizer {
           // Update row with weighted average of current score and new score value.
           // Right now hardcoding new score to be weighted at 10% of current score
           // for updated value.
-          const updatedScore = (results[0].score * 9 + score) / 10;
+          const updatedScore = (results[0].score * 1 + score) / 2;
           // const updatedScore = (results[0].score + score) / 2;
           knex(patternString)
             .where('next_action', nextActionKey)

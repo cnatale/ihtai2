@@ -17,9 +17,10 @@ module.exports = {
   },
   rubberBanding: {
     enabled: true,
-    // The larger the dampening value, the weaker rubber banding effect is.
-    dampeningValue: 20,
+    // The larger the dampening value, the weaker rubber banding effect is. Default of 20.
+    dampeningValue: 800,
     // The score that all action scores are pulled towards.
-    targetScore: 0
-  }
+    targetScore: 100
+  },
+  maxPatterns: 1000
 };
