@@ -18,7 +18,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // instantiate with number of timesteps stored
-const slidingWindow = new SlidingWindow(60);
+const slidingWindow = new SlidingWindow(config.slidingWindowSize);
 const patternRecognitionGroup = new PatternRecognitionGroup();
 
 // test initialization. in practice, use the post version

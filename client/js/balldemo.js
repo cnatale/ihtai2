@@ -38,7 +38,8 @@ var createScene = function () {
   sphere = BABYLON.Mesh.CreateSphere("Sphere0", 16, 3, scene);
   sphere.material = materialAmiga;
 
-  sphere.position = new BABYLON.Vector3(Math.random() * 20 - 10, 0, Math.random() * 10 - 5);
+  // sphere.position = new BABYLON.Vector3(Math.random() * 20 - 10, 0, Math.random() * 10 - 5);
+  sphere.position = new BABYLON.Vector3(10, 0, 5);
 
   shadowGenerator.addShadowCaster(sphere);
 
@@ -46,7 +47,7 @@ var createScene = function () {
 
   // Box
   box0 = BABYLON.Mesh.CreateBox("Box0", 3, scene);
-  box0.position = new BABYLON.Vector3(3, 30, 0);
+  box0.position = new BABYLON.Vector3(0, 5, 0);
   var materialWood = new BABYLON.StandardMaterial("wood", scene);
   materialWood.diffuseTexture = new BABYLON.Texture("textures/crate.png", scene);
   materialWood.emissiveColor = new BABYLON.Color3(0.5, 0.5, 0.5);
@@ -141,9 +142,10 @@ window.addEventListener('resize', function () { // Watch for browser/canvas resi
 
 // TODO: hook up ball movement to Ihtai suggestions 
 var currentInputState = [
-  Math.round(sphere.position.x - box0.position.x, 2),
-  Math.round(sphere.position.y - box0.position.y, 2),
-  Math.round(sphere.position.z - box0.position.z, 2)
+  Math.round(sphere.position.x - box0.position.x),
+  Math.round(sphere.position.z - box0.position.z),
+  0,
+  0
 ];                  
 var currentActionState = 0; // 0 = don't move
 var counter = 0; // used to control number of api call cycles for test purposes
@@ -231,8 +233,7 @@ function getNearestPatternRecognizer(ihtaiState) {
 
 function addTimeStep(nearestPatternString, ihtaiState) {
     // stateKey must match an existing pattern
-    console.log('*****actionKey*****')
-    console.log(ihtaiState.actionState[0]);
+    // console.log(ihtaiState.actionState[0]);
     var data = JSON.stringify({
         // actionKey: nearestPatternString.split('_')[4],
         // we want to pass along the actual action key
@@ -363,8 +364,6 @@ function actOnSuggestion (suggestedAction) {
   // 2 : +x
   // 3 : -z
   // 4 : +z
-  console.log('@@@@@@@@@SUGGESTIONACTION')
-  console.log(suggestedAction)
 
   switch (suggestedAction) {
     case 0:
@@ -395,18 +394,20 @@ function actOnSuggestion (suggestedAction) {
   // the suggestedAction value leads to inputState and driveScore
   var sphereLinearVelocity = sphere.physicsImpostor.getLinearVelocity();
   driveScore = getDriveScore(suggestedAction);
+  // probably needs velocity to figure anything out
   var ihtaiState = {
       inputState: [
         Math.round(sphere.position.x - box0.position.x),
-        Math.round(sphere.position.y - box0.position.y),
-        Math.round(sphere.position.z - box0.position.z)
+        Math.round(sphere.position.z - box0.position.z),
+        Math.round(sphereLinearVelocity.x),
+        Math.round(sphereLinearVelocity.z)
       ],
       actionState: [suggestedAction],
       driveState: [driveScore]
   };
 
-  console.log('drive score after action: ');
-  console.log(driveScore);
+  // console.log('drive score after action: ');
+  // console.log(driveScore);
 
   if (counter < 500) {
     counter++;
@@ -428,12 +429,15 @@ function getDriveScore(suggestedAction) {
   //   return 100;
   // }
 
-
+  console.log('SUGGESTEDACTION')
+  console.log(suggestedAction)
   var score = Math.round(Math.sqrt(
     Math.pow(sphere.position.x - box0.position.x, 2) +
-    Math.pow(sphere.position.y - box0.position.y, 2) +
     Math.pow(sphere.position.z - box0.position.z, 2)
   ));
+
+  // normalize. currently break code, i think b/c of decimal numbers
+  // score = score / 100;
 
   return score;
 }
@@ -446,19 +450,19 @@ function checkKey(e) {
 
     if (e.keyCode == '38') {
         // up arrow
-        currKey = 1;
+        currKey = 4;
     }
     else if (e.keyCode == '40') {
         // down arrow
-        currKey = 2;
+        currKey = 3;
     }
     else if (e.keyCode == '37') {
        // left arrow
-       currKey = 3;
+       currKey = 1;
     }
     else if (e.keyCode == '39') {
        // right arrow
-       currKey = 4;
+       currKey = 2;
     }
 
 }

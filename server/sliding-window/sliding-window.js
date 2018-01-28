@@ -41,13 +41,17 @@ class SlidingWindow {
   //   we need to be able to figure out, starting with a state,
   //   how the next action influences average drive scores.
   getAverageDriveScore() {
-    return this.timeSteps.reduce((acc, timeStep, index, timeSteps) => {
+    const avgTimesteps = this.timeSteps.reduce((acc, timeStep, index, timeSteps) => {
       // skip the first index because we only want to account for
-      // actions influenced by the action taken by tailHead state
+      // actions influenced by the action taken by head state
       return index === 0 ?
         acc :
         acc + (timeStep.score / (timeSteps.length - 1));
     }, 0);
+
+    // return avgTimesteps - this.timeSteps[0].score;
+    // return avgTimesteps;
+    return this.timeSteps[this.timeSteps.length - 1].score;
   }
 
   getHead() {

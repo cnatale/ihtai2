@@ -331,8 +331,9 @@ class PatternRecognizer {
           // Update row with weighted average of current score and new score value.
           // Right now hardcoding new score to be weighted at 10% of current score
           // for updated value.
-          const updatedScore = (results[0].score * 1 + score) / 2;
+          const updatedScore = (results[0].score * 9 + score) / 10;
           // const updatedScore = (results[0].score + score) / 2;
+          // const updatedScore = score;
           knex(patternString)
             .where('next_action', nextActionKey)
             .update('score', updatedScore)
@@ -357,14 +358,18 @@ class PatternRecognizer {
     Pulls all action scores for a PatternRecognizer towards a target score.
    */
   rubberBandActionScores(dampeningValue, targetScore) {
-    if(isNaN(dampeningValue) || isNaN(targetScore)) {
+    if (isNaN(dampeningValue) || isNaN(targetScore)) {
       throw new Error('Error: both parameters must be numbers!');
     }
+
+    // perhaps do a constant pull when score is beyond a certain value
+    // SET \`score\` = (\`score\` * ${dampeningValue} + ${targetScore}) / (${dampeningValue} + 1)
+    // SET \`score\` = if(\`score\` <= ${targetScore}, \`score\`, \`score\` - .1)
 
     const patternTableName = this.patternToString();
     return knex.raw(
       `UPDATE \`${patternTableName}\`
-       SET \`score\` = (\`score\` * ${dampeningValue} + ${targetScore}) / (${dampeningValue} + 1)
+       SET \`score\` = if(\`score\` <= ${targetScore}, \`score\`, \`score\` - .1)
        WHERE \`next_action\` IN
        (
          SELECT \`next_action\` FROM
