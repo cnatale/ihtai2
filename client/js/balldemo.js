@@ -418,7 +418,7 @@ function actOnSuggestion (suggestedAction) {
 var counter = 0;
 
 function getDriveScore(suggestedAction) {
-  // // test logic. delete when done.
+  // test logic. delete when done.
   // console.log('SUGGESTEDACTION')
   // console.log(suggestedAction)
   // console.log('CURRENTKEY')
