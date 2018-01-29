@@ -1,4 +1,5 @@
 const TimeStep = require('./time-step');
+const _ = require('lodash');
 
 /**
   A sliding window representing the last n timesteps.
@@ -49,8 +50,16 @@ class SlidingWindow {
         acc + (timeStep.score / (timeSteps.length - 1));
     }, 0);
 
+    // min score over all timesteps
+    // return _.min(_.pluck(this.timeSteps, 'score'));
+
+    // delta between start score and average score:
     // return avgTimesteps - this.timeSteps[0].score;
+
+    // average score:
     // return avgTimesteps;
+
+    // last score:
     return this.timeSteps[this.timeSteps.length - 1].score;
   }
 
