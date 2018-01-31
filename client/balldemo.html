@@ -19,6 +19,17 @@
             height: 100%;
             touch-action: none;
         }
+
+        #statusBox {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            color: #fff;
+        }
+
+        #statusBox.finished {
+          color: #42f453;
+        }
     </style>
 
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
@@ -30,7 +41,7 @@
    <body>
 
     <canvas id="renderCanvas" touch-action="none"></canvas> //touch-action="none" for best results from PEP
-
+    <div id="statusBox">Test Running. Do not refresh page.</div>
     <script src="js/balldemo.js"></script>
 
    </body>

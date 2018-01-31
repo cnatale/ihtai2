@@ -23,10 +23,6 @@ var createScene = function () {
   materialAmiga.diffuseTexture.uScale = 5;
   materialAmiga.diffuseTexture.vScale = 5;
 
-  var materialAmiga2 = new BABYLON.StandardMaterial("amiga", scene);
-  materialAmiga2.diffuseTexture = new BABYLON.Texture("textures/amiga.jpg", scene);
-  materialAmiga2.emissiveColor = new BABYLON.Color3(0.5, 0.5, 0.5);
-
   // Shadows
   var shadowGenerator = new BABYLON.ShadowGenerator(2048, light);
 
@@ -105,14 +101,29 @@ var createScene = function () {
   border3.physicsImpostor = new BABYLON.PhysicsImpostor(border3, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
 
 
-  // / test impulse ///
-  // update: this works
-  // TODO: hook up to ihtai, and apply force like this based on action suggestions
-  // setTimeout(function() {
-  //   console.log('LINEAR VELOCITY')
-  //   console.log(sphere.physicsImpostor.getLinearVelocity().x);
-  //   sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(-10, 0, 0), sphere.getAbsolutePosition());
-  // }, 3000);
+  const cylinder = BABYLON.MeshBuilder.CreateCylinder(
+    'cylinder',
+    {
+      diameter: 20,
+      height: .5,
+      faceColors: [
+        new BABYLON.Color4(0, .7, .7, 1),
+        new BABYLON.Color4(0, .7, .7, 1),
+        new BABYLON.Color4(0, .7, .7, 1)
+      ]
+    },
+    scene);
+  cylinder.position.y = -4.5;
+  var greenMat = new BABYLON.StandardMaterial('greenMat', scene);
+  greenMat.diffuseColor = new BABYLON.Color3(0, .7, .7);
+  greenMat.emissiveColor = new BABYLON.Color3(0, .7, .7);
+  greenMat.alpha = 0.5;
+  cylinder.material = greenMat;
+
+  scene.onBeforeRenderObservable.add(function () {
+    cylinder.position.x = box0.position.x;
+    cylinder.position.z = box0.position.z;
+  });
 
   return scene;
 };
@@ -412,6 +423,10 @@ function actOnSuggestion (suggestedAction) {
   if (counter < 500) {
     counter++;
     return getNearestPatternRecognizer(ihtaiState);
+  } else {
+    const element = document.getElementById('statusBox');
+    element.innerHTML = 'Test Complete';
+    element.classList.add('finished');
   }
 }
 
