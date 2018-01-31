@@ -51,8 +51,7 @@ class SlidingWindow {
     }, 0);
 
     // min score over all timesteps
-    // return _.min(_.pluck(this.timeSteps, 'score'));
-
+    // return _.min(_.map(this.timeSteps, 'score'));
     // delta between start score and average score:
     // return avgTimesteps - this.timeSteps[0].score;
 
