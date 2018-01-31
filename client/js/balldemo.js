@@ -114,11 +114,11 @@ var createScene = function () {
     },
     scene);
   cylinder.position.y = -4.5;
-  var greenMat = new BABYLON.StandardMaterial('greenMat', scene);
-  greenMat.diffuseColor = new BABYLON.Color3(0, .7, .7);
-  greenMat.emissiveColor = new BABYLON.Color3(0, .7, .7);
-  greenMat.alpha = 0.5;
-  cylinder.material = greenMat;
+  const cylinderMat = new BABYLON.StandardMaterial('cylinderMat', scene);
+  cylinderMat.diffuseColor = new BABYLON.Color3(0, .7, .7);
+  cylinderMat.emissiveColor = new BABYLON.Color3(0, .7, .7);
+  cylinderMat.alpha = 0.3;
+  cylinder.material = cylinderMat;
 
   scene.onBeforeRenderObservable.add(function () {
     cylinder.position.x = box0.position.x;
@@ -126,9 +126,7 @@ var createScene = function () {
   });
 
   return scene;
-};
-
-/******* End of the create scene function ******/    
+}; 
 
 const scene = createScene(); // Call the createScene function
 
@@ -424,6 +422,7 @@ function actOnSuggestion (suggestedAction) {
     counter++;
     return getNearestPatternRecognizer(ihtaiState);
   } else {
+    engine.stopRenderLoop();
     const element = document.getElementById('statusBox');
     element.innerHTML = 'Test Complete';
     element.classList.add('finished');
