@@ -1,7 +1,7 @@
+/////////// BEGIN BABYLON CODE ///////////
 const canvas = document.getElementById("renderCanvas"); // Get the canvas element 
 const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 
-/******* Add the create scene function ******/
 var sphere, box0;
 var createScene = function () {
   var scene = new BABYLON.Scene(engine);
@@ -140,14 +140,7 @@ window.addEventListener('resize', function () { // Watch for browser/canvas resi
 
 
 
-
-
-
-
-
-
-// IHTAI CODE GOES HERE //
-// BUG: number with dots are interpreted as table breaks, ruining sql
+//////// BEGIN IHTAI CODE //////////
 
 // TODO: hook up ball movement to Ihtai suggestions 
 var currentInputState = [
@@ -449,9 +442,6 @@ function getDriveScore(suggestedAction) {
     Math.pow(sphere.position.x - box0.position.x, 2) +
     Math.pow(sphere.position.z - box0.position.z, 2)
   ));
-
-  // normalize. currently break code, i think b/c of decimal numbers
-  // score = score / 100;
 
   return score;
 }
