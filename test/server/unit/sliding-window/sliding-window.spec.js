@@ -32,7 +32,7 @@ describe('SlidingWindow', () => {
     });
   });
 
-  it('should get the average drive score of all timeSteps after first', () => {
+  it('should get the last drive score of the slidingWindow', () => {
     const slidingWindow = new SlidingWindow(5);
     slidingWindow.addTimeStep('0', '0_0_0', 0);
     slidingWindow.addTimeStep('1', '1_1_1', 1);
@@ -40,8 +40,8 @@ describe('SlidingWindow', () => {
     slidingWindow.addTimeStep('3', '3_3_3', 3);
     slidingWindow.addTimeStep('4', '4_4_4', 4);
     
-    const expectedAverage = (1 + 2 + 3 + 4) / 4;
-    expect(slidingWindow.getAverageDriveScore()).to.equal(expectedAverage);
+    const expectedScore = 4;
+    expect(slidingWindow.getDriveScore()).to.equal(expectedScore);
 
     const slidingWindow2 = new SlidingWindow(5);
     slidingWindow2.addTimeStep('0', '0_0_0', 5);
@@ -50,8 +50,8 @@ describe('SlidingWindow', () => {
     slidingWindow2.addTimeStep('3', '3_3_3', 5);
     slidingWindow2.addTimeStep('4', '4_4_4', 5);
     
-    const expectedAverage2 = (5 + 5 + 5 + 5) / 4;
-    expect(slidingWindow2.getAverageDriveScore()).to.equal(expectedAverage2);
+    const expectedScore2 = 5;
+    expect(slidingWindow2.getDriveScore()).to.equal(expectedScore2);
   });
 
   it('should get the head of timeSteps', () => {

@@ -16,6 +16,7 @@ const { nDimensionalPointSchema, nDimensionalPointsSchema } = require('../schema
 class PatternRecognitionGroup {
 
   constructor() {
+    this.isInitialized = false;
     this.patternRecognizers = {};
   }
 
@@ -70,6 +71,7 @@ class PatternRecognitionGroup {
       return Promise.resolve([]);
     }
 
+    this.isInitialized = true;
     // add all patternRecognizers in nDimensionalPoints list
     return Promise.all(nDimensionalPoints.map((nDimensionalPoint) => {
       return this.addPatternRecognizer(nDimensionalPoint);
@@ -129,6 +131,7 @@ class PatternRecognitionGroup {
           throw nDimensionalPointsSchemaValidation;
         }
 
+        this.isInitialized = true;
         // add all patternRecognizers in nDimensionalPoints list
         return Promise.all(nDimensionalPoints.map((nDimensionalPoint) => {
           return this.addPatternRecognizer(nDimensionalPoint);
@@ -357,6 +360,9 @@ class PatternRecognitionGroup {
   // 1) multiply normalize number by max de-normalized value (say, 5)
   // 2) shift by the opposite value of normalization shift
 
+  getNumberOfPatterns() {
+    return Object.keys(this.patternRecognizers).length;
+  }
 }
 
 module.exports = PatternRecognitionGroup;

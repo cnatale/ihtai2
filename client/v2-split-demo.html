@@ -248,7 +248,7 @@ function checkNumber (suggestedAction) {
   console.log('current Ihtai Number after action (inputState: ' + currentIhtaiNumber);
   console.log('drive score after action: ');
   console.log(getDriveScore(secretNumber, currentIhtaiNumber));
-  if (counter < 300) {
+  if (counter < 100) {
     counter++;
     return getNearestPatternRecognizer(ihtaiState);
   }

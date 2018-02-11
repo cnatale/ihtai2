@@ -364,7 +364,8 @@ describe('patternRecognizer', () => {
     });
   });
 
-  describe('rubberBandActionScores', () => {
+  // TODO: re-implement after rubber banding algorithm solidifies
+  describe.skip('rubberBandActionScores', () => {
     it('should throw an error if both parameters are not numbers', () => {
       const patternRecognizer = new PatternRecognizer({
         inputState: [1],
@@ -376,6 +377,7 @@ describe('patternRecognizer', () => {
       expect(patternRecognizer.rubberBandActionScores.bind(patternRecognizer, 1)).to.throw();
       expect(patternRecognizer.rubberBandActionScores.bind(patternRecognizer, 1, 'a')).to.throw();
     });
+
     it('should apply an algorithm to pull all scores towards a target score', (done) => {
       const patternRecognizer = new PatternRecognizer({
         inputState: [1],

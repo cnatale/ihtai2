@@ -1,4 +1,5 @@
 const TimeStep = require('./time-step');
+const _ = require('lodash');
 
 /**
   A sliding window representing the last n timesteps.
@@ -11,6 +12,8 @@ class SlidingWindow {
   }
 
   isFull() {
+    console.log('TIMESTEPS LENGTH: ')
+    console.log(this.timeSteps.length)
     return this.timeSteps.length >= this.numberOfTimeSteps;
   }
 
@@ -36,18 +39,11 @@ class SlidingWindow {
     return this.timeSteps;
   }
 
-  // @return the average drive score for scores influenced by 
-  //   the tail-head's action. Starts with tail-head because
-  //   we need to be able to figure out, starting with a state,
-  //   how the next action influences average drive scores.
-  getAverageDriveScore() {
-    return this.timeSteps.reduce((acc, timeStep, index, timeSteps) => {
-      // skip the first index because we only want to account for
-      // actions influenced by the action taken by tailHead state
-      return index === 0 ?
-        acc :
-        acc + (timeStep.score / (timeSteps.length - 1));
-    }, 0);
+  // @return Return the drive score. TODO: refactor to take
+  // different time periods.
+  getDriveScore() {
+    // last score:
+    return this.timeSteps[this.timeSteps.length - 1].score;
   }
 
   getHead() {
