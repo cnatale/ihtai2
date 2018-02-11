@@ -7,6 +7,7 @@ const expect = chai.expect;
 const main = require('../../../server/main');
 const app = main;
 const dbUtil = require('../../../server/db/util');
+const config = require('config');
 
 
 describe('main', () => {
@@ -57,7 +58,7 @@ describe('main', () => {
           // TODO: better error handling for initializeFromDb().
           // right now, individual results return false if table creation
           // fails, which it always will with patterns initialized from db
-          expect(res.text).to.equal('[false,false,false,false]');
+          expect(res.text).to.equal('already initialized');
           done();
         });
     });    
@@ -102,7 +103,7 @@ describe('main', () => {
           request(app).get('/updateScore')
             .expect(500)
             .then(() => { done(); });
-        });    
+        });
     });
 
     it('returns 200 once sliding window is full', (done) => {

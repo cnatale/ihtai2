@@ -142,7 +142,7 @@ app.get('/updateScore', function (req, res) {
       'pattern_' + slidingWindow.getHead().stateKey
     );
 
-  const avgScoreOverTimeSeries = slidingWindow.getAverageDriveScore();
+  const avgScoreOverTimeSeries = slidingWindow.getDriveScore();
 
   // ex. nextMove string: '1_3_5_2'. Similar to patternRecognizer key format, but
   // no starting 'pattern_'

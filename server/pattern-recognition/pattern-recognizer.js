@@ -362,9 +362,11 @@ class PatternRecognizer {
       throw new Error('Error: both parameters must be numbers!');
     }
 
-    // perhaps do a constant pull when score is beyond a certain value
+    // This next line was original rubber banding algorithm. I'm
+    // doing a simpler calculation now that pulls scores at a constant
+    // rate towards targetScore (not the same as ideal score).
+    // May want to switch back to this implementation with target check at some point.
     // SET \`score\` = (\`score\` * ${dampeningValue} + ${targetScore}) / (${dampeningValue} + 1)
-    // SET \`score\` = if(\`score\` <= ${targetScore}, \`score\`, \`score\` - .1)
 
     const patternTableName = this.patternToString();
     return knex.raw(

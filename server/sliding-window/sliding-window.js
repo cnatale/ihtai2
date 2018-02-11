@@ -12,6 +12,8 @@ class SlidingWindow {
   }
 
   isFull() {
+    console.log('TIMESTEPS LENGTH: ')
+    console.log(this.timeSteps.length)
     return this.timeSteps.length >= this.numberOfTimeSteps;
   }
 
@@ -37,27 +39,9 @@ class SlidingWindow {
     return this.timeSteps;
   }
 
-  // @return the average drive score for scores influenced by 
-  //   the tail-head's action. Starts with tail-head because
-  //   we need to be able to figure out, starting with a state,
-  //   how the next action influences average drive scores.
-  getAverageDriveScore() {
-    const avgTimesteps = this.timeSteps.reduce((acc, timeStep, index, timeSteps) => {
-      // skip the first index because we only want to account for
-      // actions influenced by the action taken by head state
-      return index === 0 ?
-        acc :
-        acc + (timeStep.score / (timeSteps.length - 1));
-    }, 0);
-
-    // min score over all timesteps
-    // return _.min(_.map(this.timeSteps, 'score'));
-    // delta between start score and average score:
-    // return avgTimesteps - this.timeSteps[0].score;
-
-    // average score:
-    // return avgTimesteps;
-
+  // @return Return the drive score. TODO: refactor to take
+  // different time periods.
+  getDriveScore() {
     // last score:
     return this.timeSteps[this.timeSteps.length - 1].score;
   }
