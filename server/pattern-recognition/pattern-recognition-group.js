@@ -204,6 +204,7 @@ class PatternRecognitionGroup {
   }
 
   /**
+    TODO: This function hasn't been tested yet and probably doesn't work.
     Removes:
       -row containing point from global_points_table
       -all data from associated pattern_... table

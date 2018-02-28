@@ -1,14 +1,11 @@
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const request = require('supertest');
-const qs = require('qs');
 chai.use(chaiAsPromised);
 const expect = chai.expect;
 const main = require('../../../server/main');
 const app = main;
 const dbUtil = require('../../../server/db/util');
-const config = require('config');
-
 
 describe('main', () => {
   before(() => {
@@ -94,23 +91,15 @@ describe('main', () => {
 
 
   describe('/updateScore', () => {
-    it('returns 500 until sliding window is full', (done) => {
+    // config timeSteps are set at 5 and 6
+    it('only returns scores for timesteps in memory specified in config.slidingWindow.scoreTimesteps array', (done) => {
       request(app)
         .put('/addTimeStep')
         .send({ actionKey: '10', stateKey: '10_10_10', score: 2 })
         .expect(200)
-        .then(() => {
-          request(app).get('/updateScore')
-            .expect(500)
-            .then(() => { done(); });
-        });
-    });
-
-    it('returns 200 once sliding window is full', (done) => {
-      request(app)
-        .put('/addTimeStep')
-        .send({ actionKey: '10', stateKey: '10_10_10', score: 2 })
-        .expect(200)
+        .then(() => request(app).put('/addTimeStep')
+          .send({ actionKey: '10', stateKey: '10_10_10', score: 2 })
+          .expect(200))
         .then(() => request(app).put('/addTimeStep')
           .send({ actionKey: '10', stateKey: '10_10_10', score: 2 })
           .expect(200))
@@ -125,7 +114,12 @@ describe('main', () => {
           .expect(200))
         .then(() => request(app).get('/updateScore')
           .expect(200))
-        .then(() => { done(); });
+        .then((res) => {
+          const responseObject = JSON.parse(res.text);
+          expect(responseObject).to.be.an('object');
+          expect(responseObject.driveScores).to.be.an('array').with.length(2);
+          done(); 
+        });
     });
   });
 

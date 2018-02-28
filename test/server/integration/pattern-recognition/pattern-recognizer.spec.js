@@ -43,12 +43,21 @@ describe('patternRecognizer', () => {
       });
 
       patternRecognizer.createActionsTableIfNoneExists('1_2_3_4').then(() => {
-        knex.schema.hasTable('1_2_3_4').then(function(exists) {
-          if (!exists) {
+        const tableName = '1_2_3_4';
+        Promise.all([
+          knex.schema.hasTable(tableName),
+          knex.schema.hasColumn(tableName, 'next_action'),
+          knex.schema.hasColumn(tableName, 'score'),
+          knex.schema.hasColumn(tableName, 'time_period')
+        ]).then(function(results) {
+          if (!results.every((result) => result === true)) {
             expect(true).to.equal(false);
           } else {
             expect(true).to.equal(true);
           }
+
+          return knex.raw('SHOW INDEX FROM `1_2_3_4`');
+        }).then(() => {
           done();
         });
       });
@@ -106,15 +115,6 @@ describe('patternRecognizer', () => {
           }
           done();
         });
-      }, () => {
-        knex.schema.hasTable(globalPointsTableName).then(function(exists) {
-          if (!exists) {
-            expect(true).to.equal(false);
-          } else {
-            expect(true).to.equal(true);
-          }
-          done();
-        });        
       });
     });
   });
@@ -286,7 +286,7 @@ describe('patternRecognizer', () => {
       patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3').then(() => {
         patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
 
-          patternRecognizer.updateNextMoveScore('-1_a_x', 10)
+          patternRecognizer.updateNextMoveScores('-1_a_x', [10])
             .then(() => patternRecognizer.getUpdatesPerMinute())
             .then((result) => {
               expect(result).to.be.a('number');
@@ -297,7 +297,7 @@ describe('patternRecognizer', () => {
     });
   });
 
-  describe('updateNextMoveScore', () => {
+  describe('updateNextMoveScores', () => {
     it('should update next action scores based on experience', (done) => {
       const patternRecognizer = new PatternRecognizer({
         inputState: [1],
@@ -309,7 +309,43 @@ describe('patternRecognizer', () => {
       patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3').then(() => {
         patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
 
-          patternRecognizer.updateNextMoveScore('-1_a_x', 10)
+          patternRecognizer.updateNextMoveScores('-1_a_x', [10])
+            .then((result) => {
+              expect(result).to.equal(true);
+              // get the updated move score from table
+              // const expectedScore = (0.3684589274859717 * 9 + 10) / 10;
+              // hard-coding for now until I make random number generation less brittle
+              const expectedScore = 1;
+
+              knex.column('next_action', 'score')
+                .select('score', 'next_action')
+                .from('pattern_1_2_3')
+                .where('next_action', '-1_a_x')
+                .andWhere('time_period', 0)
+                .then((results) => {
+                  expect(results.length).to.equal(1);
+                  expect(results[0].score).to.equal(expectedScore);
+                  expect(results[0].next_action).to.equal('-1_a_x');
+
+                  done();
+                });
+            });
+        });
+      });
+    });
+
+    it('should update next move score for every time period passed in', (done) => {
+      const patternRecognizer = new PatternRecognizer({
+        inputState: [1],
+        actionState: [2],
+        driveState: [3]
+      });
+
+      Math.seedrandom('hello.');
+      patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3').then(() => {
+        patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
+
+          patternRecognizer.updateNextMoveScores('-1_a_x', [10, 5, 2, 4])
             .then((result) => {
               expect(result).to.equal(true);
               // get the updated move score from table
@@ -322,7 +358,8 @@ describe('patternRecognizer', () => {
                 .from('pattern_1_2_3')
                 .where('next_action', '-1_a_x')
                 .then((results) => {
-                  expect(results.length).to.equal(1);
+                  // should return 4 results, one for each time period
+                  expect(results.length).to.equal(4);
                   expect(results[0].score).to.equal(expectedScore);
                   expect(results[0].next_action).to.equal('-1_a_x');
 
@@ -346,7 +383,7 @@ describe('patternRecognizer', () => {
       patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3')).then(() => {
         patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
 
-          patternRecognizer.updateNextMoveScore('-1_a_x', 10)
+          patternRecognizer.updateNextMoveScores('-1_a_x', [10])
             .then((result) => {
               expect(result).to.equal(true);
 
@@ -493,7 +530,7 @@ describe('patternRecognizer', () => {
 
   });
 
-  describe('addPatternToAllExistingActionsTables', () => {
+  describe('addPatternToExistingActionsTables', () => {
     it(`should add a new pattern row to all existing actions tables that is
         a copy of the contents of the pattern name passed in as a param`, (done) => {
 
@@ -515,7 +552,7 @@ describe('patternRecognizer', () => {
         patternRecognizer.actionPatternToString()
       )).then((results) => {
         expect(results[0][0].affectedRows).to.equal(1);
-        // get the entire original patternRecognizer actions table
+        // get the original and copied row out of the table it was copied into
         return Promise.all([
           knex.select('next_action', 'score').table(patternRecognizer.patternToString()).where(
           'next_action', '2'),

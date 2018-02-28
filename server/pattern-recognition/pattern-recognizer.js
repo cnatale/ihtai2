@@ -45,58 +45,6 @@ class PatternRecognizer {
     this.pattern = nDimensionalPoint;
   }
 
-  /*
-    Copies the actions table of an existing PatternRecognizer. Creates a new table
-    named after this PatternRecognizer instance, but that is an exact duplicate of
-    the one tied to the originalPatternRecognizer instance.
-
-    @param originalPatternRecognizer {object} a PatternRecognizer that will have
-      its actions db table duplicated for this PatternRecognizer instance
-
-    @returns {array} an array containing the raw mysql response
-  */
-  copyActionsTable(originalPatternRecognizerString) {
-    // create table using same schema as original pattern recognizer's table
-    return knex.raw(
-      `CREATE TABLE IF NOT EXISTS
-      \`${this.patternToString()}\` LIKE \`${originalPatternRecognizerString}\``)
-      .then(() =>
-      knex.raw(`INSERT INTO \`${this.patternToString()}\` (next_action, score)
-        SELECT next_action, score FROM \`${originalPatternRecognizerString}\``));
-  }
-
-  /*
-    Adds the current instance's pattern to all existing tables.
-
-    @param originalPatternRecognizerStrings {array} a list of PatternRecognizer strings, 
-    which has its row in each actions table copied into the calling PatternRecognizer's
-    row.
-
-    @param patternToSplitFrom {string} name of action point to copy score from, of form
-      'x_y_...n'
-
-    @returns {array} a promise which is fulfilled when all inserts are complete;
-  */
-  addPatternToExistingActionsTables(originalPatternRecognizerStrings, actionPatternToSplitFrom) {
-    return Promise.all(
-      originalPatternRecognizerStrings.map((originalPatternRecognizerString) => 
-        knex.raw(`INSERT IGNORE INTO \`${originalPatternRecognizerString}\` (next_action, score)
-          SELECT '${this.actionPatternToString()}', score
-          FROM \`${originalPatternRecognizerString}\`
-          WHERE next_action = '${actionPatternToSplitFrom}'
-          AND next_action <> '${this.actionPatternToString()}'`))
-    ).then(
-      (result) => result,
-      (message) => message
-    );
-  }
-
-  removePatternFromExistingActionsTables(originalPatternRecognizerStrings, patternToRemove) {
-    return Promise.all(originalPatternRecognizerStrings.map((originalPatternRecognizerString) =>
-    knex.raw(`DELETE FROM \`${originalPatternRecognizerString}\`
-      WHERE  next_action = '${patternToRemove}'`)));    
-  }
-
   initializeTables(possibleActions) {
     const tableName = this.patternToString();
 
@@ -121,41 +69,51 @@ class PatternRecognizer {
     });
   }
 
-  patternToString() {
-    return `pattern_${this.pattern.inputState.join('_')}_${this.pattern.actionState.join('_')}_${this.pattern.driveState.join('_')}`;
-  }
-
-  static patternToString(pattern) {
-    return `pattern_${pattern.inputState.join('_')}_${pattern.actionState.join('_')}_${pattern.driveState.join('_')}`;
-  }
-
-  getPatternAsSingleArray() {
-    return [].concat(this.pattern.inputState).concat(this.pattern.actionState).concat(this.pattern.driveState);
-  }
-
-  getActionState() {
-    return this.pattern.actionState;
-  }
-
-  actionPatternToString() {
-    return this.pattern.actionState.join('_');
-  }
-
   createActionsTableIfNoneExists(tableName) {
-    return knex.schema.createTableIfNotExists(tableName, (table) => {
-      table.increments();
-      table.string('next_action'); // .primary();
-      table.double('score'); // .index();
-      // table.timestamps();
+    return knex.schema.createTable(tableName, function(table) {
+      // table.string('id').primary();
+      table.string('next_action');
+      table.double('score');
+      table.integer('time_period');
+      table.unique(['next_action', 'time_period'], 'id');
     }).then(() => {
       return true;
-    }, (message) => {
-      throw (new Error(message));
+    }).catch((error) => {
+      if (error.message.includes('ER_TABLE_EXISTS_ERROR')) { return true; }
+      console.log(error);
+      return false;
+    });
+  }
+
+  createPointsTableIfNoneExists() {
+    const globalPointsTableName = config.get('db').globalPointsTableName;
+    const _this = this;
+
+    return knex.schema.createTable(globalPointsTableName, function(table) {
+      table.increments('id').primary();
+      table.string('point');
+      table.bigInteger('update_count').unsigned();
+      table.dateTime('update_count_last_reset');
+      _this.getPatternAsSingleArray().map((value, index) => {
+        if (typeof value === 'number') {
+          table.double(`point_index_${index}`);
+        } else { table.string(`point_index_${index}`); }
+      });
+      table.integer('first_action_index');
+      table.integer('first_drive_index');
+    }).then(() => {
+      return true;
+    }).catch((error) => {
+      if (error.message.includes('ER_TABLE_EXISTS_ERROR')) { return true; }
+      console.log(error);
+      return false;
     });
   }
 
   /**
   Creates random weights for each possible next move combination.
+  Only initializes for shortest time period. Other time periods are
+  added as experienced.
 
   @param possibleActions {object} Has the following format:
   {
@@ -169,51 +127,25 @@ class PatternRecognizer {
     ex: [[-1, 0, 1], [1, 2, 3], ... [-1, 1]]
   }
   */
+
+  // TODO: Only initialize for shortest time period. Add time periods
+  //  dynamically later as sliding window populates them with data.
   initializeAllPossibleActions(possibleActions) {
     const actionsTableName = this.patternToString();
 
     const allPossibleActions = patternRecUtil.cartesianProduct(possibleActions);
     const rowsToInsert = allPossibleActions.map((val) => {
       const score = 0;
-      return { next_action: val, score };
+      return { next_action: val, score, time_period: 0 };
     });
 
-    // only add actions columns if they aren't already in the table
-    return knex(actionsTableName).count('*').then(result => {
+    // Only add actions columns if they aren't already in the table.
+    // Otherwise return true and take no action.
+    return knex(actionsTableName).count('*').then((result) => {
       return result[0]['count(*)'] === allPossibleActions.length ?
-        true : knex(actionsTableName).insert(rowsToInsert)
+        true : knex(actionsTableName).insert(rowsToInsert);
     });
   }
-
-  /**
-    Drops actions table with name string given by this pattern recognizer's patternToString method
-  */
-  dropActionsTable() {
-    return knex.schema.dropTable(this.patternToString());
-  }
-
-  createPointsTableIfNoneExists() {
-    const globalPointsTableName = config.get('db').globalPointsTableName;
-
-    return knex.schema.createTableIfNotExists(globalPointsTableName, (table) => {
-      table.increments('id').primary();
-      table.string('point');
-      table.bigInteger('update_count').unsigned();
-      table.dateTime('update_count_last_reset');
-      this.getPatternAsSingleArray().map((value, index) => {
-        if (typeof value === 'number') {
-          table.double(`point_index_${index}`);
-        } else { table.string(`point_index_${index}`); }
-      });
-      table.integer('first_action_index');
-      table.integer('first_drive_index');
-    }).then(() => {
-      return Promise.resolve(true);
-    }, (message) => {
-      throw (new Error(message));
-    });
-  }
-
 
   /**
   Adds this PatternRecognizer's n-dimensional point to the globalPointsTable
@@ -252,6 +184,112 @@ class PatternRecognizer {
     });
   }
 
+
+  /*
+    Copies the actions table of an existing PatternRecognizer. Creates a new table
+    named after this PatternRecognizer instance, but that is an exact duplicate of
+    the one tied to the originalPatternRecognizer instance.
+
+    @param originalPatternRecognizer {object} a PatternRecognizer that will have
+      its actions db table duplicated for this PatternRecognizer instance
+
+    @returns {array} an array containing the raw mysql response
+  */
+  copyActionsTable(originalPatternRecognizerString) {
+    // create table using same schema as original pattern recognizer's table
+    return knex.raw(
+      `CREATE TABLE IF NOT EXISTS
+      \`${this.patternToString()}\` LIKE \`${originalPatternRecognizerString}\``)
+      .then(() =>
+      knex.raw(`INSERT INTO \`${this.patternToString()}\` (next_action, score, time_period)
+        SELECT next_action, score, time_period FROM \`${originalPatternRecognizerString}\``));
+  }
+
+  /*
+    Adds the current instance's pattern to all existing tables. Does this by
+    copying the scores of pattern that is being split in the table (actionPatternToSplitFrom).
+
+    @param originalPatternRecognizerStrings {array} a list of PatternRecognizer strings, 
+    which has its row in each actions table copied into the calling PatternRecognizer's
+    row.
+
+    @param actionPatternToSplitFrom {string} name of action point to copy score from, of form
+      'x_y_...n'
+
+    @returns {array} a promise which is fulfilled when all inserts are complete;
+  */
+
+  // TODO: need to insert all time_periods for action pattern to split from
+  // this may actually happen by default with existing insert into ... select query
+  addPatternToExistingActionsTables(originalPatternRecognizerStrings, actionPatternToSplitFrom) {
+    // TODO: fix select... where to use both score and time_period
+    // '${this.actionPatternToString()}' was where select... next_action was
+    // used to be a final line:  AND next_action <> '${this.actionPatternToString()}'
+    // id should be an action/time_period combo
+    return Promise.all(
+      originalPatternRecognizerStrings.map((originalPatternRecognizerString) => 
+        knex.raw(`INSERT IGNORE INTO \`${originalPatternRecognizerString}\` (next_action, score, time_period)
+          SELECT '${this.actionPatternToString()}', score, time_period
+          FROM \`${originalPatternRecognizerString}\`
+          WHERE next_action = '${actionPatternToSplitFrom}'`))
+    ).then((result) => {
+      return result;
+    }).catch((error) => {
+      console.log(error);
+      return error;
+    });
+  }
+
+  removePatternFromExistingActionsTables(originalPatternRecognizerStrings, patternToRemove) {
+    return Promise.all(originalPatternRecognizerStrings.map((originalPatternRecognizerString) =>
+    knex.raw(`DELETE FROM \`${originalPatternRecognizerString}\`
+      WHERE  next_action = '${patternToRemove}'`)));    
+  }
+
+  patternToString() {
+    return `pattern_${this.pattern.inputState.join('_')}_${this.pattern.actionState.join('_')}_${this.pattern.driveState.join('_')}`;
+  }
+
+  static patternToString(pattern) {
+    return `pattern_${pattern.inputState.join('_')}_${pattern.actionState.join('_')}_${pattern.driveState.join('_')}`;
+  }
+
+  getPatternAsSingleArray() {
+    return [].concat(this.pattern.inputState).concat(this.pattern.actionState).concat(this.pattern.driveState);
+  }
+
+  getActionState() {
+    return this.pattern.actionState;
+  }
+
+  actionPatternToString() {
+    return this.pattern.actionState.join('_');
+  }
+
+  /**
+    Used to create uid's in action tables for action/time_period combos.
+    @param actionString {String} string representation of action state.
+    @param timePeriod {Number} the time period index.
+
+    @returns {String} a string representation of the action string/time period combination.
+  */
+  actionTimePeriodComboToString(actionString, timePeriod) {
+    if (typeof actionString !== 'string') {
+      throw (new Error('param actionString must be a String!'));
+    } else if (typeof timePeriod !== 'number') {
+      throw (new Error('param timePeriod must be a Number!'));
+    }
+
+    return `${actionString}+${timePeriod}`;
+  }
+
+  /**
+    Drops actions table with name string given by this pattern recognizer's patternToString method
+  */
+  dropActionsTable() {
+    return knex.schema.dropTable(this.patternToString());
+  }
+
   removePointFromPointsTable() {
     const globalPointsTableName = config.get('db').globalPointsTableName;
 
@@ -269,7 +307,10 @@ class PatternRecognizer {
   getBestNextAction() {
     const actionsTableName = this.patternToString();
 
-    return knex(actionsTableName).orderBy('score').limit(1)
+    return knex(actionsTableName)
+      .orderBy('score')
+      .orderBy('time_period')
+      .limit(1)
       .then((res) => res[0]);
   }
 
@@ -279,7 +320,7 @@ class PatternRecognizer {
     @return {object} List of all next actions and their scores. Order not guaranteed.
   */
   getNextActionScores() {
-    return knex.column('next_action', 'score').select().from(this.patternToString());
+    return knex.column('next_action', 'score', 'time_period').select().from(this.patternToString());
   }
 
   getUpdatesPerMinute() {
@@ -310,8 +351,17 @@ class PatternRecognizer {
 
   /**
     Reweights the scores in next moves db table
+
+    @param nextActionKey {String}
+    @param scores {Array of Numbers} The scores to update with.
+      Each index is implicitly the time_period value
   */
-  updateNextMoveScore(nextActionKey, score) {
+  // TODO: needs to update all scores, change 'score' to 'scores' array
+  // should probably be array of objects, with each object containing
+  // a score and time_period. Or just increment time_periods for each index.
+  // Also should update all scores that can be updated in sliding window.
+
+  updateNextMoveScores(nextActionKey, scores) {
     /*
     Steps:
       -query actions table to get current score for nextMove key
@@ -328,28 +378,46 @@ class PatternRecognizer {
           if (!results.length) {
             reject('ERROR: no rows selected matching pattern string: ' + patternString);
           }
-          // Update row with weighted average of current score and new score value.
-          // Right now hardcoding new score to be weighted at 10% of current score
-          // for updated value.
 
-          const updatedScore = (results[0].score * config.moveUpdates.originalScoreWeight + score) / (config.moveUpdates.originalScoreWeight + 1);
-          // const updatedScore = score;
-          knex(patternString)
-            .where('next_action', nextActionKey)
-            .update('score', updatedScore)
-            .then((numberOfRowsUpdated) => {
-              if (!numberOfRowsUpdated) {
-                reject('ERROR: no rows affected by score update');
-              }
-              // before resolving, increment update_count in patternRecognizer's globalPointsTable row
-              const globalPointsTableName = config.get('db').globalPointsTableName;
-              knex(globalPointsTableName)
-                .increment('update_count', 1)
-                .where('point', '=', patternString)
-                .then(() => {
-                  resolve(true);
-                });
-            });
+          const queries = scores.map((score, index) => {
+            // If no existing score for a time_period, set to score.
+            // Otherwise, update row with weighted average of current score and new score value.
+            const updatedScore = results[index] ?
+              (results[index].score * config.moveUpdates.originalScoreWeight + score) / (config.moveUpdates.originalScoreWeight + 1) :
+              score;
+
+            // updated score is 1, but insert/update is failing
+            return knex.raw(
+              `INSERT INTO ${patternString} (
+                next_action,
+                time_period,
+                score)
+              values (?,?,?)
+                ON DUPLICATE KEY UPDATE score=?`, [
+                  nextActionKey,
+                  index,
+                  updatedScore,
+                  updatedScore
+                ])
+              .then((results) => {
+                // affectedRows value of 1 indicates insertion.
+                // affectedRows value of 2 indicates an update.
+                // see https://dev.mysql.com/doc/refman/5.7/en/mysql-affected-rows.html
+                if (results[0].affectedRows !== 1 && results[0].affectedRows !== 2) {
+                  reject('ERROR: no rows affected by score update');
+                }
+
+                // before resolving, increment update_count in patternRecognizer's globalPointsTable row
+                const globalPointsTableName = config.get('db').globalPointsTableName;
+                return knex(globalPointsTableName)
+                  .increment('update_count', 1)
+                  .where('point', '=', patternString);
+              });
+          });
+
+          Promise.all(queries).then(() => {
+            resolve(true);
+          });
         });
     });
   }

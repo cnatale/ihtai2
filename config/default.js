@@ -27,7 +27,10 @@ module.exports = {
   // note that increasing sliding window size increases the 
   // time it takes for learning to take effect. don't use
   // a smaller value than 3
-  slidingWindowSize: 30,
+  slidingWindow: {
+    size: 100,
+    scoreTimesteps: [ 5, 30, 100]
+  },
   moveUpdates: {
     // successful values for balldemo have been 4/5, 9/10, and 15/16
     // lower values have more "jagged" movement patterns. Higher is smoother.

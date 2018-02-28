@@ -18,7 +18,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // instantiate with number of timesteps stored
-const slidingWindow = new SlidingWindow(config.slidingWindowSize);
+const slidingWindow = new SlidingWindow(config.slidingWindow.size, config.slidingWindow.scoreTimesteps);
 const patternRecognitionGroup = new PatternRecognitionGroup();
 
 // test initialization. in practice, use the post version
@@ -132,35 +132,39 @@ app.get('/updateScore', function (req, res) {
   log.info('request to update score for sliding window head received');
   log.info('req.body');
 
-  if (!slidingWindow.isFull()) {
-    return res.status(500).send(`Sliding window must be full with
-      ${slidingWindow.numberOfTimeSteps} elements in order to update score!`);
-  }
+  // TODO: since we can now have many time periods stored from a sliding window,
+  //  call update using scores from all time periods the sliding window is filled
+  //  for.
+  // if (!slidingWindow.isFull()) {
+  //   return res.status(500).send(`Sliding window must be full with
+  //     ${slidingWindow.numberOfTimeSteps} elements in order to update score!`);
+  // }
 
   const patternRecognizer = 
     patternRecognitionGroup.getPatternRecognizer(
       'pattern_' + slidingWindow.getHead().stateKey
     );
 
-  const avgScoreOverTimeSeries = slidingWindow.getDriveScore();
+  const driveScores = slidingWindow.getAllDriveScores();
 
   // ex. nextMove string: '1_3_5_2'. Similar to patternRecognizer key format, but
   // no starting 'pattern_'
-  patternRecognizer.updateNextMoveScore(
+  return patternRecognizer.updateNextMoveScores(
     slidingWindow.getTailHead().actionKey, // this might just need to be getHead().actionKey?
-    avgScoreOverTimeSeries
+    driveScores
   ).then(() => {
     // apply rubber banding if enabled
     return config.rubberBanding.enabled ?
       patternRecognizer.rubberBandActionScores(
         config.rubberBanding.dampeningValue,
         config.rubberBanding.targetScore
-      ) : null;
+      ) : null;    
   }).then(() => {
+    // only rubber band once
     res.status(200).json({
       startPattern: patternRecognizer.patternToString(),
       actionKey: slidingWindow.getTailHead().actionKey,
-      actionAverageScore: avgScoreOverTimeSeries
+      driveScores
     });
   }).catch((message) => {
     res.status(500).send(message);
