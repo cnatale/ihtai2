@@ -59,7 +59,7 @@ describe('SlidingWindow', () => {
       slidingWindow.addTimeStep('3', '3_3_3', 3);
       slidingWindow.addTimeStep('4', '4_4_4', 4);
       
-      const expectedScore = 4;
+      const expectedScore = 0;
       expect(slidingWindow.getDriveScore(0)).to.equal(expectedScore);
 
       const slidingWindow2 = new SlidingWindow(5, [5]);
@@ -81,11 +81,11 @@ describe('SlidingWindow', () => {
       slidingWindow.addTimeStep('3', '3_3_3', 3);
       slidingWindow.addTimeStep('4', '4_4_4', 4);
 
-      expect(slidingWindow.getDriveScore(0)).to.equal(4);
-      expect(slidingWindow.getDriveScore(1)).to.equal(3);
+      expect(slidingWindow.getDriveScore(0)).to.equal(0);
+      expect(slidingWindow.getDriveScore(1)).to.equal(1);
       expect(slidingWindow.getDriveScore(2)).to.equal(2);
-      expect(slidingWindow.getDriveScore(3)).to.equal(1);
-      expect(slidingWindow.getDriveScore(4)).to.equal(0);
+      expect(slidingWindow.getDriveScore(3)).to.equal(3);
+      expect(slidingWindow.getDriveScore(4)).to.equal(4);
     });
 
     it('should throw an error if getDriveScore param value is greater than number of timesteps stored', () => {
@@ -93,7 +93,8 @@ describe('SlidingWindow', () => {
       slidingWindow.addTimeStep('0', '0_0_0', 0);
       slidingWindow.addTimeStep('1', '1_1_1', 1);
 
-      expect(slidingWindow.getDriveScore(1)).to.equal(0);
+      expect(slidingWindow.getDriveScore(0)).to.equal(0);
+      expect(slidingWindow.getDriveScore(1)).to.equal(1);
       // 2 will fail even though there are two timesteps because distance is 0-indexed.
       expect(slidingWindow.getDriveScore.bind(slidingWindow, 2)).to.throw();
     });
@@ -109,7 +110,7 @@ describe('SlidingWindow', () => {
       slidingWindow.addTimeStep('4', '4_4_4', 4);
 
       const allDriveScores = slidingWindow.getAllDriveScores();
-      expect(allDriveScores).to.deep.equal([4, 3, 2, 1, 0]);
+      expect(allDriveScores).to.deep.equal([0, 1, 2, 3, 4]);
     });
 
     it('should filter results for timestep distances > those in memory', () => {
@@ -118,7 +119,7 @@ describe('SlidingWindow', () => {
       slidingWindow.addTimeStep('1', '1_1_1', 1);
 
       const allDriveScores = slidingWindow.getAllDriveScores();
-      expect(allDriveScores).to.deep.equal([1, 0]);      
+      expect(allDriveScores).to.deep.equal([0, 1]);      
     });
 
     it('should return an empty array if no timestep distances are < number of steps stored in memory', () => {

@@ -388,12 +388,12 @@ class PatternRecognizer {
 
             // updated score is 1, but insert/update is failing
             return knex.raw(
-              `INSERT INTO ${patternString} (
+              `INSERT INTO \`${patternString}\` (
                 next_action,
                 time_period,
                 score)
               values (?,?,?)
-                ON DUPLICATE KEY UPDATE score=?`, [
+                ON DUPLICATE KEY UPDATE score = ?`, [
                   nextActionKey,
                   index,
                   updatedScore,

@@ -70,12 +70,17 @@ class SlidingWindow {
 
     @returns {number} the drive score.
   */
+
+  // TODO: I think this is wrong. The old version performed the following operation:
+  // return this.timeSteps[this.timeSteps.length - 1].score;
   getDriveScore(distanceFromCurrentMoment) {
     // ex: this would return the most recently-added timeStep.
     // return this.timeSteps[this.timeSteps.length - 1].score;
 
-    const index = (this.timeSteps.length - 1) - distanceFromCurrentMoment;
-    if (index < 0) { throw new Error('Distance is greater than number of timesteps!'); }
+    // this is useless because it's looking backwards in time from the most recent action.
+    // needs to look forward from earliest index.
+    const index = distanceFromCurrentMoment;
+    if (index >= this.timeSteps.length) { throw new Error('Distance is greater than number of timesteps!'); }
 
     return this.timeSteps[index].score;
   }
@@ -88,8 +93,8 @@ class SlidingWindow {
   getAllDriveScores() {
     // Remove all timeStep distances that are greater than what is stored in this.timeSteps.
     const filteredScoreTimeSteps = this.scoreTimeSteps.filter((scoreTimeStepDistance) => {
-      const index = (this.timeSteps.length - 1) - scoreTimeStepDistance;
-      return index >= 0;
+      const index = scoreTimeStepDistance;
+      return index < this.timeSteps.length;
     });
 
     return filteredScoreTimeSteps.map((scoreTimeStepDistance) => {
