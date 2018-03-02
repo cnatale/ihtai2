@@ -374,6 +374,7 @@ class PatternRecognizer {
     return new Promise((resolve, reject) => {
       knex.select('score').from(patternString)
         .where('next_action', nextActionKey)
+        .orderBy('time_period')
         .then((results) => {
           if (!results.length) {
             reject('ERROR: no rows selected matching pattern string: ' + patternString);
@@ -384,9 +385,9 @@ class PatternRecognizer {
             // Otherwise, update row with weighted average of current score and new score value.
             const updatedScore = results[index] ?
               (results[index].score * config.moveUpdates.originalScoreWeight + score) / (config.moveUpdates.originalScoreWeight + 1) :
-              score;
+              0;
+            /* ^^^ originally was score, or maybe try config.rubberBanding.targetScore */
 
-            // updated score is 1, but insert/update is failing
             return knex.raw(
               `INSERT INTO \`${patternString}\` (
                 next_action,

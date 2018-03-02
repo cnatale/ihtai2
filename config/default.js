@@ -28,8 +28,8 @@ module.exports = {
   // time it takes for learning to take effect. don't use
   // a smaller value than 3
   slidingWindow: {
-    size: 100,
-    scoreTimesteps: [ 5, 30, 99]
+    size: 300,
+    scoreTimesteps: [ /* 5, */ 30, 99, 299]
   },
   moveUpdates: {
     // successful values for balldemo have been 4/5, 9/10, and 15/16
