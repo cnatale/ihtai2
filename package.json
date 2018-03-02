@@ -5,7 +5,7 @@
   "main": "server/index.js",
   "scripts": {
     "selenium-nix-start": "brew services start chromedriver && ./node_modules/.bin/selenium-standalone start",
-    "end-to-end-test": "node ./test/end_to_end/test.js",
+    "end-to-end-test": "node ./automated_browser_scripts/test.js",
     "start": "node ./server/main.js",
     "start-debugger": "node --inspect --debug-brk ./server/main.js",
     "test": "NODE_ENV=test ./node_modules/.bin/mocha test/**/*.spec.js",
