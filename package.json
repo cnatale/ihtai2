@@ -4,7 +4,7 @@
   "description": "",
   "main": "server/index.js",
   "scripts": {
-    "selenium-nix-start": "brew services start chromedriver | ./node_modules/.bin/selenium-standalone start",
+    "selenium-nix-start": "brew services start chromedriver && ./node_modules/.bin/selenium-standalone start",
     "end-to-end-test": "node ./test/end_to_end/test.js",
     "start": "node ./server/main.js",
     "start-debugger": "node --inspect --debug-brk ./server/main.js",
