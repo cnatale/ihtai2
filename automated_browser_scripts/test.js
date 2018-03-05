@@ -2,13 +2,30 @@ var webdriverio = require('webdriverio');
 var options = { desiredCapabilities: { browserName: 'chrome' } };
 var client = webdriverio.remote(options);
 
+let count = 0;
+const numberOfTestsToRun = 60;
+
+function waitLoop() {
+  console.log('waitloop called');
+  client.getText('#statusBox').then((value) => {
+    console.log(value);
+    if(value === 'Test Complete'){
+      console.log('test complete')
+      count++;
+      client.refresh();
+    }
+  })
+
+
+  if (count < numberOfTestsToRun) {
+    setTimeout(waitLoop, 1500);
+  }
+}
+
 client
-    .init()
-    .url('https://duckduckgo.com/')
-    .setValue('#search_form_input_homepage', 'WebdriverIO')
-    .click('#search_button_homepage')
-    .getTitle().then(function(title) {
-        console.log('Title is: ' + title);
-        // outputs: "Title is: WebdriverIO (Software) at DuckDuckGo"
-    })
-    //.end();
+  .init()
+  //.url('http://www.duckduckgo.com')
+  .url('http://localhost:3800/balldemo.html')
+  .then(() => {
+    setTimeout(waitLoop, 1500);
+  })
