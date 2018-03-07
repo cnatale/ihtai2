@@ -385,7 +385,7 @@ class PatternRecognizer {
             // Otherwise, update row with weighted average of current score and new score value.
             const updatedScore = results[index] ?
               (results[index].score * config.moveUpdates.originalScoreWeight + score) / (config.moveUpdates.originalScoreWeight + 1) :
-              0;
+              score;
             /* ^^^ originally was score, or maybe try config.rubberBanding.targetScore */
 
             return knex.raw(

@@ -23,13 +23,13 @@ module.exports = {
     // The score that all action scores are pulled towards.
     targetScore: 10
   },
-  maxPatterns: 1000,
+  maxPatterns: 4000,
   // note that increasing sliding window size increases the 
   // time it takes for learning to take effect. don't use
   // a smaller value than 3
   slidingWindow: {
-    size: 300,
-    scoreTimesteps: [ /* 5, */ 30, 99, 299]
+    size: 151,
+    scoreTimesteps: [ 30, 60, 90, 120, 150 ]
   },
   moveUpdates: {
     // successful values for balldemo have been 4/5, 9/10, and 15/16

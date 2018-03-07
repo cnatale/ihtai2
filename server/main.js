@@ -135,10 +135,10 @@ app.get('/updateScore', function (req, res) {
   // TODO: since we can now have many time periods stored from a sliding window,
   //  call update using scores from all time periods the sliding window is filled
   //  for.
-  // if (!slidingWindow.isFull()) {
-  //   return res.status(500).send(`Sliding window must be full with
-  //     ${slidingWindow.numberOfTimeSteps} elements in order to update score!`);
-  // }
+  if (!slidingWindow.isFull()) {
+    return res.status(500).send(`Sliding window must be full with
+      ${slidingWindow.numberOfTimeSteps} elements in order to update score!`);
+  }
 
   const patternRecognizer = 
     patternRecognitionGroup.getPatternRecognizer(

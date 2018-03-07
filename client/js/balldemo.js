@@ -35,7 +35,8 @@ var createScene = function () {
   sphere.material = materialAmiga;
 
   // sphere.position = new BABYLON.Vector3(Math.random() * 20 - 10, 0, Math.random() * 10 - 5);
-  sphere.position = new BABYLON.Vector3(10, 0, 5);
+  // sphere.position = new BABYLON.Vector3(10, 0, 5);
+  sphere.position = new BABYLON.Vector3(-40, 0, 40);
 
   shadowGenerator.addShadowCaster(sphere);
 
@@ -411,7 +412,8 @@ function actOnSuggestion (suggestedAction) {
   // console.log('drive score after action: ');
   // console.log(driveScore);
 
-  if (counter < 500) {
+  if (counter < 1500) {
+    console.log(`cycle ${counter} complete`)
     counter++;
     return getNearestPatternRecognizer(ihtaiState);
   } else {
@@ -421,8 +423,6 @@ function actOnSuggestion (suggestedAction) {
     element.classList.add('finished');
   }
 }
-
-var counter = 0;
 
 function getDriveScore(suggestedAction) {
   // test logic. delete when done.
