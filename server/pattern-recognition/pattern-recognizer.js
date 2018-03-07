@@ -70,7 +70,7 @@ class PatternRecognizer {
   }
 
   createActionsTableIfNoneExists(tableName) {
-    return knex.schema.createTable(tableName, function(table) {
+    return knex.schema.createTableIfNotExists(tableName, function(table) {
       // table.string('id').primary();
       table.string('next_action');
       table.double('score');
@@ -89,7 +89,7 @@ class PatternRecognizer {
     const globalPointsTableName = config.get('db').globalPointsTableName;
     const _this = this;
 
-    return knex.schema.createTable(globalPointsTableName, function(table) {
+    return knex.schema.createTableIfNotExists(globalPointsTableName, function(table) {
       table.increments('id').primary();
       table.string('point');
       table.bigInteger('update_count').unsigned();
