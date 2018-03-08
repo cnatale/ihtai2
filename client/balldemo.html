@@ -27,7 +27,19 @@
             color: #fff;
         }
 
-        #statusBox.finished {
+        #avgScore {
+          position: absolute;
+          top: 20px;
+          left: 0px;
+        }
+
+        #pctTimeInTargetArea {
+          position: absolute;
+          top: 40px;
+          left: 0px;        
+        }
+
+        #statusBox.finished, #avgScore, #pctTimeInTargetArea {
           color: #42f453;
         }
     </style>
@@ -42,6 +54,8 @@
 
     <canvas id="renderCanvas" touch-action="none"></canvas> //touch-action="none" for best results from PEP
     <div id="statusBox">Test Running. Do not refresh page.</div>
+    <div id="avgScore"></div>
+    <div id="pctTimeInTargetArea"></div>
     <script src="js/balldemo.js"></script>
 
    </body>

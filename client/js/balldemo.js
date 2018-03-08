@@ -35,7 +35,7 @@ var createScene = function () {
   sphere.material = materialAmiga;
 
   // sphere.position = new BABYLON.Vector3(Math.random() * 20 - 10, 0, Math.random() * 10 - 5);
-  // sphere.position = new BABYLON.Vector3(10, 0, 5);
+  // sphere.position = new BABYLON.Vector3(5, 0, 5);
   sphere.position = new BABYLON.Vector3(-40, 0, 40);
 
   shadowGenerator.addShadowCaster(sphere);
@@ -142,8 +142,9 @@ window.addEventListener('resize', function () { // Watch for browser/canvas resi
 
 
 //////// BEGIN IHTAI CODE //////////
+let scoreSum = 0;
+let timeInTargetAreaSum = 0;
 
-// TODO: hook up ball movement to Ihtai suggestions 
 var currentInputState = [
   Math.round(sphere.position.x - box0.position.x),
   Math.round(sphere.position.z - box0.position.z),
@@ -409,10 +410,14 @@ function actOnSuggestion (suggestedAction) {
       driveState: [driveScore]
   };
 
-  // console.log('drive score after action: ');
-  // console.log(driveScore);
+  const timeInTargetAreaAdder =
+    (Math.abs(sphere.position.x - box0.position.x) + Math.abs(sphere.position.z - box0.position.z)) <= 10 ? 1 : 0;
 
-  if (counter < 1500) {
+  timeInTargetAreaSum += timeInTargetAreaAdder;
+  scoreSum += driveScore;
+
+  const numberOfCycles = 500;
+  if (counter < numberOfCycles) {
     console.log(`cycle ${counter} complete`)
     counter++;
     return getNearestPatternRecognizer(ihtaiState);
@@ -420,6 +425,12 @@ function actOnSuggestion (suggestedAction) {
     engine.stopRenderLoop();
     // TODO: add divs with avg score, and pct of time spent
     // under target that end to end test can consume.
+
+    const avgScore = scoreSum / numberOfCycles;
+    const pctTimeInTargetArea = timeInTargetAreaSum / numberOfCycles;
+    document.getElementById('avgScore').innerHTML = avgScore;
+    document.getElementById('pctTimeInTargetArea').innerHTML = pctTimeInTargetArea;
+
     const element = document.getElementById('statusBox');
     element.innerHTML = 'Test Complete';
     element.classList.add('finished');
