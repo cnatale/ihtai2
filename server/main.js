@@ -13,8 +13,13 @@ const argv = require('minimist')(process.argv.slice(2));
 // rubberBandingTargetScore
 // rubberBandingDecay
 // originalScoreWeight
-// maxPatterns
+// maxPatterns,
+// scoreTimeSteps (pass in the form of 'timeSteps=30,60,90,120' etc.)
+// slidingWindowSize
+
 const maxPatterns = argv.maxPatterns || config.maxPatterns;
+const scoreTimesteps = argv.scoreTimesteps.split(',') || config.slidingWindow.scoreTimesteps;
+const slidingWindowSize = argv.slidingWindowSize || config.slidingWindow.size;
 
 module.exports = app;
 
@@ -25,7 +30,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // instantiate with number of timesteps stored
-const slidingWindow = new SlidingWindow(config.slidingWindow.size, config.slidingWindow.scoreTimesteps);
+const slidingWindow = new SlidingWindow(slidingWindowSize, scoreTimesteps);
 const patternRecognitionGroup = new PatternRecognitionGroup();
 
 // test initialization. in practice, use the post version

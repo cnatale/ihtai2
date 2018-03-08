@@ -418,6 +418,8 @@ function actOnSuggestion (suggestedAction) {
     return getNearestPatternRecognizer(ihtaiState);
   } else {
     engine.stopRenderLoop();
+    // TODO: add divs with avg score, and pct of time spent
+    // under target that end to end test can consume.
     const element = document.getElementById('statusBox');
     element.innerHTML = 'Test Complete';
     element.classList.add('finished');
