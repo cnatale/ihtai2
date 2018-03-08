@@ -426,8 +426,8 @@ class PatternRecognizer {
   /**
     Pulls all action scores for a PatternRecognizer towards a target score.
    */
-  rubberBandActionScores(dampeningValue, targetScore, decay) {
-    if (isNaN(dampeningValue) || isNaN(targetScore) || isNaN(decay)) {
+  rubberBandActionScores(targetScore, decay) {
+    if (isNaN(targetScore) || isNaN(decay)) {
       throw new Error('Error: all parameters must be numbers!');
     }
 
