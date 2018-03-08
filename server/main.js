@@ -13,6 +13,8 @@ const argv = require('minimist')(process.argv.slice(2));
 // rubberBandingTargetScore
 // rubberBandingDecay
 // originalScoreWeight
+// maxPatterns
+const maxPatterns = argv.maxPatterns || config.maxPatterns;
 
 module.exports = app;
 
@@ -198,7 +200,7 @@ app.post('/splitPatternRecognizer', function(req, res) {
   log.info('request to split pattern recognizer received');
   log.info(req.body);
 
-  if (patternRecognitionGroup.getNumberOfPatterns() > config.maxPatterns) {
+  if (patternRecognitionGroup.getNumberOfPatterns() > maxPatterns) {
     return res.status(500).send('Maximum number of patterns already created!');
   }
 
