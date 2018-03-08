@@ -26,6 +26,8 @@ const config = require('config');
 const patternRecUtil = require('./util');
 const moment = require('moment');
 const { nDimensionalPointSchema } = require('../schemas/schemas');
+// TODO: move all command line argument processing to main.js
+const argv = require('minimist')(process.argv);
 
 class PatternRecognizer {
   /**
@@ -370,6 +372,7 @@ class PatternRecognizer {
     */
 
     const patternString = this.patternToString();
+    const originalScoreWeight = argv.originalScoreWeight || config.moveUpdates.originalScoreWeight;
 
     return new Promise((resolve, reject) => {
       knex.select('score').from(patternString)
@@ -384,9 +387,8 @@ class PatternRecognizer {
             // If no existing score for a time_period, set to score.
             // Otherwise, update row with weighted average of current score and new score value.
             const updatedScore = results[index] ?
-              (results[index].score * config.moveUpdates.originalScoreWeight + score) / (config.moveUpdates.originalScoreWeight + 1) :
+              (results[index].score * originalScoreWeight + score) / (originalScoreWeight + 1) :
               score;
-            /* ^^^ originally was score, or maybe try config.rubberBanding.targetScore */
 
             return knex.raw(
               `INSERT INTO \`${patternString}\` (

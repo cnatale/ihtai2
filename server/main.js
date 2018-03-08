@@ -8,6 +8,11 @@ log.level(config.log.level);
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
+const argv = require('minimist')(process.argv.slice(2));
+// current accepted command line arguments:
+// rubberBandingTargetScore
+// rubberBandingDecay
+// originalScoreWeight
 
 module.exports = app;
 
@@ -156,8 +161,8 @@ app.get('/updateScore', function (req, res) {
     // apply rubber banding if enabled
     return config.rubberBanding.enabled ?
       patternRecognizer.rubberBandActionScores(
-        config.rubberBanding.targetScore,
-        config.rubberBanding.decay
+        argv.rubberBandingTargetScore || config.rubberBanding.targetScore,
+        argv.rubberBandingDecay || config.rubberBanding.decay
       ) : null;    
   }).then(() => {
     // only rubber band once
