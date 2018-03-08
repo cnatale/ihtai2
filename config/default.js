@@ -17,10 +17,7 @@ module.exports = {
   },
   rubberBanding: {
     enabled: true,
-    // The larger the dampening value, the weaker rubber banding effect is. Default of 20.
-    // Lower values result in more frantic cycling of possible actions.
-    dampeningValue: /* 800 */ 20,
-    // The score that all action scores are pulled towards.
+    // The score that action scores above targetScore threshold are pulled towards.
     targetScore: 10,
     decay: 0.05
   },
