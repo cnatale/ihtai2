@@ -10,12 +10,12 @@ const bodyParser = require('body-parser');
 const app = express();
 const argv = require('minimist')(process.argv.slice(2));
 // current accepted command line arguments:
-// rubberBandingTargetScore
-// rubberBandingDecay
-// originalScoreWeight
-// maxPatterns,
-// scoreTimeSteps (pass in the form of 'timeSteps=30,60,90,120' etc.)
-// slidingWindowSize
+// rubberBandingTargetScore {number}
+// rubberBandingDecay {number}
+// originalScoreWeight {number}
+// maxPatterns, {number}
+// scoreTimeSteps (pass in the form of 'timeSteps=30,60,90,120' etc.) {comma-separated numbers}
+// slidingWindowSize {number}
 
 const maxPatterns = argv.maxPatterns || config.maxPatterns;
 const scoreTimesteps = argv.scoreTimesteps ? argv.scoreTimesteps.split(',') : config.slidingWindow.scoreTimesteps;
