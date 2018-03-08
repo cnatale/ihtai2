@@ -10,7 +10,8 @@ const mysqlKnex = knex({
     user: config.mysql.user,
     password: config.mysql.password,
     database: config.mysql.database
-  }
+  },
+  pool: { min: 0, max: 1 }
 });
 
 log.info('NODE_ENV:', process.env.NODE_ENV);

@@ -3,7 +3,7 @@ var options = { desiredCapabilities: { browserName: 'chrome' } };
 var client = webdriverio.remote(options);
 
 let count = 0;
-const numberOfTestsToRun = 100;
+const numberOfTestsToRun = 25;
 
 function waitLoop() {
   client.getText('#statusBox').then((value) => {
