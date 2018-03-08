@@ -12,7 +12,7 @@ const argv = require('minimist')(process.argv.slice(2));
 // current accepted command line arguments:
 // rubberBandingTargetScore {number}
 // rubberBandingDecay {number}
-// originalScoreWeight {number}
+// originalScoreWeight {number} (referenced in pattern-recognizer.updateNextMoveScores())
 // maxPatterns, {number}
 // scoreTimeSteps (pass in the form of 'timeSteps=30,60,90,120' etc.) {comma-separated numbers}
 // slidingWindowSize {number}
