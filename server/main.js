@@ -18,8 +18,10 @@ const argv = require('minimist')(process.argv.slice(2));
 // slidingWindowSize
 
 const maxPatterns = argv.maxPatterns || config.maxPatterns;
-const scoreTimesteps = argv.scoreTimesteps.split(',') || config.slidingWindow.scoreTimesteps;
+const scoreTimesteps = argv.scoreTimesteps ? argv.scoreTimesteps.split(',') : config.slidingWindow.scoreTimesteps;
 const slidingWindowSize = argv.slidingWindowSize || config.slidingWindow.size;
+const rubberBandingTargetScore = argv.rubberBandingTargetScore || config.rubberBanding.targetScore;
+const rubberBandingDecay = argv.rubberBandingDecay || config.rubberBanding.decay;
 
 module.exports = app;
 
@@ -168,8 +170,8 @@ app.get('/updateScore', function (req, res) {
     // apply rubber banding if enabled
     return config.rubberBanding.enabled ?
       patternRecognizer.rubberBandActionScores(
-        argv.rubberBandingTargetScore || config.rubberBanding.targetScore,
-        argv.rubberBandingDecay || config.rubberBanding.decay
+        rubberBandingTargetScore,
+        rubberBandingDecay
       ) : null;    
   }).then(() => {
     // only rubber band once
