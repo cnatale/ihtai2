@@ -426,9 +426,9 @@ class PatternRecognizer {
   /**
     Pulls all action scores for a PatternRecognizer towards a target score.
    */
-  rubberBandActionScores(dampeningValue, targetScore) {
-    if (isNaN(dampeningValue) || isNaN(targetScore)) {
-      throw new Error('Error: both parameters must be numbers!');
+  rubberBandActionScores(dampeningValue, targetScore, decay) {
+    if (isNaN(dampeningValue) || isNaN(targetScore) || isNaN(decay)) {
+      throw new Error('Error: all parameters must be numbers!');
     }
 
     // This next line was original rubber banding algorithm. I'm
@@ -436,11 +436,11 @@ class PatternRecognizer {
     // rate towards targetScore (not the same as ideal score).
     // May want to switch back to this implementation with target check at some point.
     // SET \`score\` = (\`score\` * ${dampeningValue} + ${targetScore}) / (${dampeningValue} + 1)
-    // was using .10 as the decay value, .05 results in less new behavior learning
+    // was using .10 as the decay value, .05 results in less new behavior learning but more steady behavior
     const patternTableName = this.patternToString();
     return knex.raw(
       `UPDATE \`${patternTableName}\`
-       SET \`score\` = if(\`score\` <= ${targetScore}, \`score\`, \`score\` - .05)
+       SET \`score\` = if(\`score\` <= ${targetScore}, \`score\`, \`score\` - ${decay})
        WHERE \`next_action\` IN
        (
          SELECT \`next_action\` FROM

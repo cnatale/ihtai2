@@ -21,7 +21,8 @@ module.exports = {
     // Lower values result in more frantic cycling of possible actions.
     dampeningValue: /* 800 */ 20,
     // The score that all action scores are pulled towards.
-    targetScore: 10
+    targetScore: 10,
+    decay: 0.05
   },
   maxPatterns: 4000,
   // note that increasing sliding window size increases the 

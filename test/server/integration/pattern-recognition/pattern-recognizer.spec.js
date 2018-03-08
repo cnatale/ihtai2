@@ -484,6 +484,10 @@ describe('patternRecognizer', () => {
         });
       });
     });
+
+    it('should decay scores above threshold based on decay param', (done) => {
+
+    });
   });
 
   describe('copyActionsTable', () => {

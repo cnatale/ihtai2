@@ -157,7 +157,8 @@ app.get('/updateScore', function (req, res) {
     return config.rubberBanding.enabled ?
       patternRecognizer.rubberBandActionScores(
         config.rubberBanding.dampeningValue,
-        config.rubberBanding.targetScore
+        config.rubberBanding.targetScore,
+        config.rubberBanding.decay
       ) : null;    
   }).then(() => {
     // only rubber band once
