@@ -416,7 +416,7 @@ function actOnSuggestion (suggestedAction) {
   timeInTargetAreaSum += timeInTargetAreaAdder;
   scoreSum += driveScore;
 
-  const numberOfCycles = 500;
+  const numberOfCycles = 750;
   if (counter < numberOfCycles) {
     console.log(`cycle ${counter} complete`)
     counter++;

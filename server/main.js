@@ -22,6 +22,13 @@ const scoreTimesteps = argv.scoreTimesteps ? argv.scoreTimesteps.split(',') : co
 const slidingWindowSize = argv.slidingWindowSize || config.slidingWindow.size;
 const rubberBandingTargetScore = argv.rubberBandingTargetScore || config.rubberBanding.targetScore;
 const rubberBandingDecay = argv.rubberBandingDecay || config.rubberBanding.decay;
+console.log(`
+maxPatterns:${maxPatterns}
+scoreTimesteps:${scoreTimesteps}
+slidingWindowSize:${slidingWindowSize}
+rubberBandingTargetScore:${rubberBandingTargetScore}
+rubberBandingDecay:${rubberBandingDecay}
+`);
 
 module.exports = app;
 

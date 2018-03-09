@@ -8,7 +8,16 @@ console.log('starting end to end test with the following arguments:');
 console.log(argv);
 
 let count = 0;
-const numberOfTestsToRun = 25;
+const numberOfTestsToRun = 75;
+
+// build filename
+let fileName = './data/';
+_.forEach(argv, (value, key) => {
+  if (key !== '_') {
+    fileName = `${fileName}_${key}_${value}`;
+  }
+});
+fileName = fileName + '.csv';
 
 function waitLoop() {
   let avgScore, pctTimeInTargetArea;
@@ -29,7 +38,7 @@ function waitLoop() {
         });
         output = output + `${values[0]},${values[1]}\n`;
 
-        fs.appendFile('./data/test_results.csv', output, function(err) {
+        fs.appendFile(fileName, output, function(err) {
           if (err) {
             console.log(err);
           }
@@ -63,16 +72,17 @@ client
     });
     output = output + 'Average Score,Percentage Time in Target Area\n';
 
-    return new Promise((resolve, reject) => {
-      fs.appendFile('./data/test_results.csv', output, function(err) {
-            if (err) {
-              console.log(err);
-              return reject();
-            }
+    // adds column titles for csv rows
+    // return new Promise((resolve, reject) => {
+    //   fs.appendFile(fileName, output, function(err) {
+    //         if (err) {
+    //           console.log(err);
+    //           return reject();
+    //         }
 
-            return resolve();
-          });
-    });
+    //         return resolve();
+    //       });
+    // });
 
   })
   .then(() => {

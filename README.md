@@ -46,3 +46,11 @@ You'll also need to setup your browser to interface with Webdriver. See instruct
 `npm run start-and-trial -- --slidingWindowSize=400 --maxPatterns=2000 --rubberBandingTargetScore=10 --rubberBandingDecay=0.05 --originalScoreWeight=9 --scoreTimeSteps=30,60,90,120,150,180,210,240,270,300`
 
 Trial data will be output to a file in the `/data` directory.
+Alternately, you can run each process in its own bash terminal. This is currently a more stable approach.
+
+run:
+`node server/main.js --slidingWindowSize=301 --maxPatterns=4000 --rubberBandingTargetScore=0 --rubberBandingDecay=0.05 --originalScoreWeight=1  --scoreTimeSteps=30,60,90,120,150,180,210,240,270,300`
+
+then in another window run:
+
+`node ./automated_browser_scripts/test.js --slidingWindowSize=301 --maxPatterns=4000 --rubberBandingTargetScore=0 --rubberBandingDecay=0.05 --originalScoreWeight=1  --scoreTimeSteps=30,60,90,120,150,180,210,240,270,300`

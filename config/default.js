@@ -5,7 +5,7 @@ module.exports = {
     password: ''
   },
   log: {
-    level: 'info',
+    level: 'error',
     rotate: {
       maxSize: '1g',
       maxFiles: 10
