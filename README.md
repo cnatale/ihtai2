@@ -41,3 +41,8 @@ Access webdriver.io through node_modules/.bin as well. Ex:
 Selenium standalone must be running before Webdriver can access it.
 
 You'll also need to setup your browser to interface with Webdriver. See instructions [here](http://webdriver.io/guide/getstarted/install.html#Setup-Chrome).
+
+### Automated trial example
+`npm run start-and-trial -- --slidingWindowSize=400 --maxPatterns=2000 --rubberBandingTargetScore=10 --rubberBandingDecay=0.05 --originalScoreWeight=9 --scoreTimeSteps=30,60,90,120,150,180,210,240,270,300`
+
+Trial data will be output to a file in the `/data` directory.
