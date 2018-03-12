@@ -14,11 +14,19 @@ const argv = require('minimist')(process.argv.slice(2));
 // rubberBandingDecay {number}
 // originalScoreWeight {number} (referenced in pattern-recognizer.updateNextMoveScores())
 // maxPatterns, {number}
-// scoreTimeSteps (pass in the form of 'timeSteps=30,60,90,120' etc.) {comma-separated numbers}
+// scoreTimesteps (pass in the form of 'timeSteps=30,60,90,120' etc.) {comma-separated numbers}
 // slidingWindowSize {number}
 
 const maxPatterns = argv.maxPatterns || config.maxPatterns;
-const scoreTimesteps = argv.scoreTimesteps ? argv.scoreTimesteps.split(',') : config.slidingWindow.scoreTimesteps;
+const scoreTimesteps =
+  argv.scoreTimesteps ?
+    (() => {
+      if (typeof argv.scoreTimesteps === 'number') {
+        return [  argv.scoreTimesteps ];
+      }
+      return argv.scoreTimesteps.split(',').map((timestep) => Number(timestep));
+    })() : config.slidingWindow.scoreTimesteps;
+
 const slidingWindowSize = argv.slidingWindowSize || config.slidingWindow.size;
 const rubberBandingTargetScore = argv.rubberBandingTargetScore || config.rubberBanding.targetScore;
 const rubberBandingDecay = argv.rubberBandingDecay || config.rubberBanding.decay;

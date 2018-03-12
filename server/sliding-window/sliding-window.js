@@ -6,23 +6,23 @@ const Joi = require('joi');
 /**
   A sliding window representing the last n timesteps.
   @param numberOfTimeSteps {Number} - the number of timesteps stored in sliding window
-  @param scoreTimeSteps {Array of Numbers} - the timesteps which should be recorded for memory retrieval
+  @param scoreTimesteps {Array of Numbers} - the timesteps which should be recorded for memory retrieval
 */
 
 class SlidingWindow {
-  constructor(numberOfTimeSteps, scoreTimeSteps) {
-    this.assertConstructorParams(numberOfTimeSteps, scoreTimeSteps);
+  constructor(numberOfTimeSteps, scoreTimesteps) {
+    this.assertConstructorParams(numberOfTimeSteps, scoreTimesteps);
 
     this.numberOfTimeSteps = numberOfTimeSteps || 5;
-    this.scoreTimeSteps = scoreTimeSteps;
+    this.scoreTimesteps = scoreTimesteps;
     this.timeSteps = [];
   }
 
   // Breaking this into its own function so I can write tests targeting it.
-  assertConstructorParams(numberOfTimeSteps, scoreTimeSteps) {
+  assertConstructorParams(numberOfTimeSteps, scoreTimesteps) {
     if (isNaN(numberOfTimeSteps)) { throw new Error('param numberOfTimeSteps must be a number!'); }
     Joi.validate(
-      scoreTimeSteps,
+      scoreTimesteps,
       Joi.array().items(Joi.number()).required(),
       function (err) {
         if (err) { throw err; }
@@ -88,11 +88,11 @@ class SlidingWindow {
   /**
   
     @returns {Array of Numbers} representing score for every timeStep distance
-      specified in scoreTimeSteps
+      specified in scoreTimesteps
   */
   getAllDriveScores() {
     // Remove all timeStep distances that are greater than what is stored in this.timeSteps.
-    const filteredScoreTimeSteps = this.scoreTimeSteps.filter((scoreTimeStepDistance) => {
+    const filteredScoreTimeSteps = this.scoreTimesteps.filter((scoreTimeStepDistance) => {
       const index = scoreTimeStepDistance;
       return index < this.timeSteps.length;
     });

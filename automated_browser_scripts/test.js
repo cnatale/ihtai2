@@ -1,6 +1,17 @@
 const webdriverio = require('webdriverio');
 const _ = require('lodash');
-const options = { desiredCapabilities: { browserName: 'chrome' } };
+const options = {
+  desiredCapabilities: {
+    browserName: 'chrome',
+    chromeOptions: {
+      args: [
+        '--disable-background-timer-throttling',
+        '--pause-background-tabs',
+        '--headless'
+      ]
+    }
+  }
+};
 const client = webdriverio.remote(options);
 const fs = require('fs');
 const argv = require('minimist')(process.argv.slice(2));
@@ -8,7 +19,7 @@ console.log('starting end to end test with the following arguments:');
 console.log(argv);
 
 let count = 0;
-const numberOfTestsToRun = 75;
+const numberOfTestsToRun = 1000;
 
 // build filename
 let fileName = './data/';
@@ -28,7 +39,7 @@ function waitLoop() {
         // append all env vars as csv's
         let output = '';
         _.forEach(argv, (value, key) => {
-          if(key === 'scoreTimeSteps') {
+          if(key === 'scoreTimesteps') {
             value = `"${value}"`;
           }
 

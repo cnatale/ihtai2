@@ -27,7 +27,7 @@ module.exports = {
   // a smaller value than 3
   slidingWindow: {
     size: 301,
-    scoreTimesteps: [ 30, 60, 90, 120, 150, 180, 210, 240, 270, 300 ]
+    scoreTimesteps: [ 30 ]
   },
   moveUpdates: {
     // successful values for balldemo have been 4/5, 9/10, and 15/16
