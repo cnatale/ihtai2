@@ -158,7 +158,7 @@ var driveScore = getDriveScore(currentActionState);
 const possibleDataValues = [0, 1, 2, 3, 4];
 var startingData = JSON.stringify({
     startingData: [
-      { inputState: currentInputState, actionState: [currentActionState], driveState: [driveScore] }
+      { inputState: currentInputState, actionState: [currentActionState], driveState: [] /* [driveScore] */ }
     ],
     possibleDataValues: [
       possibleDataValues
@@ -197,7 +197,7 @@ fetch('http://localhost:3800/initialize', {
     return getNearestPatternRecognizer({
       inputState: currentInputState,
       actionState: [currentActionState],
-      driveState: [driveScore]
+      driveState: [] /* [driveScore] */
     });
 }, (message) => {
     console.log('initialize failure: ');
@@ -397,17 +397,18 @@ function actOnSuggestion (suggestedAction) {
 
   // the suggestedAction value leads to inputState and driveScore
   var sphereLinearVelocity = sphere.physicsImpostor.getLinearVelocity();
-  driveScore = getDriveScore(suggestedAction);
+  // dividing by two here to attempt a simple way to compress better than i currently am
+  driveScore = Math.round(getDriveScore(suggestedAction)/2);
   // probably needs velocity to figure anything out
   var ihtaiState = {
       inputState: [
-        Math.round(sphere.position.x - box0.position.x),
-        Math.round(sphere.position.z - box0.position.z),
-        Math.round(sphereLinearVelocity.x),
-        Math.round(sphereLinearVelocity.z)
+        Math.round((sphere.position.x - box0.position.x)/2),
+        Math.round((sphere.position.z - box0.position.z)/2),
+        Math.round((sphereLinearVelocity.x)/2),
+        Math.round((sphereLinearVelocity.z)/2)
       ],
       actionState: [suggestedAction],
-      driveState: [driveScore]
+      driveState: [] // [driveScore]
   };
 
   const timeInTargetAreaAdder =
