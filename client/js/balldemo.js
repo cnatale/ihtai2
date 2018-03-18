@@ -158,7 +158,7 @@ var driveScore = getDriveScore(currentActionState);
 const possibleDataValues = [0, 1, 2, 3, 4];
 var startingData = JSON.stringify({
     startingData: [
-      { inputState: currentInputState, actionState: [currentActionState], driveState: [] /* [driveScore] */ }
+      { inputState: currentInputState, actionState: [currentActionState], driveState: [0] /* [driveScore] */ }
     ],
     possibleDataValues: [
       possibleDataValues
@@ -197,7 +197,7 @@ fetch('http://localhost:3800/initialize', {
     return getNearestPatternRecognizer({
       inputState: currentInputState,
       actionState: [currentActionState],
-      driveState: [] /* [driveScore] */
+      driveState: [0] /* [driveScore] */
     });
 }, (message) => {
     console.log('initialize failure: ');
@@ -408,7 +408,7 @@ function actOnSuggestion (suggestedAction) {
         Math.round((sphereLinearVelocity.z)/2)
       ],
       actionState: [suggestedAction],
-      driveState: [] // [driveScore]
+      driveState: [0] // [driveScore]
   };
 
   const timeInTargetAreaAdder =
