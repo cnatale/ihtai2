@@ -8,7 +8,7 @@ exports.nDimensionalPointSchema = Joi.object().keys({
     Joi.number()
   ).required(),
   driveState: Joi.array().items(
-    Joi.number()
+    // Joi.number()
   ).required()
 }).required().with('inputState', 'actionState', 'driveState');
 

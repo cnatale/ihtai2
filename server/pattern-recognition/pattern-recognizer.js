@@ -81,7 +81,15 @@ class PatternRecognizer {
     }).then(() => {
       return true;
     }).catch((error) => {
-      if (error.message.includes('ER_TABLE_EXISTS_ERROR')) { return true; }
+      if (error.message.includes('ER_TABLE_EXISTS_ERROR')) {
+        console.log(`createActionsTableIfNoneExists: Table ${tableName} already exists.`);
+        return true;
+      }
+      if (error.message.includes('ER_DUP_KEYNAME')) {
+        console.log(`createActionsTableIfNoneExists: Duplicate key name in ${tableName}`);
+        return true;
+      }
+
       console.log(error);
       return false;
     });
