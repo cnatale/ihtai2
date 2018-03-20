@@ -16,6 +16,7 @@ module.exports = {
     type: 'mysql'
   },
   caching: {
+    enabled: false,
     host: 'localhost',
     port: '11211'
   },
