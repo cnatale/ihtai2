@@ -1,5 +1,8 @@
 # ihtai2
 
+## Requirements
+Ihtai uses Memcached for nearest-neighbor search caching. It needs to be running in order for the server to work.
+
 ## Architecture
 pattern-recognition-group
   sliding-window

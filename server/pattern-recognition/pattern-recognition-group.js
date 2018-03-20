@@ -2,6 +2,8 @@
 const PatternRecognizer = require('./pattern-recognizer');
 const _ = require('lodash');
 const knex = require('../db/knex');
+const nodeFn = require('when/node');
+const memcached = require('../caching/memcached');
 const config = require('config');
 const Joi = require('joi');
 const { nDimensionalPointSchema, nDimensionalPointsSchema } = require('../schemas/schemas');
@@ -247,13 +249,31 @@ class PatternRecognitionGroup {
       throw schemaValidator;
     }
 
-    // query global points table for nearest neighbor
-    const globalPointsTableName = config.get('db').globalPointsTableName;
-    return knex(globalPointsTableName)
-      .select('point')
-      .orderByRaw(this.nearestNeighborQueryString(nDimensionalPoint))
-      .limit(1)
-      .then((result) => result[0].point);
+    // Attempt to access cached nearest neighbor first, and if not available
+    // to the db query and then cache.
+    const nearestNeighborQueryString = this.nearestNeighborQueryString(nDimensionalPoint);
+    const nearestNeighborString = PatternRecognizer.patternToString(nDimensionalPoint);
+
+    return nodeFn
+      .call(memcached.get.bind(memcached), nearestNeighborString)
+      .then((cachedNearestNeighbor) => {
+
+        if (cachedNearestNeighbor) {
+          return cachedNearestNeighbor;
+        }
+
+        // query global points table for nearest neighbor
+        const globalPointsTableName = config.get('db').globalPointsTableName;
+        return knex(globalPointsTableName)
+          .select('point')
+          .orderByRaw(nearestNeighborQueryString)
+          .limit(1)
+          .then((result) => {
+            return nodeFn
+              .call(memcached.set.bind(memcached), nearestNeighborString, result[0].point, 0)
+              .then(() => result[0].point);
+          });
+      });
   }
 
   /**
@@ -338,7 +358,13 @@ class PatternRecognitionGroup {
         _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
         this.patternRecognizers[originalPatternRecognizerString].actionPatternToString()
       );
-    }).then(() => newPatternRecognizer);
+    }).then(() => {
+      // Need to flush memcached every time a pattern recognizer is added
+      // b/c old nearest neighbors may no longer be applicable.
+      return nodeFn
+        .call(memcached.flush.bind(memcached))
+        .then(() => newPatternRecognizer);
+    });
   }
 
   doesActionsPatternExist(patternRecognizerActionString, patternTableName) {

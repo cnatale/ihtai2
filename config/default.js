@@ -15,6 +15,10 @@ module.exports = {
     globalPointsTableName: 'global_points_table',
     type: 'mysql'
   },
+  caching: {
+    host: 'localhost',
+    port: '11211'
+  },
   rubberBanding: {
     enabled: true,
     // The score that action scores above targetScore threshold are pulled towards.
