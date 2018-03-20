@@ -398,14 +398,14 @@ function actOnSuggestion (suggestedAction) {
   // the suggestedAction value leads to inputState and driveScore
   var sphereLinearVelocity = sphere.physicsImpostor.getLinearVelocity();
   // dividing by two here to attempt a simple way to compress better than i currently am
-  driveScore = Math.round(getDriveScore(suggestedAction)/2);
+  driveScore = Math.round(getDriveScore(suggestedAction)/2.5);
   // probably needs velocity to figure anything out
   var ihtaiState = {
       inputState: [
-        Math.round((sphere.position.x - box0.position.x)/2),
-        Math.round((sphere.position.z - box0.position.z)/2),
-        Math.round((sphereLinearVelocity.x)/2),
-        Math.round((sphereLinearVelocity.z)/2)
+        Math.round((sphere.position.x - box0.position.x)/2.5),
+        Math.round((sphere.position.z - box0.position.z)/2.5),
+        Math.round((sphereLinearVelocity.x)/2.5),
+        Math.round((sphereLinearVelocity.z)/2.5)
       ],
       actionState: [suggestedAction],
       driveState: [0] // [driveScore]
