@@ -189,7 +189,6 @@ app.get('/updateScore', function (req, res) {
         rubberBandingDecay
       ) : null;    
   }).then(() => {
-    // only rubber band once
     res.status(200).json({
       startPattern: patternRecognizer.patternToString(),
       actionKey: slidingWindow.getTailHead().actionKey,

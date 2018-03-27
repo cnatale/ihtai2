@@ -260,33 +260,29 @@ class PatternRecognitionGroup {
         .then(cachedNearestNeighbor => {
           return cachedNearestNeighbor ?
             cachedNearestNeighbor
-            : nearestNeighborQuery(cachedNearestNeighbor, nearestNeighborQueryString, nearestNeighborString);
+            : this.nearestNeighborQuery(cachedNearestNeighbor, nearestNeighborQueryString, nearestNeighborString);
         })
-      : nearestNeighborQuery(null, nearestNeighborQueryString, nearestNeighborString);
+      : this.nearestNeighborQuery(null, nearestNeighborQueryString, nearestNeighborString);
   }
 
   nearestNeighborQuery (cachedNearestNeighbor, nearestNeighborQueryString, nearestNeighborString) {
+    if (cachedNearestNeighbor) {
+      return cachedNearestNeighbor;
+    }
 
-        if (cachedNearestNeighbor) {
-          return cachedNearestNeighbor;
-        }
-
-        // query global points table for nearest neighbor
-        const globalPointsTableName = config.get('db').globalPointsTableName;
-        return knex(globalPointsTableName)
-          .select('point')
-          .orderByRaw(nearestNeighborQueryString)
-          .limit(1)
-          .then((result) => {
-            return config.caching.enabled ?
-              nodeFn
-                .call(memcached.set.bind(memcached), nearestNeighborString, result[0].point, 0)
-                .then(() => result[0].point)
-              : result[0].point;
-          });
-      }
-
-
+    // query global points table for nearest neighbor
+    const globalPointsTableName = config.get('db').globalPointsTableName;
+    return knex(globalPointsTableName)
+      .select('point')
+      .orderByRaw(nearestNeighborQueryString)
+      .limit(1)
+      .then((result) => {
+        return config.caching.enabled ?
+          nodeFn
+            .call(memcached.set.bind(memcached), nearestNeighborString, result[0].point, 0)
+            .then(() => result[0].point)
+          : result[0].point;
+      });
   }
 
   /**

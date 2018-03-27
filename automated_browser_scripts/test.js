@@ -19,7 +19,7 @@ console.log('starting end to end test with the following arguments:');
 console.log(argv);
 
 let count = 0;
-const numberOfTestsToRun = 400;
+const numberOfTestsToRun = 1200;
 
 
 // build filename
