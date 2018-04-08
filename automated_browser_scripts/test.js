@@ -19,7 +19,7 @@ console.log('starting end to end test with the following arguments:');
 console.log(argv);
 
 let count = 0;
-const numberOfTestsToRun = 1200;
+const numberOfTestsToRun = 2000;
 
 
 // build filename
@@ -74,7 +74,7 @@ function waitLoop() {
 
 client
   .init()
-  .url('http://localhost:3800/balldemo.html')
+  .url('http://localhost:3800/balldemo_multistep.html')
   .then(() => {
     let output = '\n\n';
     _.forEach(argv, (value, key) => {

@@ -17,7 +17,7 @@ module.exports = {
   },
   caching: {
     enabled: false,
-    host: 'localhost',
+    host: '192.168.1.6',
     port: '11211'
   },
   rubberBanding: {
