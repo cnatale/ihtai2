@@ -16,7 +16,8 @@ module.exports = {
     type: 'mysql'
   },
   caching: {
-    host: 'localhost',
+    enabled: false,
+    host: '192.168.1.6',
     port: '11211'
   },
   rubberBanding: {

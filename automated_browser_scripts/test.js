@@ -74,7 +74,7 @@ function waitLoop() {
 
 client
   .init()
-  .url('http://localhost:3800/balldemo.html')
+  .url('http://localhost:3800/balldemo_multistep.html')
   .then(() => {
     let output = '\n\n';
     _.forEach(argv, (value, key) => {

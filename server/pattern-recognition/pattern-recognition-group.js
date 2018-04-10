@@ -254,25 +254,34 @@ class PatternRecognitionGroup {
     const nearestNeighborQueryString = this.nearestNeighborQueryString(nDimensionalPoint);
     const nearestNeighborString = PatternRecognizer.patternToString(nDimensionalPoint);
 
-    return nodeFn
-      .call(memcached.get.bind(memcached), nearestNeighborString)
-      .then((cachedNearestNeighbor) => {
+    return config.caching.enabled ?
+      nodeFn
+        .call(memcached.get.bind(memcached), nearestNeighborString)
+        .then(cachedNearestNeighbor => {
+          return cachedNearestNeighbor ?
+            cachedNearestNeighbor
+            : this.nearestNeighborQuery(cachedNearestNeighbor, nearestNeighborQueryString, nearestNeighborString);
+        })
+      : this.nearestNeighborQuery(null, nearestNeighborQueryString, nearestNeighborString);
+  }
 
-        if (cachedNearestNeighbor) {
-          return cachedNearestNeighbor;
-        }
+  nearestNeighborQuery (cachedNearestNeighbor, nearestNeighborQueryString, nearestNeighborString) {
+    if (cachedNearestNeighbor) {
+      return cachedNearestNeighbor;
+    }
 
-        // query global points table for nearest neighbor
-        const globalPointsTableName = config.get('db').globalPointsTableName;
-        return knex(globalPointsTableName)
-          .select('point')
-          .orderByRaw(nearestNeighborQueryString)
-          .limit(1)
-          .then((result) => {
-            return nodeFn
-              .call(memcached.set.bind(memcached), nearestNeighborString, result[0].point, 0)
-              .then(() => result[0].point);
-          });
+    // query global points table for nearest neighbor
+    const globalPointsTableName = config.get('db').globalPointsTableName;
+    return knex(globalPointsTableName)
+      .select('point')
+      .orderByRaw(nearestNeighborQueryString)
+      .limit(1)
+      .then((result) => {
+        return config.caching.enabled ?
+          nodeFn
+            .call(memcached.set.bind(memcached), nearestNeighborString, result[0].point, 0)
+            .then(() => result[0].point)
+          : result[0].point;
       });
   }
 
@@ -361,9 +370,11 @@ class PatternRecognitionGroup {
     }).then(() => {
       // Need to flush memcached every time a pattern recognizer is added
       // b/c old nearest neighbors may no longer be applicable.
-      return nodeFn
-        .call(memcached.flush.bind(memcached))
-        .then(() => newPatternRecognizer);
+      return config.caching.enabled ?
+        nodeFn
+          .call(memcached.flush.bind(memcached))
+          .then(() => newPatternRecognizer)
+        : newPatternRecognizer;
     });
   }
 
