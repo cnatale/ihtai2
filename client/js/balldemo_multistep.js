@@ -2,15 +2,17 @@
 const canvas = document.getElementById("renderCanvas"); // Get the canvas element 
 const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 
-var sphere, box0;
+var sphere, box0, helperBox, ground, divider, border0, border1, border2, border3;
+var canJump = true;
+
 var createScene = function () {
   var scene = new BABYLON.Scene(engine);
   scene.clearColor = BABYLON.Color3.Purple();
 
-  var camera = new BABYLON.FreeCamera("Camera", new BABYLON.Vector3(0, 0, -20), scene);
+  var camera = new BABYLON.FreeCamera("Camera", new BABYLON.Vector3(0, 35, 45), scene);
   camera.attachControl(canvas, true);
   camera.checkCollisions = true;
-  camera.applyGravity = true;
+  camera.applyGravity = false;
   camera.setTarget(new BABYLON.Vector3(0, 0, 0));
 
   var light = new BABYLON.DirectionalLight("dir02", new BABYLON.Vector3(0.2, -1, 0), scene);
@@ -27,7 +29,10 @@ var createScene = function () {
   var shadowGenerator = new BABYLON.ShadowGenerator(2048, light);
 
   // Physics
-  scene.enablePhysics(null, new BABYLON.CannonJSPlugin());
+  // TODO: can call setGravity(gravity: Vector3) on the CannonJSPlugin instance to
+  // apply different gravity values to the world physics
+  var cannonJSPlugin = new BABYLON.CannonJSPlugin(new BABYLON.Vector3(0, -9.82, 0));
+  scene.enablePhysics(null, cannonJSPlugin);
   // scene.enablePhysics(null, new BABYLON.OimoJSPlugin());
 
   // Sphere
@@ -42,51 +47,72 @@ var createScene = function () {
 
   sphere.physicsImpostor = new BABYLON.PhysicsImpostor(sphere, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1 }, scene);
 
-  // Box
-  box0 = BABYLON.Mesh.CreateBox("Box0", 3, scene);
-  box0.position = new BABYLON.Vector3(0, 5, 0);
+  // common wood material for boxes
   var materialWood = new BABYLON.StandardMaterial("wood", scene);
   materialWood.diffuseTexture = new BABYLON.Texture("textures/crate.png", scene);
   materialWood.emissiveColor = new BABYLON.Color3(0.5, 0.5, 0.5);
+
+  // helper box
+  helperBox = BABYLON.Mesh.CreateBox("helperBox", 5, scene);
+  helperBox.position = new BABYLON.Vector3(10, 0, 4);
+  helperBox.material = materialWood;
+
+  shadowGenerator.addShadowCaster(helperBox);  
+
+  // Box
+  box0 = BABYLON.Mesh.CreateBox("Box0", 3, scene);
+  box0.position = new BABYLON.Vector3(0, 5, -35);
   box0.material = materialWood;
 
   shadowGenerator.addShadowCaster(box0);
 
   // Playground
-  var ground = BABYLON.Mesh.CreateBox("Ground", 1, scene);
+  ground = BABYLON.Mesh.CreateBox("Ground", 1, scene);
   ground.scaling = new BABYLON.Vector3(100, 1, 100);
   ground.position.y = -5.0;
   ground.checkCollisions = true;
 
-  var border0 = BABYLON.Mesh.CreateBox("border0", 1, scene);
+  divider = BABYLON.Mesh.CreateBox("divider", 1, scene);
+  divider.scaling = new BABYLON.Vector3(100, 16, 1);
+  divider.position.y = -3.5;
+  divider.position.x = 0;
+  divider.checkCollisions = true;
+  shadowGenerator.addShadowCaster(divider);
+
+  border0 = BABYLON.Mesh.CreateBox("border0", 1, scene);
   border0.scaling = new BABYLON.Vector3(1, 100, 100);
   border0.position.y = -5.0;
   border0.position.x = -50.0;
   border0.checkCollisions = true;
 
-  var border1 = BABYLON.Mesh.CreateBox("border1", 1, scene);
+  border1 = BABYLON.Mesh.CreateBox("border1", 1, scene);
   border1.scaling = new BABYLON.Vector3(1, 100, 100);
   border1.position.y = -5.0;
   border1.position.x = 50.0;
   border1.checkCollisions = true;
 
-  var border2 = BABYLON.Mesh.CreateBox("border2", 1, scene);
+  border2 = BABYLON.Mesh.CreateBox("border2", 1, scene);
   border2.scaling = new BABYLON.Vector3(100, 100, 1);
   border2.position.y = -5.0;
   border2.position.z = 50.0;
   border2.checkCollisions = true;
 
-  var border3 = BABYLON.Mesh.CreateBox("border3", 1, scene);
+  border3 = BABYLON.Mesh.CreateBox("border3", 1, scene);
   border3.scaling = new BABYLON.Vector3(100, 100, 1);
   border3.position.y = -5.0;
   border3.position.z = -50.0;
   border3.checkCollisions = true;
 
   var groundMat = new BABYLON.StandardMaterial("groundMat", scene);
+  var dividerMat = new BABYLON.StandardMaterial("Red", scene);
+  dividerMat.diffuseColor = new BABYLON.Color3(1, .3, .3);
+  dividerMat.emissiveColor = new BABYLON.Color3(1, .3, .3);
+  dividerMat.backFaceCulling = false;
   groundMat.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
   groundMat.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.2);
   groundMat.backFaceCulling = false;
   ground.material = groundMat;
+  divider.material = dividerMat;
   border0.material = groundMat;
   border1.material = groundMat;
   border2.material = groundMat;
@@ -94,14 +120,17 @@ var createScene = function () {
   ground.receiveShadows = true;
 
   // Physics
+  helperBox.physicsImpostor = new BABYLON.PhysicsImpostor(helperBox, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 100, friction: 0.4, restitution: 0.3 }, scene);
   box0.physicsImpostor = new BABYLON.PhysicsImpostor(box0, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 2, friction: 0.4, restitution: 0.3 }, scene);
   ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, friction: 0.5, restitution: 0.7 }, scene);
+  divider.physicsImpostor = new BABYLON.PhysicsImpostor(divider, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
   border0.physicsImpostor = new BABYLON.PhysicsImpostor(border0, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
   border1.physicsImpostor = new BABYLON.PhysicsImpostor(border1, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
   border2.physicsImpostor = new BABYLON.PhysicsImpostor(border2, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
   border3.physicsImpostor = new BABYLON.PhysicsImpostor(border3, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
 
 
+  // the blue highlight around the box ihtai agent is trying to get near
   const cylinder = BABYLON.MeshBuilder.CreateCylinder(
     'cylinder',
     {
@@ -126,6 +155,26 @@ var createScene = function () {
     cylinder.position.z = box0.position.z;
   });
 
+  ////////// COLLISION LOGIC /////////////
+  var colliders = []; // all meshes that can collide go here
+
+  function checkCollisions(meshToCheckCollisions) {
+    scene.registerBeforeRender(function() {
+      var anyCollisions = false;
+      colliders.forEach(function(c) {
+        if (meshToCheckCollisions.intersectsMesh(c)) {
+            anyCollisions = true;
+        }
+      });
+      canJump = anyCollisions; 
+    });
+  }
+
+  colliders.push(helperBox, ground);
+
+  checkCollisions(sphere);
+  ////////////////////////////////////////
+
   return scene;
 }; 
 
@@ -149,13 +198,14 @@ var currentInputState = [
   Math.round(sphere.position.x - box0.position.x),
   Math.round(sphere.position.z - box0.position.z),
   0,
-  0
+  0,
+  canJump ? 0 : 20
 ];                  
 var currentActionState = 0; // 0 = don't move
 var counter = 0; // used to control number of api call cycles for test purposes
 var driveScore = getDriveScore(currentActionState);
 
-const possibleDataValues = [0, 1, 2, 3, 4];
+const possibleDataValues = [0, 1, 2, 3, 4, 5];
 var startingData = JSON.stringify({
     startingData: [
       { inputState: currentInputState, actionState: [currentActionState], driveState: [0] /* [driveScore] */ }
@@ -385,6 +435,11 @@ function actOnSuggestion (suggestedAction) {
     case 4:
       sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, 3), sphere.getAbsolutePosition());
       break;
+    case 5:
+      if (canJump) {
+        sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 10, 0), sphere.getAbsolutePosition());
+      }
+      break;
     default:
 
       break;
@@ -398,14 +453,15 @@ function actOnSuggestion (suggestedAction) {
   // the suggestedAction value leads to inputState and driveScore
   var sphereLinearVelocity = sphere.physicsImpostor.getLinearVelocity();
   // dividing by two here to attempt a simple way to compress better than i currently am
-  driveScore = Math.round(getDriveScore(suggestedAction)/2.5);
+  driveScore = Math.round(getDriveScore(suggestedAction));
   // probably needs velocity to figure anything out
   var ihtaiState = {
       inputState: [
-        Math.round((sphere.position.x - box0.position.x)/2.5),
-        Math.round((sphere.position.z - box0.position.z)/2.5),
-        Math.round((sphereLinearVelocity.x)/2.5),
-        Math.round((sphereLinearVelocity.z)/2.5)
+        Math.round((sphere.position.x - box0.position.x)),
+        Math.round((sphere.position.z - box0.position.z)),
+        Math.round((sphereLinearVelocity.x)),
+        Math.round((sphereLinearVelocity.z)),
+        canJump ? 0 : 20
       ],
       actionState: [suggestedAction],
       driveState: [0] // [driveScore]
@@ -482,18 +538,9 @@ function checkKey(e) {
        // right arrow
        currKey = 2;
     }
+    else if (e.keyCode == '32') {
+      // space bar (jump)
+      currKey = 5;
+    }
 
 }
-
-
-// TODO:
-// Explicitly pass the contents of each promise to the next, because these
-// calls aren't running in order and they need to maintaint the right 
-// state values. Ex: 2 getnearestpatternrecognizer calls happen after eachother.
-
-// TODO: instead of passing velocity, pass delta for x and z between
-// box and sphere.
-
-
-
-

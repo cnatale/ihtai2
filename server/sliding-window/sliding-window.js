@@ -2,6 +2,7 @@ const TimeStep = require('./time-step');
 const _ = require('lodash');
 const assert = require('assert');
 const Joi = require('joi');
+const math = require('mathjs');
 
 /**
   A sliding window representing the last n timesteps.
@@ -79,10 +80,21 @@ class SlidingWindow {
 
     // this is useless because it's looking backwards in time from the most recent action.
     // needs to look forward from earliest index.
-    const index = distanceFromCurrentMoment;
-    if (index >= this.timeSteps.length) { throw new Error('Distance is greater than number of timesteps!'); }
 
-    return this.timeSteps[index].score;
+    // commenting out original logic to try a summation-based approach
+    // ///////////////////////////////////////////////////
+    // const index = distanceFromCurrentMoment;
+    // if (index >= this.timeSteps.length) { throw new Error('Distance is greater than number of timesteps!'); }
+
+    // return this.timeSteps[index].score;
+    // //////////////////////////////////////////////////
+    
+    const startingIndex = 20;
+    const scoresToAverage = this.timeSteps
+      .slice(startingIndex, distanceFromCurrentMoment)
+      .map(timeStep => timeStep.score);
+
+    return math.sum(scoresToAverage) / scoresToAverage.length;
   }
 
   /**

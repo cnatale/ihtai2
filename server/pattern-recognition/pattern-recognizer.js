@@ -441,7 +441,8 @@ class PatternRecognizer {
       throw new Error('Error: all parameters must be numbers!');
     }
 
-    // was using .10 as the decay value, .05 results in less new behavior learning but more steady behavior
+    // TODO: if i'm updating all scores in a table, i don't think i need
+    // the inner select statements, or the WHERE for that matter
     const patternTableName = this.patternToString();
     return knex.raw(
       `UPDATE \`${patternTableName}\`
