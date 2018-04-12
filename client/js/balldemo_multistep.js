@@ -2,7 +2,7 @@
 const canvas = document.getElementById("renderCanvas"); // Get the canvas element 
 const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 
-var sphere, box0, helperBox, ground, divider, border0, border1, border2, border3;
+var sphere, box0, helperBox, ground, ceiling, divider, border0, border1, border2, border3;
 var canJump = true;
 
 var createScene = function () {
@@ -72,6 +72,11 @@ var createScene = function () {
   ground.position.y = -5.0;
   ground.checkCollisions = true;
 
+  ceiling = BABYLON.Mesh.CreateBox("Ceiling", 1, scene);
+  ceiling.scaling = new BABYLON.Vector3(100, 1, 100);
+  ceiling.position.y = 45.0;
+  ceiling.checkCollisions = true;
+
   divider = BABYLON.Mesh.CreateBox("divider", 1, scene);
   divider.scaling = new BABYLON.Vector3(100, 16, 1);
   divider.position.y = -3.5;
@@ -112,6 +117,7 @@ var createScene = function () {
   groundMat.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.2);
   groundMat.backFaceCulling = false;
   ground.material = groundMat;
+  ceiling.material = groundMat;
   divider.material = dividerMat;
   border0.material = groundMat;
   border1.material = groundMat;
@@ -123,6 +129,7 @@ var createScene = function () {
   helperBox.physicsImpostor = new BABYLON.PhysicsImpostor(helperBox, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 100, friction: 0.4, restitution: 0.3 }, scene);
   box0.physicsImpostor = new BABYLON.PhysicsImpostor(box0, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 2, friction: 0.4, restitution: 0.3 }, scene);
   ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, friction: 0.5, restitution: 0.7 }, scene);
+  ceiling.physicsImpostor = new BABYLON.PhysicsImpostor(ceiling, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, friction: 0.5, restitution: 0.7 }, scene);
   divider.physicsImpostor = new BABYLON.PhysicsImpostor(divider, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
   border0.physicsImpostor = new BABYLON.PhysicsImpostor(border0, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
   border1.physicsImpostor = new BABYLON.PhysicsImpostor(border1, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
@@ -195,11 +202,11 @@ let scoreSum = 0;
 let timeInTargetAreaSum = 0;
 
 var currentInputState = [
-  Math.round(sphere.position.x - box0.position.x),
-  Math.round(sphere.position.z - box0.position.z),
+  Math.round((sphere.position.x - box0.position.x)/12.5),
+  Math.round((sphere.position.z - box0.position.z)/12.5),
   0,
   0,
-  canJump ? 0 : 20
+  canJump ? 0 : 8
 ];                  
 var currentActionState = 0; // 0 = don't move
 var counter = 0; // used to control number of api call cycles for test purposes
@@ -453,15 +460,15 @@ function actOnSuggestion (suggestedAction) {
   // the suggestedAction value leads to inputState and driveScore
   var sphereLinearVelocity = sphere.physicsImpostor.getLinearVelocity();
   // dividing by two here to attempt a simple way to compress better than i currently am
-  driveScore = Math.round(getDriveScore(suggestedAction));
+  driveScore = getDriveScore(suggestedAction);
   // probably needs velocity to figure anything out
   var ihtaiState = {
       inputState: [
-        Math.round((sphere.position.x - box0.position.x)),
-        Math.round((sphere.position.z - box0.position.z)),
-        Math.round((sphereLinearVelocity.x)),
-        Math.round((sphereLinearVelocity.z)),
-        canJump ? 0 : 20
+        Math.round((sphere.position.x - box0.position.x)/12.5),
+        Math.round((sphere.position.z - box0.position.z)/12.5),
+        Math.round((sphereLinearVelocity.x)/12.5),
+        Math.round((sphereLinearVelocity.z)/12.5),
+        canJump ? 0 : 8
       ],
       actionState: [suggestedAction],
       driveState: [0] // [driveScore]
@@ -510,7 +517,8 @@ function getDriveScore(suggestedAction) {
   console.log(suggestedAction)
   var score = Math.round(Math.sqrt(
     Math.pow(sphere.position.x - box0.position.x, 2) +
-    Math.pow(sphere.position.z - box0.position.z, 2)
+    Math.pow(sphere.position.z - box0.position.z, 2) +
+    Math.pow(sphere.position.y - box0.position.y, 2)
   ));
 
   return score;
