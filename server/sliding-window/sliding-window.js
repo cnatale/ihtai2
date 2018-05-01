@@ -95,6 +95,7 @@ class SlidingWindow {
       .map(timeStep => timeStep.score);
 
     return math.sum(scoresToAverage) / scoresToAverage.length;
+    // return this.timeSteps[20].score;
   }
 
   /**

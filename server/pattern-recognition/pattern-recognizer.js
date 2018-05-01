@@ -35,10 +35,11 @@ class PatternRecognizer {
     are arrays. Must follow nDimensionalPointSchema.
   */
   constructor(nDimensionalPoint) {
-    const nDimensionalPointValidation = nDimensionalPointSchema.validate(nDimensionalPoint);
-    if (nDimensionalPointValidation.error !== null) {
-      throw nDimensionalPointValidation;
-    }
+    // temporarily disabling until schema solidifies
+    // const nDimensionalPointValidation = nDimensionalPointSchema.validate(nDimensionalPoint);
+    // if (nDimensionalPointValidation.error !== null) {
+    //   throw nDimensionalPointValidation;
+    // }
 
     this.setPattern(nDimensionalPoint);
   }
@@ -229,8 +230,6 @@ class PatternRecognizer {
     @returns {array} a promise which is fulfilled when all inserts are complete;
   */
 
-  // TODO: need to insert all time_periods for action pattern to split from
-  // this may actually happen by default with existing insert into ... select query
   addPatternToExistingActionsTables(originalPatternRecognizerStrings, actionPatternToSplitFrom) {
     // TODO: fix select... where to use both score and time_period
     // '${this.actionPatternToString()}' was where select... next_action was
@@ -257,11 +256,11 @@ class PatternRecognizer {
   }
 
   patternToString() {
-    return `pattern_${this.pattern.inputState.join('_')}_${this.pattern.actionState.join('_')}_${this.pattern.driveState.join('_')}`;
+    return `pattern_${this.pattern.inputState.join('_')}_${this.pattern.actionState.join('_')}_${this.pattern.driveState.join('_')}`.replace(/\./g, '+');
   }
 
   static patternToString(pattern) {
-    return `pattern_${pattern.inputState.join('_')}_${pattern.actionState.join('_')}_${pattern.driveState.join('_')}`;
+    return `pattern_${pattern.inputState.join('_')}_${pattern.actionState.join('_')}_${pattern.driveState.join('_')}`.replace(/\./g, '+');
   }
 
   getPatternAsSingleArray() {
@@ -273,7 +272,7 @@ class PatternRecognizer {
   }
 
   actionPatternToString() {
-    return this.pattern.actionState.join('_');
+    return `action_${this.pattern.actionState.join('_')}`.replace(/\./g, '+');
   }
 
   /**

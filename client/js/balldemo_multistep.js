@@ -202,11 +202,12 @@ let scoreSum = 0;
 let timeInTargetAreaSum = 0;
 
 var currentInputState = [
-  Math.round((sphere.position.x - box0.position.x)/12.5),
-  Math.round((sphere.position.z - box0.position.z)/12.5),
+  Math.round(((sphere.position.x - box0.position.x)/12.5) * 1000),
+  Math.round(((sphere.position.z - box0.position.z)/12.5) * 1000),
+  Math.round(((sphere.position.y - box0.position.y)/12.5) * 1000),
   0,
   0,
-  canJump ? 0 : 8
+  0
 ];                  
 var currentActionState = 0; // 0 = don't move
 var counter = 0; // used to control number of api call cycles for test purposes
@@ -269,7 +270,9 @@ function getNearestPatternRecognizer(ihtaiState) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(ihtaiState)
-    }).then((response) => response.text()).then(function (nearestPatternString) {
+    }).then((response) => response.json()).then(function (nearestPattern) {
+      const nearestPatternString = nearestPattern.point;
+      document.getElementById('currentNearestNeighbor').innerHTML = nearestPattern.id;
 
       if (shouldSplitPatternRecognizer) {
         shouldSplitPatternRecognizer = false;
@@ -373,7 +376,7 @@ function getUpdatesPerMinute(patternString, bestActionString) {
           // console.log(resultJson);
 
           // split anytime the pattern has more than 1 update
-          if (resultJson.updatesPerMinute > 1) {
+          if (resultJson.updatesPerMinute > 50) {
             shouldSplitPatternRecognizer = true;
           }
 
@@ -425,26 +428,26 @@ function actOnSuggestion (suggestedAction) {
   // 2 : +x
   // 3 : -z
   // 4 : +z
-
+  var v = 3;
   switch (suggestedAction) {
     case 0:
       // no impulse
       break;
     case 1:
-      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(-3, 0, 0), sphere.getAbsolutePosition());
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(-v, 0, 0), sphere.getAbsolutePosition());
       break;
     case 2:
-      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(3, 0, 0), sphere.getAbsolutePosition());
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(v, 0, 0), sphere.getAbsolutePosition());
       break;
     case 3:
-      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, -3), sphere.getAbsolutePosition());
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, -v), sphere.getAbsolutePosition());
       break;
     case 4:
-      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, 3), sphere.getAbsolutePosition());
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, v), sphere.getAbsolutePosition());
       break;
     case 5:
       if (canJump) {
-        sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 10, 0), sphere.getAbsolutePosition());
+        sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 20, 0), sphere.getAbsolutePosition());
       }
       break;
     default:
@@ -464,11 +467,12 @@ function actOnSuggestion (suggestedAction) {
   // probably needs velocity to figure anything out
   var ihtaiState = {
       inputState: [
-        Math.round((sphere.position.x - box0.position.x)/12.5),
-        Math.round((sphere.position.z - box0.position.z)/12.5),
-        Math.round((sphereLinearVelocity.x)/12.5),
-        Math.round((sphereLinearVelocity.z)/12.5),
-        canJump ? 0 : 8
+        Math.round(((sphere.position.x - box0.position.x)/12.5) * 1000),
+        Math.round(((sphere.position.z - box0.position.z)/12.5) * 1000),
+        Math.round(((sphere.position.y - box0.position.y)/12.5) * 1000),
+        Math.round(((sphereLinearVelocity.x)/12.5) * 1000),
+        Math.round(((sphereLinearVelocity.z)/12.5) * 1000),
+        Math.round(((sphereLinearVelocity.y)/12.5) * 1000)
       ],
       actionState: [suggestedAction],
       driveState: [0] // [driveScore]
@@ -480,7 +484,7 @@ function actOnSuggestion (suggestedAction) {
   timeInTargetAreaSum += timeInTargetAreaAdder;
   scoreSum += driveScore;
 
-  const numberOfCycles = 750;
+  const numberOfCycles = 1500;
   if (counter < numberOfCycles) {
     console.log(`cycle ${counter} complete`)
     counter++;

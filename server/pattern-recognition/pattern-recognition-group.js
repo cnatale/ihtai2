@@ -114,7 +114,8 @@ class PatternRecognitionGroup {
         return results.map((result) => {
           const prefixRemoved = result.point.replace('pattern_', '');
           const allPoints = prefixRemoved.split('_').map((numberString) => {
-            return parseInt(numberString, 10);
+            // return parseInt(numberString, 10);
+            return numberString;
           });
 
           // return an nDimensionalPoints object
@@ -128,10 +129,11 @@ class PatternRecognitionGroup {
         // return an array of nDimensionalPoints representing existing points
       })
       .then((nDimensionalPoints) => {
-        const nDimensionalPointsSchemaValidation = nDimensionalPointsSchema.validate(nDimensionalPoints);
-        if (nDimensionalPointsSchemaValidation.error !== null) {
-          throw nDimensionalPointsSchemaValidation;
-        }
+        // temporarily turn off while changing schema
+        // const nDimensionalPointsSchemaValidation = nDimensionalPointsSchema.validate(nDimensionalPoints);
+        // if (nDimensionalPointsSchemaValidation.error !== null) {
+        //   throw nDimensionalPointsSchemaValidation;
+        // }
 
         this.isInitialized = true;
         // add all patternRecognizers in nDimensionalPoints list
@@ -150,10 +152,11 @@ class PatternRecognitionGroup {
     @returns {Promise} A promise resolving to true or false, depending on if action was successful
   */
   addPatternRecognizer (nDimensionalPoint) {
-    const schemaValidator = nDimensionalPointSchema.validate(nDimensionalPoint);
-    if (schemaValidator.error !== null) {
-      return Promise.reject(schemaValidator);
-    }
+    // temporarily disabling until schema solidifies
+    // const schemaValidator = nDimensionalPointSchema.validate(nDimensionalPoint);
+    // if (schemaValidator.error !== null) {
+    //   return Promise.reject(schemaValidator);
+    // }
     if (!this.possibleActionValues) {
       return Promise.reject(new Error('PatternRecognitionGroup.addPatternRecognizer: possibleActionValues not initialized.'));
     }
@@ -273,7 +276,7 @@ class PatternRecognitionGroup {
     // query global points table for nearest neighbor
     const globalPointsTableName = config.get('db').globalPointsTableName;
     return knex(globalPointsTableName)
-      .select('point')
+      .select('point', 'id')
       .orderByRaw(nearestNeighborQueryString)
       .limit(1)
       .then((result) => {
@@ -281,7 +284,7 @@ class PatternRecognitionGroup {
           nodeFn
             .call(memcached.set.bind(memcached), nearestNeighborString, result[0].point, 0)
             .then(() => result[0].point)
-          : result[0].point;
+          : { point: result[0].point, id: result[0].id };
       });
   }
 
@@ -360,13 +363,23 @@ class PatternRecognitionGroup {
         originalPatternRecognizerString
       );
     }).then((isActionPatternAlreadyInTables) => {
+      // If the new point is an action/time period combo that we don't
+      // already have in existing actions tables, we need to add it to all of them.
+      // In practice, this is too computationallly expensive.
+      // Lazy adding the new action/time_period combos when first inserted into a table
+      // probably makes more sense, using insert ignore (or better yet replace) raw query.
+
       // if action pattern does not already exist in patternRecognizers list
       if (isActionPatternAlreadyInTables) { return true; }
+      // also this shouldn't be called unless multiple time periods exist in ihtai agent...
+      // console.log('****** SLOW addPatternToExistingActionsTables called *******')
 
-      return newPatternRecognizer.addPatternToExistingActionsTables(
-        _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
-        this.patternRecognizers[originalPatternRecognizerString].actionPatternToString()
-      );
+      // this is slooooooow. TODO: improve performance.
+      // return newPatternRecognizer.addPatternToExistingActionsTables(
+      //   _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
+      //   this.patternRecognizers[originalPatternRecognizerString].actionPatternToString()
+      // );
+      return true;
     }).then(() => {
       // Need to flush memcached every time a pattern recognizer is added
       // b/c old nearest neighbors may no longer be applicable.
