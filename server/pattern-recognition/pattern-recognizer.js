@@ -390,12 +390,19 @@ class PatternRecognizer {
             reject('ERROR: no rows selected matching pattern string: ' + patternString);
           }
 
+          const bestAction = { index: 0, score: 99999999999 };
+
           const queries = scores.map((score, index) => {
             // If no existing score for a time_period, set to score.
             // Otherwise, update row with weighted average of current score and new score value.
             const updatedScore = results[index] ?
               (results[index].score * originalScoreWeight + score) / (originalScoreWeight + 1) :
               score;
+
+            if (updatedScore < bestAction.score) {
+              bestAction.index = index;
+              bestAction.score = updatedScore;
+            }
 
             return knex.raw(
               `INSERT INTO \`${patternString}\` (
@@ -426,7 +433,7 @@ class PatternRecognizer {
           });
 
           Promise.all(queries).then(() => {
-            resolve(true);
+            resolve(bestAction.score);
           });
         });
     });

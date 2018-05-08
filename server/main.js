@@ -9,6 +9,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
 const argv = require('minimist')(process.argv.slice(2));
+
+let totalCycles = 0;
 // current accepted command line arguments:
 // rubberBandingTargetScore {number}
 // rubberBandingDecay {number}
@@ -161,6 +163,7 @@ app.get('/updateScore', function (req, res) {
   log.info('request to update score for sliding window head received');
   log.info('req.body');
 
+  totalCycles++;
   // TODO: since we can now have many time periods stored from a sliding window,
   //  call update using scores from all time periods the sliding window is filled
   //  for.
@@ -178,15 +181,28 @@ app.get('/updateScore', function (req, res) {
 
   // ex. nextMove string: '1_3_5_2'. Similar to patternRecognizer key format, but
   // no starting 'pattern_'
+
   return patternRecognizer.updateNextMoveScores(
     slidingWindow.getTailHead().actionKey, // this might just need to be getHead().actionKey?
     driveScores
-  ).then(() => {
+  ).then((bestScore) => {
+    // TODO: using bestScore, create variable rate of decay
+    // for rubber banding decay rate
+    const decayScore = bestScore < 40 ? bestScore : 40;
+
+    // Todo: make the output range be a param
+    // right now is always between .00025 and .05
+    const decayRate = (decayScore * (.05 - .00025)) / 40 + .00025;
+
+    // console.log(decayRate);
+    // console.log(rubberBandingDecay)
+
     // apply rubber banding if enabled
     return config.rubberBanding.enabled ?
       patternRecognizer.rubberBandActionScores(
         rubberBandingTargetScore,
-        rubberBandingDecay
+        // rubberBandingDecay
+        decayRate
       ) : null;    
   }).then(() => {
     res.status(200).json({

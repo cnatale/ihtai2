@@ -90,9 +90,20 @@ class SlidingWindow {
     // //////////////////////////////////////////////////
     
     const startingIndex = 20;
+
     const scoresToAverage = this.timeSteps
       .slice(startingIndex, distanceFromCurrentMoment)
-      .map(timeStep => timeStep.score);
+      .map((timeStep, index, array) => {
+        // weight early scores higher than later ones
+        // evenly weighted
+        return timeStep.score;
+
+        // weight to short-term
+        // return timeStep.score * ((array.length - index) / (array.length) + 1)
+
+        // weight to long-term
+        // return timeStep.score * (index / (array.length) + 1)
+      });
 
     return math.sum(scoresToAverage) / scoresToAverage.length;
     // return this.timeSteps[20].score;
