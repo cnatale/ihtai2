@@ -419,7 +419,7 @@ function splitPatternRecognizer(nearestPatternString, newPoint, timeStepData) {
 function actOnSuggestion (suggestedAction) {
   // console.log('suggestedAction to be acted on: ' + suggestedAction);
   // x and z axes apply force horizontally
-  // signals. 
+  //
   // +x is right, -x is left
   // +z is away from camera, -z is towards
   // so action signal can be:
@@ -517,6 +517,12 @@ function getDriveScore(suggestedAction) {
   //   return 100;
   // }
 
+  // TODO: think about how to add notion of curiosity as
+  // past of the scored. 
+  // For example, model curiosity as delta between score returned by bestAction
+  // and actual score computed here
+  // Would need to start passing in expected score as param along with
+  // suggested action for this to work.
   console.log('SUGGESTEDACTION')
   console.log(suggestedAction)
   var score = Math.round(Math.sqrt(

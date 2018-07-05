@@ -7,7 +7,8 @@ const math = require('mathjs');
 /**
   A sliding window representing the last n timesteps.
   @param numberOfTimeSteps {Number} - the number of timesteps stored in sliding window
-  @param scoreTimesteps {Array of Numbers} - the timesteps which should be recorded for memory retrieval
+  @param scoreTimesteps {Array of Numbers} - the timesteps which should be recorded for memory retrieval.
+    Allows for storing multiple averages
 */
 
 class SlidingWindow {

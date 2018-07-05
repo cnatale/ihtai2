@@ -184,25 +184,27 @@ app.get('/updateScore', function (req, res) {
 
   return patternRecognizer.updateNextMoveScores(
     slidingWindow.getTailHead().actionKey, // this might just need to be getHead().actionKey?
-    driveScores
+    driveScores,
+    totalCycles
   ).then((bestScore) => {
-    // TODO: using bestScore, create variable rate of decay
-    // for rubber banding decay rate
-    const decayScore = bestScore < 40 ? bestScore : 40;
+    // using bestScore, create variable rate of rubberbanding
+    const decayScore = bestScore < 80 ? bestScore : 80;
 
-    // Todo: make the output range be a param
+    // TODO: make the output range be hyperparameters
     // right now is always between .00025 and .05
-    const decayRate = (decayScore * (.05 - .00025)) / 40 + .00025;
+    // TODO: turn this equation into a utility method.
+    // TODO: add citations to paper that suggested similar method
+    const decayRate = (decayScore * (.05 - .002)) / 80 + .002;
 
-    // console.log(decayRate);
-    // console.log(rubberBandingDecay)
+    // TODO: use age multiplier on decayRate. start at 1, lower to .5
+    // as totalCycles approaches max age value
 
     // apply rubber banding if enabled
     return config.rubberBanding.enabled ?
       patternRecognizer.rubberBandActionScores(
         rubberBandingTargetScore,
         // rubberBandingDecay
-        decayRate
+        totalCycles < 1500 * 200 ? decayRate : /* decayRate * .1 */ .0005
       ) : null;    
   }).then(() => {
     res.status(200).json({
