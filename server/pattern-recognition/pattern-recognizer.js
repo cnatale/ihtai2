@@ -269,6 +269,9 @@ class PatternRecognizer {
     return [].concat(this.pattern.inputState).concat(this.pattern.actionState).concat(this.pattern.driveState);
   }
 
+  /**
+    @returns {array} an n-dimensional array representing the action state
+  */
   getActionState() {
     return this.pattern.actionState;
   }

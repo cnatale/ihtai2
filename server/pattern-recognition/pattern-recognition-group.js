@@ -268,6 +268,7 @@ class PatternRecognitionGroup {
       : this.nearestNeighborQuery(null, nearestNeighborQueryString, nearestNeighborString);
   }
 
+  // TODO: add integration tests
   nearestNeighborQuery (cachedNearestNeighbor, nearestNeighborQueryString, nearestNeighborString) {
     if (cachedNearestNeighbor) {
       return cachedNearestNeighbor;
