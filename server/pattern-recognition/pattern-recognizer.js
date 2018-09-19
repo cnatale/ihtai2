@@ -231,7 +231,8 @@ class PatternRecognizer {
   */
 
   addPatternToExistingActionsTables(originalPatternRecognizerStrings, actionPatternToSplitFrom) {
-    // TODO: fix select... where to use both score and time_period
+    // TODO: add some integratino tests to make sure this is working correctly.
+
     // '${this.actionPatternToString()}' was where select... next_action was
     // used to be a final line:  AND next_action <> '${this.actionPatternToString()}'
     // id should be an action/time_period combo

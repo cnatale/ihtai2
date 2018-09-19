@@ -363,22 +363,14 @@ class PatternRecognitionGroup {
         originalPatternRecognizerString
       );
     }).then((isActionPatternAlreadyInTables) => {
-      // If the new point is an action/time period combo that we don't
-      // already have in existing actions tables, we need to add it to all of them.
-      // In practice, this is too computationallly expensive.
-      // Lazy adding the new action/time_period combos when first inserted into a table
-      // probably makes more sense, using insert ignore (or better yet replace) raw query.
-
       // if action pattern does not already exist in patternRecognizers list
       if (isActionPatternAlreadyInTables) { return true; }
-      // also this shouldn't be called unless multiple time periods exist in ihtai agent...
-      // console.log('****** SLOW addPatternToExistingActionsTables called *******')
 
       // this is slooooooow. TODO: improve performance.
-      // return newPatternRecognizer.addPatternToExistingActionsTables(
-      //   _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
-      //   this.patternRecognizers[originalPatternRecognizerString].actionPatternToString()
-      // );
+      return newPatternRecognizer.addPatternToExistingActionsTables(
+        _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
+        this.patternRecognizers[originalPatternRecognizerString].actionPatternToString()
+      );
       return true;
     }).then(() => {
       // Need to flush memcached every time a pattern recognizer is added
