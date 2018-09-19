@@ -218,7 +218,7 @@ class PatternRecognizer {
 
   /*
     Adds the current instance's pattern to all existing tables. Does this by
-    copying the scores of pattern that is being split in the table (actionPatternToSplitFrom).
+    copying the scores of pattern that is being split from the table (actionPatternToSplitFrom).
 
     @param originalPatternRecognizerStrings {array} a list of PatternRecognizer strings, 
     which has its row in each actions table copied into the calling PatternRecognizer's
@@ -231,11 +231,12 @@ class PatternRecognizer {
   */
 
   addPatternToExistingActionsTables(originalPatternRecognizerStrings, actionPatternToSplitFrom) {
-    // TODO: add some integratino tests to make sure this is working correctly.
+    // TODO: add some integration tests to make sure this is working correctly.
 
     // '${this.actionPatternToString()}' was where select... next_action was
     // used to be a final line:  AND next_action <> '${this.actionPatternToString()}'
     // id should be an action/time_period combo
+
     return Promise.all(
       originalPatternRecognizerStrings.map((originalPatternRecognizerString) => 
         knex.raw(`INSERT IGNORE INTO \`${originalPatternRecognizerString}\` (next_action, score, time_period)

@@ -358,15 +358,16 @@ class PatternRecognitionGroup {
     ]).then(() => {
       this.patternRecognizers[newPatternRecognizer.patternToString()] = newPatternRecognizer;
 
+      // Verify that the action pattern doesn't already exist in the splitting PatternRecognizer's table.
+      // The assumption is that if it doesn't exist here, it needs to be added to every PatternRecognizer table.
       return this.doesActionsPatternExist(
         newPatternRecognizer.actionPatternToString(),
         originalPatternRecognizerString
       );
     }).then((isActionPatternAlreadyInTables) => {
-      // if action pattern does not already exist in patternRecognizers list
       if (isActionPatternAlreadyInTables) { return true; }
 
-      // this is slooooooow. TODO: improve performance.
+      // this is slooooooow. TODO: improve performance. try skipping the map() by patternToString() values.
       return newPatternRecognizer.addPatternToExistingActionsTables(
         _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
         this.patternRecognizers[originalPatternRecognizerString].actionPatternToString()
