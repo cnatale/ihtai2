@@ -50,7 +50,7 @@ describe('SlidingWindow', () => {
     });
   });
 
-  describe('getDriveScore()', () => {
+  describe('getAverageDriveScore()', () => {
     it('should get the last drive score of the slidingWindow', () => {
       const slidingWindow = new SlidingWindow(5, [5]);
       slidingWindow.addTimeStep('0', '0_0_0', 0);
@@ -60,7 +60,7 @@ describe('SlidingWindow', () => {
       slidingWindow.addTimeStep('4', '4_4_4', 4);
       
       const expectedScore = 0;
-      expect(slidingWindow.getDriveScore(0)).to.equal(expectedScore);
+      expect(slidingWindow.getAverageDriveScore(0)).to.equal(expectedScore);
 
       const slidingWindow2 = new SlidingWindow(5, [5]);
       slidingWindow2.addTimeStep('0', '0_0_0', 5);
@@ -70,7 +70,7 @@ describe('SlidingWindow', () => {
       slidingWindow2.addTimeStep('4', '4_4_4', 5);
       
       const expectedScore2 = 5;
-      expect(slidingWindow2.getDriveScore(0)).to.equal(expectedScore2);
+      expect(slidingWindow2.getAverageDriveScore(0)).to.equal(expectedScore2);
     });
 
     it('should get the drive score at any point in the sliding window', () => {
@@ -81,26 +81,26 @@ describe('SlidingWindow', () => {
       slidingWindow.addTimeStep('3', '3_3_3', 3);
       slidingWindow.addTimeStep('4', '4_4_4', 4);
 
-      expect(slidingWindow.getDriveScore(0)).to.equal(0);
-      expect(slidingWindow.getDriveScore(1)).to.equal(1);
-      expect(slidingWindow.getDriveScore(2)).to.equal(2);
-      expect(slidingWindow.getDriveScore(3)).to.equal(3);
-      expect(slidingWindow.getDriveScore(4)).to.equal(4);
+      expect(slidingWindow.getAverageDriveScore(0)).to.equal(0);
+      expect(slidingWindow.getAverageDriveScore(1)).to.equal(1);
+      expect(slidingWindow.getAverageDriveScore(2)).to.equal(2);
+      expect(slidingWindow.getAverageDriveScore(3)).to.equal(3);
+      expect(slidingWindow.getAverageDriveScore(4)).to.equal(4);
     });
 
-    it('should throw an error if getDriveScore param value is greater than number of timesteps stored', () => {
+    it('should throw an error if getAverageDriveScore param value is greater than number of timesteps stored', () => {
       const slidingWindow = new SlidingWindow(5, [5]);
       slidingWindow.addTimeStep('0', '0_0_0', 0);
       slidingWindow.addTimeStep('1', '1_1_1', 1);
 
-      expect(slidingWindow.getDriveScore(0)).to.equal(0);
-      expect(slidingWindow.getDriveScore(1)).to.equal(1);
+      expect(slidingWindow.getAverageDriveScore(0)).to.equal(0);
+      expect(slidingWindow.getAverageDriveScore(1)).to.equal(1);
       // 2 will fail even though there are two timesteps because distance is 0-indexed.
-      expect(slidingWindow.getDriveScore.bind(slidingWindow, 2)).to.throw();
+      expect(slidingWindow.getAverageDriveScore.bind(slidingWindow, 2)).to.throw();
     });
   });
 
-  describe('getAllDriveScores()', () => {
+  describe('getAllAverageDriveScores()', () => {
     it('should return an array of drive scores ', () => {
       const slidingWindow = new SlidingWindow(5, [0, 1, 2, 3, 4]);
       slidingWindow.addTimeStep('0', '0_0_0', 0);
@@ -109,7 +109,7 @@ describe('SlidingWindow', () => {
       slidingWindow.addTimeStep('3', '3_3_3', 3);
       slidingWindow.addTimeStep('4', '4_4_4', 4);
 
-      const allDriveScores = slidingWindow.getAllDriveScores();
+      const allDriveScores = slidingWindow.getAllAverageDriveScores();
       expect(allDriveScores).to.deep.equal([0, 1, 2, 3, 4]);
     });
 
@@ -118,7 +118,7 @@ describe('SlidingWindow', () => {
       slidingWindow.addTimeStep('0', '0_0_0', 0);
       slidingWindow.addTimeStep('1', '1_1_1', 1);
 
-      const allDriveScores = slidingWindow.getAllDriveScores();
+      const allDriveScores = slidingWindow.getAllAverageDriveScores();
       expect(allDriveScores).to.deep.equal([0, 1]);      
     });
 
@@ -127,7 +127,7 @@ describe('SlidingWindow', () => {
       slidingWindow.addTimeStep('0', '0_0_0', 0);
       slidingWindow.addTimeStep('1', '1_1_1', 1);
 
-      const allDriveScores = slidingWindow.getAllDriveScores();
+      const allDriveScores = slidingWindow.getAllAverageDriveScores();
       expect(allDriveScores).to.deep.equal([]);      
     });
   });

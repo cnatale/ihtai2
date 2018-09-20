@@ -122,7 +122,7 @@ class PatternRecognizer {
   }
 
   /**
-  Creates random weights for each possible next move combination.
+  Create a row in Pattern Recognizer's actions table for each possible action.
   Only initializes for shortest time period. Other time periods are
   added as experienced.
 
@@ -139,8 +139,8 @@ class PatternRecognizer {
   }
   */
 
-  // TODO: Only initialize for shortest time period. Add time periods
-  //  dynamically later as sliding window populates them with data.
+  // Only initialize for shortest time period. Add time periods
+  // dynamically later as sliding window populates them with data.
   initializeAllPossibleActions(possibleActions) {
     const actionsTableName = this.patternToString();
 

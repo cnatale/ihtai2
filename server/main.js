@@ -87,8 +87,8 @@ app.post('/initialize', function (req, res) {
   }
 
   patternRecognitionGroup.initialize(
-    req.body.startingData, 
-    req.body.possibleDataValues
+    req.body.startingData,
+    req.body.possibleActionValues
   ).then((result) => {
     log.info('PATTERN RECOGNITION GROUP INITIALIZED');
     log.info(result);
@@ -111,7 +111,7 @@ app.post('/initializeFromDb', function (req, res) {
   }
 
   patternRecognitionGroup.initializeFromDb(
-    req.body.possibleDataValues
+    req.body.possibleActionValues
   ).then((result) => {
     log.info('PATTERN RECOGNITION GROUP INITIALIZED FROM DB');
     log.info(result);
@@ -190,21 +190,18 @@ app.get('/updateScore', function (req, res) {
     // create variable rate of rubberbanding
 
     // cap score at 80
-    const decayScore = bestScore < 80 ? bestScore : 80;
+    // const decayScore = bestScore < 80 ? bestScore : 80;
 
-    // TODO: make the output range be hyperparameters
-    // right now is always between .00025 and .05
-    const decayRate = (decayScore * (.05 - .002)) / 80 + .002;
-
-    // TODO: use age multiplier on decayRate. start at 1, lower to .5
-    // as totalCycles approaches max age value
+    // // TODO: make the output range be hyperparameters
+    // // right now is always between .00025 and .05
+    // const decayRate = (decayScore * (.05 - .002)) / 80 + .002;
 
     // apply rubber banding if enabled
     return config.rubberBanding.enabled ?
       patternRecognizer.rubberBandActionScores(
         rubberBandingTargetScore,
-        // rubberBandingDecay
-        totalCycles < 1500 * 200 ? decayRate : /* decayRate * .1 */ .0005
+        rubberBandingDecay
+        // totalCycles < 1500 * 200 ? decayRate : /* decayRate * .1 */ .0005
       ) : null;    
   }).then(() => {
     res.status(200).json({

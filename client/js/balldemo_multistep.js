@@ -214,13 +214,13 @@ var counter = 0; // used to control number of api call cycles for test purposes
 // use this var to record drive score throughout application life
 var driveScore = getDriveScore(startingActionState);
 
-const possibleDataValues = [0, 1, 2, 3, 4, 5];
+const possibleActionValues = [0, 1, 2, 3, 4, 5];
 var startingData = JSON.stringify({
     startingData: [
       { inputState: startingInputState, actionState: [startingActionState], driveState: [driveScore] }
     ],
     possibleDataValues: [
-      possibleDataValues
+      possibleActionValues
     ]
 });
 
