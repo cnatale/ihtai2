@@ -207,7 +207,7 @@ var currentInputState = [
   Math.round(((sphere.position.y - box0.position.y)/12.5) * 1000),
   0,
   0,
-  0
+  canJump ? 0 : 20
 ];                  
 var currentActionState = 0; // 0 = don't move
 var counter = 0; // used to control number of api call cycles for test purposes
@@ -252,6 +252,9 @@ fetch('http://localhost:3800/initialize', {
     },
     body: startingData
 })).then((response) => {
+    // TODO: verify currentInputState, currentActionState, and driveScore are actually
+    // being updated. Taking a cursory glance at the code, it seems like they're always set to
+    // initial value.
     return getNearestPatternRecognizer({
       inputState: currentInputState,
       actionState: [currentActionState],
