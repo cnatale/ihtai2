@@ -6,9 +6,10 @@ const math = require('mathjs');
 
 /**
   A sliding window representing the last n timesteps.
-  @param numberOfTimeSteps {Number} - the number of timesteps stored in sliding window
+  @param numberOfTimeSteps {Number} - the max number of timesteps stored in sliding window
   @param scoreTimesteps {Array of Numbers} - the timesteps which should be recorded for memory retrieval.
-    Allows for storing multiple averages
+    Allows for storing multiple averages. Each value in the array represents the number of timesteps
+    into the future a particular recording will track.
 */
 
 class SlidingWindow {
@@ -17,6 +18,7 @@ class SlidingWindow {
 
     this.numberOfTimeSteps = numberOfTimeSteps || 5;
     this.scoreTimesteps = scoreTimesteps;
+    // A queue of timeSteps. Lower indices represent most recent scores
     this.timeSteps = [];
   }
 
@@ -34,8 +36,10 @@ class SlidingWindow {
     return true;
   }
 
-  isFull() {
-    return this.timeSteps.length >= this.numberOfTimeSteps;
+  isMinimallyFull() {
+    return this.scoreTimesteps.some(scoreTimestep =>
+      this.timeSteps.length >= scoreTimestep
+    );
   }
 
   flush() {
@@ -70,52 +74,35 @@ class SlidingWindow {
       score property. A value of 0 would return the last timestep added to array,
       1 the second from last, and so on.
 
-    @returns {number} the drive score.
+    @returns {number} the computed drive score.
   */
 
-  // TODO: I think this is wrong. The old version performed the following operation:
-  // return this.timeSteps[this.timeSteps.length - 1].score;
-  getDriveScore(distanceFromCurrentMoment) {
-    // ex: this would return the most recently-added timeStep.
-    // return this.timeSteps[this.timeSteps.length - 1].score;
-
-    // this is useless because it's looking backwards in time from the most recent action.
-    // needs to look forward from earliest index.
-
-    // commenting out original logic to try a summation-based approach
-    // ///////////////////////////////////////////////////
-    // const index = distanceFromCurrentMoment;
-    // if (index >= this.timeSteps.length) { throw new Error('Distance is greater than number of timesteps!'); }
-
-    // return this.timeSteps[index].score;
-    // //////////////////////////////////////////////////
-    
+  getAverageDriveScore(distanceFromCurrentMoment) {    
     const startingIndex = 20;
 
     const scoresToAverage = this.timeSteps
       .slice(startingIndex, distanceFromCurrentMoment)
       .map((timeStep, index, array) => {
-        // weight early scores higher than later ones
         // evenly weighted
-        return timeStep.score;
+        //return timeStep.score;
 
-        // weight to short-term
-        // return timeStep.score * ((array.length - index) / (array.length) + 1)
+        // weight to short-term (numbers at the beginning of timeSteps queue)
+        return timeStep.score * ((array.length - index) / (array.length) + 1)
 
-        // weight to long-term
+        // weight to long-term (numbers at the end of timeSteps queue)
         // return timeStep.score * (index / (array.length) + 1)
       });
 
+    
     return math.sum(scoresToAverage) / scoresToAverage.length;
-    // return this.timeSteps[20].score;
   }
 
   /**
   
-    @returns {Array of Numbers} representing score for every timeStep distance
+    @returns {Array of Numbers} representing average score for every timeStep stream
       specified in scoreTimesteps
   */
-  getAllDriveScores() {
+  getAllAverageDriveScores() {
     // Remove all timeStep distances that are greater than what is stored in this.timeSteps.
     const filteredScoreTimeSteps = this.scoreTimesteps.filter((scoreTimeStepDistance) => {
       const index = scoreTimeStepDistance;
@@ -123,7 +110,7 @@ class SlidingWindow {
     });
 
     return filteredScoreTimeSteps.map((scoreTimeStepDistance) => {
-      return this.getDriveScore(scoreTimeStepDistance);
+      return this.getAverageDriveScore(scoreTimeStepDistance);
     });
   }
 

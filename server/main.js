@@ -167,9 +167,9 @@ app.get('/updateScore', function (req, res) {
   // TODO: since we can now have many time periods stored from a sliding window,
   //  call update using scores from all time periods the sliding window is filled
   //  for.
-  if (!slidingWindow.isFull()) {
-    return res.status(500).send(`Sliding window must be full with
-      ${slidingWindow.numberOfTimeSteps} elements in order to update score!`);
+  if (!slidingWindow.isMinimallyFull()) {
+    return res.status(500).send(`Sliding window must be minimally full
+      in order to update score!`);
   }
 
   const patternRecognizer = 
@@ -177,7 +177,7 @@ app.get('/updateScore', function (req, res) {
       'pattern_' + slidingWindow.getHead().stateKey
     );
 
-  const driveScores = slidingWindow.getAllDriveScores();
+  const driveScores = slidingWindow.getAllAverageDriveScores();
 
   // ex. nextMove string: '1_3_5_2'. Similar to patternRecognizer key format, but
   // no starting 'pattern_'
@@ -187,13 +187,13 @@ app.get('/updateScore', function (req, res) {
     driveScores,
     totalCycles
   ).then((bestScore) => {
-    // using bestScore, create variable rate of rubberbanding
+    // create variable rate of rubberbanding
+
+    // cap score at 80
     const decayScore = bestScore < 80 ? bestScore : 80;
 
     // TODO: make the output range be hyperparameters
     // right now is always between .00025 and .05
-    // TODO: turn this equation into a utility method.
-    // TODO: add citations to paper that suggested similar method
     const decayRate = (decayScore * (.05 - .002)) / 80 + .002;
 
     // TODO: use age multiplier on decayRate. start at 1, lower to .5

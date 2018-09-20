@@ -389,6 +389,7 @@ class PatternRecognizer {
     originalScoreWeight = totalCycles < 1500 * 200 ? originalScoreWeight : originalScoreWeight * 4
 
     return new Promise((resolve, reject) => {
+      // Start by getting current score for each timePeriod stream
       knex.select('score').from(patternString)
         .where('next_action', nextActionKey)
         .orderBy('time_period')
@@ -400,26 +401,6 @@ class PatternRecognizer {
           const bestAction = { index: 0, score: 99999999999 };
 
           const queries = scores.map((score, index) => {
-            // TODO: Model curiosity. If results[index], can get delta of 
-            // results[index] and score to create a number representing
-            // curiosity. Bigger number means more curious. Could
-            // use this number as part of score calculation (would
-            // want to do (1/curiosity) since numbers closer to 0 
-            // represent better scores in Ihtai).
-            // ex:
-            // curiosity = 1/Math.abs(results[index].score - score)
-            // scoreWithCuriosity = score + (curiosity * curiosityMultiplier)
-            // curiosity multiplier would be a number >= 1
-            // scoreWithCuriosity would then replace score in the updatedScore
-            // variable equation
-            // Note that should probably offset curiosity val based on its
-            // value. Idea being the score stored is being offset by
-            // curiosity, and a delta between current score and new score
-            // needs to take into account that extra curiosity amount,
-            // or it'll give artificially low scores to new results with
-            // higher scores.
-
-
             // If no existing score for a time_period, set to score.
             // Otherwise, update row with weighted average of current score and new score value.
             const updatedScore = results[index] ?
@@ -473,6 +454,8 @@ class PatternRecognizer {
     if (isNaN(targetScore) || isNaN(decay)) {
       throw new Error('Error: all parameters must be numbers!');
     }
+    // TODO: think about varying decay rate based on number of times a pattern has been
+    // accessed to simulate curiosity. Scores updated less often get a higher decay rate.
 
     // TODO: if i'm updating all scores in a table, i don't think i need
     // the inner select statements, or the WHERE for that matter
