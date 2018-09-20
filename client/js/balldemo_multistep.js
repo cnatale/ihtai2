@@ -201,22 +201,23 @@ window.addEventListener('resize', function () { // Watch for browser/canvas resi
 let scoreSum = 0;
 let timeInTargetAreaSum = 0;
 
-var currentInputState = [
+var startingInputState = [
   Math.round(((sphere.position.x - box0.position.x)/12.5) * 1000),
   Math.round(((sphere.position.z - box0.position.z)/12.5) * 1000),
   Math.round(((sphere.position.y - box0.position.y)/12.5) * 1000),
   0,
   0,
-  canJump ? 0 : 20
+  0
 ];                  
-var currentActionState = 0; // 0 = don't move
+var startingActionState = 0; // 0 = don't move
 var counter = 0; // used to control number of api call cycles for test purposes
-var driveScore = getDriveScore(currentActionState);
+// use this var to record drive score throughout application life
+var driveScore = getDriveScore(startingActionState);
 
 const possibleDataValues = [0, 1, 2, 3, 4, 5];
 var startingData = JSON.stringify({
     startingData: [
-      { inputState: currentInputState, actionState: [currentActionState], driveState: [driveScore] }
+      { inputState: startingInputState, actionState: [startingActionState], driveState: [driveScore] }
     ],
     possibleDataValues: [
       possibleDataValues
@@ -232,7 +233,7 @@ function clearDb() {
 
 // clearDb();
 
-//////// START DATA FETCH CHAIN ////////
+//////// START INITIAL DATA FETCH CHAIN ////////
 
 fetch('http://localhost:3800/initializeFromDb', {
     method: 'post',
@@ -252,18 +253,20 @@ fetch('http://localhost:3800/initialize', {
     },
     body: startingData
 })).then((response) => {
-    // TODO: verify currentInputState, currentActionState, and driveScore are actually
+    // TODO: verify startingInputState, startingActionState, and driveScore are actually
     // being updated. Taking a cursory glance at the code, it seems like they're always set to
     // initial value.
     return getNearestPatternRecognizer({
-      inputState: currentInputState,
-      actionState: [currentActionState],
+      inputState: startingInputState,
+      actionState: [startingActionState],
       driveState: [driveScore]
     });
 }, (message) => {
     console.log('initialize failure: ');
     console.log(message);
 });
+
+//////// END INITIAL DATA FETCH CHAIN ////////
 
 function getNearestPatternRecognizer(ihtaiState) {
     return fetch('http://localhost:3800/nearestPatternRecognizer', {
