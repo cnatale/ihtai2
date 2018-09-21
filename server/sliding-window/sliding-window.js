@@ -51,7 +51,8 @@ class SlidingWindow {
     Note that this assumes client is keeping track of the string representing
     current Ihtai state that is the starting point for this action.
 
-    Most recent timesteps are added to the end of the timesteps array.
+    Most recent timesteps are added to the end of the timesteps array. If there are too many timeSteps,
+    one is removed from the beginning of the timeSteps array.
 
     @param stateKey {string} string representing the agent state at this moment
     @param driveScore {number} the drive score average of all drives the moment after action
@@ -87,10 +88,10 @@ class SlidingWindow {
         //return timeStep.score;
 
         // weight to short-term (numbers at the beginning of timeSteps queue)
-        return timeStep.score * ((array.length - index) / (array.length) + 1)
+        // return timeStep.score * ((array.length - index) / (array.length) + 1)
 
         // weight to long-term (numbers at the end of timeSteps queue)
-        // return timeStep.score * (index / (array.length) + 1)
+        return timeStep.score * (index / (array.length) + 1)
       });
 
     
