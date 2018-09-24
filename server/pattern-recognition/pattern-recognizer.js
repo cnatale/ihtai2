@@ -455,7 +455,7 @@ class PatternRecognizer {
       throw new Error('Error: all parameters must be numbers!');
     }
     // TODO: think about varying decay rate based on number of times a pattern has been
-    // accessed to simulate curiosity. Scores updated less often get a higher decay rate.
+    // accessed to simulate curiosity. Patterns accessed less often get a higher decay rate.
 
     // TODO: if i'm updating all scores in a table, i don't think i need
     // the inner select statements, or the WHERE for that matter

@@ -54,6 +54,7 @@ class SlidingWindow {
     Most recent timesteps are added to the end of the timesteps array. If there are too many timeSteps,
     one is removed from the beginning of the timeSteps array.
 
+    @param actionKey {string}
     @param stateKey {string} string representing the agent state at this moment
     @param driveScore {number} the drive score average of all drives the moment after action
            in actionTakenKey occurred.
@@ -71,15 +72,24 @@ class SlidingWindow {
   /**
     Gets the drive score a particular number of timeSteps in the past.
 
-    @param distanceFromCurrentMoment {number} The distance from head with which to select
+    @param distanceFromCurrentMoment {number, Integer greater than 0} The distance from head with which to select
       score property. A value of 0 would return the last timestep added to array,
       1 the second from last, and so on.
+
+    @param startingIndex {number, Integer 0 or positive} Which index to start the averaging from. Set to non-zero
+      if you want there to be a delay to account for actions taking some time to manifest
+      changes in drive scores.
 
     @returns {number} the computed drive score.
   */
 
-  getAverageDriveScore(distanceFromCurrentMoment) {    
-    const startingIndex = 20;
+  getAverageDriveScore(distanceFromCurrentMoment, startingIndex = 0) {
+    if (distanceFromCurrentMoment > this.timeSteps.length) {
+      throw new Error('param `distanceFromCurrentMoment` cannot be greater than the number of timeSteps in memory');
+    }
+    if (startingIndex >= distanceFromCurrentMoment) {
+      throw new Error('param distanceFromCurrentMoment must be less than startingIndex');
+    }
 
     const scoresToAverage = this.timeSteps
       .slice(startingIndex, distanceFromCurrentMoment)
@@ -87,11 +97,12 @@ class SlidingWindow {
         // evenly weighted
         //return timeStep.score;
 
-        // weight to short-term (numbers at the beginning of timeSteps queue)
-        // return timeStep.score * ((array.length - index) / (array.length) + 1)
+        // weighted multiplier for both short and longterm is roughly 1 to 2
+        // weight to short-term (numbers at the beginning of timeSteps queue) (the  + 1 in denominator prevents divide by 0 errors)
+        return timeStep.score * ((array.length - index) / (array.length) + 1)
 
-        // weight to long-term (numbers at the end of timeSteps queue)
-        return timeStep.score * (index / (array.length) + 1)
+        // weight to long-term (numbers at the end of timeSteps queue) (the  + 1 in denominator prevents divide by 0 errors)
+        // return timeStep.score * (index / (array.length) + 1)
       });
 
     
@@ -107,7 +118,7 @@ class SlidingWindow {
     // Remove all timeStep distances that are greater than what is stored in this.timeSteps.
     const filteredScoreTimeSteps = this.scoreTimesteps.filter((scoreTimeStepDistance) => {
       const index = scoreTimeStepDistance;
-      return index < this.timeSteps.length;
+      return index <= this.timeSteps.length;
     });
 
     return filteredScoreTimeSteps.map((scoreTimeStepDistance) => {
