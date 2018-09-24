@@ -5,7 +5,7 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 const SlidingWindow = require('../../../../server/sliding-window/sliding-window');
 
-describe.only('SlidingWindow', () => {
+describe('SlidingWindow', () => {
   describe('constructor/assertConstructorParams', () => {
     it('should throw an error when first param is not a number', () => {
       const slidingWindow = new SlidingWindow(5, [5]);
@@ -52,15 +52,38 @@ describe.only('SlidingWindow', () => {
 
   describe('getAverageDriveScore()', () => {
     it('should throw an error when distanceFromCurrentMoment param is > number of timeSteps in memory', () => {
+      const slidingWindow = new SlidingWindow(5, [4]);
+      slidingWindow.addTimeStep('0', '0_0_0', 0);
+      slidingWindow.addTimeStep('1', '1_1_1', 1);
+      slidingWindow.addTimeStep('2', '2_2_2', 2);
+      slidingWindow.addTimeStep('3', '3_3_3', 3);
+      slidingWindow.addTimeStep('4', '4_4_4', 4);
 
+      expect(slidingWindow.getAverageDriveScore.bind(slidingWindow, 6)).to.throw();
     });
 
     it('should throw an error when startingIndex param is >= distanceFromCurrentMomentParam', () => {
+      const slidingWindow = new SlidingWindow(5, [4]);
+      slidingWindow.addTimeStep('0', '0_0_0', 0);
+      slidingWindow.addTimeStep('1', '1_1_1', 1);
+      slidingWindow.addTimeStep('2', '2_2_2', 2);
+      slidingWindow.addTimeStep('3', '3_3_3', 3);
+      slidingWindow.addTimeStep('4', '4_4_4', 4);
 
+      expect(slidingWindow.getAverageDriveScore.bind(slidingWindow, 6, 6)).to.throw();
+      expect(slidingWindow.getAverageDriveScore.bind(slidingWindow, 6, 7)).to.throw();
     });
 
     it('should change starting index for averaging score based on startingIndex param', () => {
+      const slidingWindow = new SlidingWindow(5, [4]);
+      slidingWindow.addTimeStep('0', '0_0_0', 0);
+      slidingWindow.addTimeStep('1', '1_1_1', 1);
+      slidingWindow.addTimeStep('2', '2_2_2', 2);
+      slidingWindow.addTimeStep('3', '3_3_3', 3);
+      slidingWindow.addTimeStep('4', '4_4_4', 4);
 
+      // the average of just the final timestep score should always be more than the average of all timestep scores
+      expect(slidingWindow.getAverageDriveScore(5, 4)).to.be.above(slidingWindow.getAverageDriveScore(5, 0))
     });
 
     it('should get the last drive score of the slidingWindow', () => {
