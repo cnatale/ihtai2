@@ -217,10 +217,10 @@ class PatternRecognizer {
   }
 
   /*
-    Adds the current instance's pattern to all existing tables. Does this by
-    copying the scores of pattern that is being split from the table (actionPatternToSplitFrom).
+    Adds the current instance's pattern to all action tables which are listed in the first param array.
+    Does this by copying the scores of pattern that is being split from the table (actionPatternToSplitFrom).
 
-    @param originalPatternRecognizerStrings {array} a list of PatternRecognizer strings, 
+    @param originalPatternRecognizerStrings {array} a list of PatternRecognizer name strings,
     which has its row in each actions table copied into the calling PatternRecognizer's
     row.
 
@@ -231,8 +231,6 @@ class PatternRecognizer {
   */
 
   addPatternToExistingActionsTables(originalPatternRecognizerStrings, actionPatternToSplitFrom) {
-    // TODO: add some integration tests to make sure this is working correctly.
-
     // '${this.actionPatternToString()}' was where select... next_action was
     // used to be a final line:  AND next_action <> '${this.actionPatternToString()}'
     // id should be an action/time_period combo
