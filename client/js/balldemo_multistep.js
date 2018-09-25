@@ -219,7 +219,7 @@ var startingData = JSON.stringify({
     startingData: [
       { inputState: startingInputState, actionState: [startingActionState], driveState: [driveScore] }
     ],
-    possibleDataValues: [
+    possibleActionValues: [
       possibleActionValues
     ]
 });
@@ -235,6 +235,7 @@ function clearDb() {
 
 //////// START INITIAL DATA FETCH CHAIN ////////
 
+// attempt to initialize from db first
 fetch('http://localhost:3800/initializeFromDb', {
     method: 'post',
     headers: {
@@ -242,7 +243,7 @@ fetch('http://localhost:3800/initializeFromDb', {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      possibleDataValues: [possibleDataValues]
+      possibleDataValues: [possibleActionValues]
     })
 }).then((response) =>
 fetch('http://localhost:3800/initialize', {
@@ -256,6 +257,7 @@ fetch('http://localhost:3800/initialize', {
     // TODO: verify startingInputState, startingActionState, and driveScore are actually
     // being updated. Taking a cursory glance at the code, it seems like they're always set to
     // initial value.
+
     return getNearestPatternRecognizer({
       inputState: startingInputState,
       actionState: [startingActionState],
