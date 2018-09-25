@@ -395,7 +395,13 @@ class PatternRecognizer {
 
     return new Promise((resolve, reject) => {
       // Start by getting current score for each timePeriod stream
-      knex.select('score').from(patternString)
+
+      // The join here provides access to the update_count for a pattern.
+      // I can use this to simulate curiosity by making original score weight inversely proportional to
+      // the update_count, maybe on a logarithmic scale.
+      const globalPointsTableName = config.get('db').globalPointsTableName;
+      knex.select('score', 'update_count').from(patternString)
+        .join(globalPointsTableName, `${globalPointsTableName}.point`, '=', knex.raw('?', [patternString]))
         .where('next_action', nextActionKey)
         .orderBy('time_period')
         .then((results) => {
