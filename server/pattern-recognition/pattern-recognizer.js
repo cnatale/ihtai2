@@ -275,7 +275,7 @@ class PatternRecognizer {
   }
 
   actionPatternToString() {
-    return `action_${this.pattern.actionState.join('_')}`.replace(/\./g, '+');
+    return `${this.pattern.actionState.join('_')}`.replace(/\./g, '+');
   }
 
   /**

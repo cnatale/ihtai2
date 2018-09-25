@@ -562,9 +562,6 @@ describe('patternRecognizer', () => {
           'next_action', '11'),
         ]);
       }).then((result) => {
-        console.log('*********')
-        console.log(result);
-        console.log('**********')
         const originalResult = (_.flatten(result)[0]);
         const copyResult = (_.flatten(result)[1]);
 
