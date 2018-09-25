@@ -37,6 +37,6 @@ module.exports = {
   moveUpdates: {
     // successful values for balldemo have been 4/5, 9/10, and 15/16
     // lower values have more "jagged" movement patterns. Higher is smoother.
-    originalScoreWeight: 9
+    originalScoreWeight: 4
   }
 };

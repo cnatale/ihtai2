@@ -389,10 +389,10 @@ class PatternRecognizer {
     */
 
     const patternString = this.patternToString();
-    let originalScoreWeight = argv.originalScoreWeight || config.moveUpdates.originalScoreWeight;
+    // let originalScoreWeight = argv.originalScoreWeight || config.moveUpdates.originalScoreWeight;
     // BUG: totalCycles isn't in scope here. Pass as param
-    originalScoreWeight = totalCycles < 1500 * 200 ? originalScoreWeight : originalScoreWeight * 4
-
+    // this isn't a good way to calculate b/c totalCycles resets every time the ihtai server instance closes
+    // originalScoreWeight = totalCycles < 1500 * 200 ? originalScoreWeight : originalScoreWeight * 4
     return new Promise((resolve, reject) => {
       // Start by getting current score for each timePeriod stream
 
@@ -400,6 +400,9 @@ class PatternRecognizer {
       // I can use this to simulate curiosity by making original score weight inversely proportional to
       // the update_count, maybe on a logarithmic scale.
       const globalPointsTableName = config.get('db').globalPointsTableName;
+      const  originalScoreWeight = argv.originalScoreWeight ||
+        config.moveUpdates.originalScoreWeight;
+
       knex.select('score', 'update_count').from(patternString)
         .join(globalPointsTableName, `${globalPointsTableName}.point`, '=', knex.raw('?', [patternString]))
         .where('next_action', nextActionKey)
@@ -414,8 +417,13 @@ class PatternRecognizer {
           const queries = scores.map((score, index) => {
             // If no existing score for a time_period, set to score.
             // Otherwise, update row with weighted average of current score and new score value.
+            // Note: update_count must be > 0 for else result is NaN, adding one to value to account for this,
+            // then adding an extra 1 so that original score weight never becomes 0.
+            // Some example values: 0 => .3, 10 => ~1, 100 => ~2, 1000 => ~3
+            const curiosityWeight = Math.log10(results[index].update_count + 2)
+
             const updatedScore = results[index] ?
-              (results[index].score * originalScoreWeight + score) / (originalScoreWeight + 1) :
+              (results[index].score * originalScoreWeight * curiosityWeight + score) / (originalScoreWeight * curiosityWeight + 1) :
               score;
 
             if (updatedScore < bestAction.score) {
