@@ -369,6 +369,8 @@ class PatternRecognizer {
     @param nextActionKey {String}
     @param scores {Array of Numbers} The scores to update with.
       Each index is implicitly the time_period value
+
+    @returns {Promise resolving to Number} A Promise which resolves to the best available action's score.
   */
   // TODO: needs to update all scores, change 'score' to 'scores' array
   // should probably be array of objects, with each object containing

@@ -311,11 +311,11 @@ describe('patternRecognizer', () => {
 
           patternRecognizer.updateNextMoveScores('-1_a_x', [10])
             .then((result) => {
-              expect(result).to.equal(true);
+              const expectedScore = 0.2702702702702703;
+              expect(result).to.equal(expectedScore);
               // get the updated move score from table
               // const expectedScore = (0.3684589274859717 * 9 + 10) / 10;
               // hard-coding for now until I make random number generation less brittle
-              const expectedScore = 1;
 
               knex.column('next_action', 'score')
                 .select('score', 'next_action')
@@ -347,12 +347,10 @@ describe('patternRecognizer', () => {
 
           patternRecognizer.updateNextMoveScores('-1_a_x', [10, 5, 2, 4])
             .then((result) => {
-              expect(result).to.equal(true);
+              const expectedScore = 0.2702702702702703;
+              expect(result).to.equal(0.2702702702702703);
+              
               // get the updated move score from table
-              // const expectedScore = (0.3684589274859717 * 9 + 10) / 10;
-              // hard-coding for now until I make random number generation less brittle
-              const expectedScore = 1;
-
               knex.column('next_action', 'score')
                 .select('score', 'next_action')
                 .from('pattern_1_2_3')
@@ -385,7 +383,7 @@ describe('patternRecognizer', () => {
 
           patternRecognizer.updateNextMoveScores('-1_a_x', [10])
             .then((result) => {
-              expect(result).to.equal(true);
+              expect(result).to.equal(0.2702702702702703);
 
               const globalPointsTableName = config.get('db').globalPointsTableName;
               knex(globalPointsTableName).select().where('point', '=', patternRecognizer.patternToString())

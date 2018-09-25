@@ -27,11 +27,6 @@ class PatternRecognitionGroup {
       used for creating child PatternRecognizers. If you don't want to initialize
       with points, pass an empty array.
 
-      TODO: add logic that does a query for all rows in global points table, and also
-        generates PatternRecognizers based on the results. Will need to add three extra
-        rows to global_points_table that hold the index for first input, index for first action, and
-        input for first drive.
-
       Length = inputState.length + actionState.length + driveState.length
       Ex: [{inputState: [-1], actionState: [a], driveState: [x]},
            {inputState: [0], actionState: [b], driveState: [y]},
