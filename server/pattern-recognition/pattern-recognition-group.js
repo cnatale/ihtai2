@@ -201,15 +201,6 @@ class PatternRecognitionGroup {
     @returns {object} the associated patternRecognizer instance object
   */
   getPatternRecognizer(nDimensionalPointString) {
-    /*
-    TODO: Bug after restarting server with existing ihtai instance in db, causes server to crash
-{"name":"Ihtai","hostname":"Chriss-MacBook-Pro.local","pid":4199,"level":50,"msg":"FAILURE INITIALIZING PATTERN RECOGNITION GROUP FROM DB","time":"2018-09-25T17:45:08.050Z","v":0}
-{"name":"Ihtai","hostname":"Chriss-MacBook-Pro.local","pid":4199,"level":50,"err":{"message":"PatternRecognitionGroup.addPatternRecognizer: possibleActionValues not initialized.","name":"Error","stack":"Error: PatternRecognitionGroup.addPatternRecognizer: possibleActionValues not initialized.\n    at PatternRecognitionGroup.addPatternRecognizer (/Users/natale/Projects/ihtai_2.0/server/pattern-recognition/pattern-recognition-group.js:162:29)\n    at Promise.all.nDimensionalPoints.map (/Users/natale/Projects/ihtai_2.0/server/pattern-recognition/pattern-recognition-group.js:141:23)\n    at Array.map (<anonymous>)\n    at knex.select.then.then (/Users/natale/Projects/ihtai_2.0/server/pattern-recognition/pattern-recognition-group.js:140:47)\n    at tryCatcher (/Users/natale/Projects/ihtai_2.0/node_modules/bluebird/js/release/util.js:16:23)\n    at Promise._settlePromiseFromHandler (/Users/natale/Projects/ihtai_2.0/node_modules/bluebird/js/release/promise.js:512:31)\n    at Promise._settlePromise (/Users/natale/Projects/ihtai_2.0/node_modules/bluebird/js/release/promise.js:569:18)\n    at Promise._settlePromise0 (/Users/natale/Projects/ihtai_2.0/node_modules/bluebird/js/release/promise.js:614:10)\n    at Promise._settlePromises (/Users/natale/Projects/ihtai_2.0/node_modules/bluebird/js/release/promise.js:693:18)\n    at Async._drainQueue (/Users/natale/Projects/ihtai_2.0/node_modules/bluebird/js/release/async.js:133:16)\n    at Async._drainQueues (/Users/natale/Projects/ihtai_2.0/node_modules/bluebird/js/release/async.js:143:10)\n    at Immediate.Async.drainQueues [as _onImmediate] (/Users/natale/Projects/ihtai_2.0/node_modules/bluebird/js/release/async.js:17:14)\n    at runCallback (timers.js:789:20)\n    at tryOnImmediate (timers.js:751:5)\n    at processImmediate [as _immediateCallback] (timers.js:722:5)"},"msg":"PatternRecognitionGroup.addPatternRecognizer: possibleActionValues not initialized.","time":"2018-09-25T17:45:08.051Z","v":0}
-Error: PatternRecognitionGroup.getPatternRecognizer():
-        no patternRecognizer found matching the input string pattern_-3200_6000_-400_0_0_0_0_85
-
-    */
-
     if (!this.patternRecognizers[nDimensionalPointString]) {
       throw (`Error: PatternRecognitionGroup.getPatternRecognizer(): 
         no patternRecognizer found matching the input string ${nDimensionalPointString}`);

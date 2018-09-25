@@ -243,7 +243,7 @@ fetch('http://localhost:3800/initializeFromDb', {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      possibleDataValues: [possibleActionValues]
+      possibleActionValues: [possibleActionValues]
     })
 }).then((response) =>
 fetch('http://localhost:3800/initialize', {
