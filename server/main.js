@@ -137,7 +137,9 @@ app.post('/nearestPatternRecognizer', function (req, res) {
       driveState: req.body.driveState
     }
   ).then((nearestPatternRecognizer) => {
-    res.status(200).send(nearestPatternRecognizer);
+    nearestPatternRecognizer ?
+      res.status(200).send(nearestPatternRecognizer) :
+      res.status(500).send();
   });
 });
 

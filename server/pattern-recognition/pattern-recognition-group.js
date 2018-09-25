@@ -68,6 +68,8 @@ class PatternRecognitionGroup {
       return Promise.resolve([]);
     }
 
+    // TODO: global points table needs created before
+
     this.isInitialized = true;
     // add all patternRecognizers in nDimensionalPoints list
     return Promise.all(nDimensionalPoints.map((nDimensionalPoint) => {
@@ -122,6 +124,9 @@ class PatternRecognitionGroup {
           return nDimensionalPoint;
         });
         // return an array of nDimensionalPoints representing existing points
+      }, (error) => {
+        console.log('Error: PatternRecognitionGroup.initializeFromDb():');
+        return Promise.reject(error);
       })
       .then((nDimensionalPoints) => {
         // temporarily turn off while changing schema
@@ -152,6 +157,7 @@ class PatternRecognitionGroup {
     // if (schemaValidator.error !== null) {
     //   return Promise.reject(schemaValidator);
     // }
+
     if (!this.possibleActionValues) {
       return Promise.reject(new Error('PatternRecognitionGroup.addPatternRecognizer: possibleActionValues not initialized.'));
     }
@@ -281,6 +287,9 @@ class PatternRecognitionGroup {
             .call(memcached.set.bind(memcached), nearestNeighborString, result[0].point, 0)
             .then(() => result[0].point)
           : { point: result[0].point, id: result[0].id };
+      }, (error) => {
+        console.log('nearestNeighborQuery: failure to access global points table')
+        return false
       });
   }
 

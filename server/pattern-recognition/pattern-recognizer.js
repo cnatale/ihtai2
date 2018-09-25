@@ -112,13 +112,14 @@ class PatternRecognizer {
       });
       table.integer('first_action_index');
       table.integer('first_drive_index');
-    }).then(() => {
-      return true;
     }).catch((error) => {
       if (error.message.includes('ER_TABLE_EXISTS_ERROR')) { return true; }
       console.log(error);
       return false;
-    });
+    })
+    .then(() => {
+      return true;
+    })
   }
 
   /**
@@ -189,8 +190,12 @@ class PatternRecognizer {
                 reject(message);
               });
           } else { resolve(results); }
+        },
+        (error) => {
+          if (error.message.includes('ER_NO_SUCH_TABLE')) { return true; }
+          console.log(error);
+          return false;
         });
-
       });
     });
   }
