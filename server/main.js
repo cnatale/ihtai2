@@ -42,6 +42,14 @@ rubberBandingDecay:${rubberBandingDecay}
 
 module.exports = app;
 
+// enable cors
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
+  next();
+});
+
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -281,6 +289,7 @@ app.post('/updatesPerMinute', function (req, res) {
 // TODO: expose method that returns an array of all points in global points table
 
 // serve static client files
-app.use(express.static('client'));
-log.info('Ihtai server running on port 3800');
+// app.use(express.static('client'));
+
 app.listen(3800);
+log.info('Ihtai server running on port 3800');
