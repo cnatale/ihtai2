@@ -77,7 +77,8 @@ class PatternRecognizer {
       // table.string('id').primary();
       table.string('next_action');
       table.double('score');
-      table.integer('time_period');
+      table.integer('time_period').unsigned();
+      table.bigInteger('update_count').unsigned().defaultTo(0);
       table.unique(['next_action', 'time_period'], 'id');
     }).then(() => {
       return true;
@@ -148,7 +149,7 @@ class PatternRecognizer {
     const allPossibleActions = patternRecUtil.cartesianProduct(possibleActions);
     const rowsToInsert = allPossibleActions.map((val) => {
       const score = 0;
-      return { next_action: val, score, time_period: 0 };
+      return { next_action: val, score, time_period: 0, update_count: 0 };
     });
 
     // Only add actions columns if they aren't already in the table.
@@ -217,8 +218,8 @@ class PatternRecognizer {
       `CREATE TABLE IF NOT EXISTS
       \`${this.patternToString()}\` LIKE \`${originalPatternRecognizerString}\``)
       .then(() =>
-      knex.raw(`INSERT INTO \`${this.patternToString()}\` (next_action, score, time_period)
-        SELECT next_action, score, time_period FROM \`${originalPatternRecognizerString}\``));
+      knex.raw(`INSERT INTO \`${this.patternToString()}\` (next_action, score, time_period, update_count)
+        SELECT next_action, score, time_period, 0 FROM \`${originalPatternRecognizerString}\``));
   }
 
   /*
@@ -371,7 +372,7 @@ class PatternRecognizer {
 
     @param nextActionKey {String}
     @param scores {Array of Numbers} The scores to update with.
-      Each index is implicitly the time_period value
+      Each index is implicitly the time_period stream value
 
     @returns {Promise resolving to Number} A Promise which resolves to the best available action's score.
   */
@@ -403,15 +404,15 @@ class PatternRecognizer {
       const  originalScoreWeight = argv.originalScoreWeight ||
         config.moveUpdates.originalScoreWeight;
 
-      knex.select('score', 'update_count').from(patternString)
+      knex.select('score', `${globalPointsTableName}.update_count as pattern_update_count`, `${patternString}.update_count as action_update_count`).from(patternString)
         .join(globalPointsTableName, `${globalPointsTableName}.point`, '=', knex.raw('?', [patternString]))
         .where('next_action', nextActionKey)
         .orderBy('time_period')
         .then((results) => {
+          // I would get multiple results here if I have more than one time period in memory. Expect at least 1
           if (!results.length) {
             reject('ERROR: no rows selected matching pattern string: ' + patternString);
           }
-
           const bestAction = { index: 0, score: 99999999999 };
 
           const queries = scores.map((score, index) => {
@@ -419,11 +420,32 @@ class PatternRecognizer {
             // Otherwise, update row with weighted average of current score and new score value.
             // Note: update_count must be > 0 for else result is NaN, adding one to value to account for this,
             // then adding an extra 1 so that original score weight never becomes 0.
-            // Some example values: 0 => .3, 10 => ~1, 100 => ~2, 1000 => ~3
-            const curiosityWeight = Math.log10(results[index].update_count + 2)
+            // Some example values: 0 => .3, 10 => ~1, 100 => ~2, 1000 => ~3, 10000 => ~4
 
+            // value isn't used if results[index] is undefined 
+            const ageMultiplier = results[index] ? Math.log10(results[index].pattern_update_count + 2) : 0;
+            const curiosityMultiplier = results[index] ? Math.log10(results[index].action_update_count + 2) : 0;
+
+            // Adding/multiplying curiosityWeight with score creates a variable rubber banding effect to scores.
+            // The rate of rubberBanding increases the more times a pattern is accessed. This makes
+            // patterns accessed fewer times tend to be more attractive. As all numbers get larger, there's
+            // less variability between this effect due to the log function in the curiosityWeight calculation.
+
+            // Multiplying the original score by curiosity rate slows the rate of learning the more times a pattern has been updated.
+
+            // Note: version i tested with last, commenting out curiosityWeight, worked well getting close to box.
+            // However, it stopped approaching within a certain distance. Could be because of multiplying score
+            // by rubberBandingAmount. This would have a smaller rubbber band effect the smaller the number is.
+
+            // Note: multiplying old score and originalScoreWeight by curiosityWeight does a good job of 'freezing'
+            // learning after a certain number of time a pattern has been accessed. Behavior becomes predictable.
+
+            // Note: I don't think multiplying/ adding score by rubberBandingAmount does anything, because it's
+            // using the same rubberBandingAmount for all scores. If it was privileging scores tied to certain actions
+            // then it might work.
+            // If I started keeping update_counts for each action in a pattern table, and using that as a standin for curiosity, that'd probably work.
             const updatedScore = results[index] ?
-              (results[index].score * originalScoreWeight * curiosityWeight + score) / (originalScoreWeight * curiosityWeight + 1) :
+              (results[index].score * originalScoreWeight /* * ageMultiplier */ + score * curiosityMultiplier) / (originalScoreWeight /* * ageMultiplier */ + 1) :
               score;
 
             if (updatedScore < bestAction.score) {
@@ -437,11 +459,12 @@ class PatternRecognizer {
                 time_period,
                 score)
               values (?,?,?)
-                ON DUPLICATE KEY UPDATE score = ?`, [
+                ON DUPLICATE KEY UPDATE score = ?, update_count = ?`, [
                   nextActionKey,
                   index,
                   updatedScore,
-                  updatedScore
+                  updatedScore,
+                  results[index] ? results[index].action_update_count + 1 : 0
                 ])
               .then((results) => {
                 // affectedRows value of 1 indicates insertion.

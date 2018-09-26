@@ -21,7 +21,7 @@ module.exports = {
     port: '11211'
   },
   rubberBanding: {
-    enabled: true,
+    enabled: false,
     // The score that action scores above targetScore threshold are pulled towards.
     targetScore: 10,
     decay: 0.05

@@ -207,12 +207,13 @@ app.get('/updateScore', function (req, res) {
     // const decayRate = (decayScore * (.05 - .002)) / 80 + .002;
 
     // apply rubber banding if enabled
-    return config.rubberBanding.enabled ?
-      patternRecognizer.rubberBandActionScores(
-        rubberBandingTargetScore,
-        rubberBandingDecay
-        // totalCycles < 1500 * 200 ? decayRate : /* decayRate * .1 */ .0005
-      ) : null;    
+    // return config.rubberBanding.enabled ?
+    //   patternRecognizer.rubberBandActionScores(
+    //     rubberBandingTargetScore,
+    //     rubberBandingDecay
+    //     // totalCycles < 1500 * 200 ? decayRate : /* decayRate * .1 */ .0005
+    //   ) : null;
+    return null;
   }).then(() => {
     res.status(200).json({
       startPattern: patternRecognizer.patternToString(),
