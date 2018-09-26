@@ -422,30 +422,12 @@ class PatternRecognizer {
             // then adding an extra 1 so that original score weight never becomes 0.
             // Some example values: 0 => .3, 10 => ~1, 100 => ~2, 1000 => ~3, 10000 => ~4
 
-            // value isn't used if results[index] is undefined 
-            const ageMultiplier = results[index] ? Math.log10(results[index].pattern_update_count + 2) : 0;
-            const curiosityMultiplier = results[index] ? Math.log10(results[index].action_update_count + 2) : 0;
+            // value isn't used if results[index] is undefined
+            const ageMultiplier = results[index] ? 1 + Math.log10(results[index].pattern_update_count + 2) * 2 : 0;
+            const curiosityMultiplier = results[index] ? 1 + Math.log10(results[index].action_update_count + 2) : 0;
 
-            // Adding/multiplying curiosityWeight with score creates a variable rubber banding effect to scores.
-            // The rate of rubberBanding increases the more times a pattern is accessed. This makes
-            // patterns accessed fewer times tend to be more attractive. As all numbers get larger, there's
-            // less variability between this effect due to the log function in the curiosityWeight calculation.
-
-            // Multiplying the original score by curiosity rate slows the rate of learning the more times a pattern has been updated.
-
-            // Note: version i tested with last, commenting out curiosityWeight, worked well getting close to box.
-            // However, it stopped approaching within a certain distance. Could be because of multiplying score
-            // by rubberBandingAmount. This would have a smaller rubbber band effect the smaller the number is.
-
-            // Note: multiplying old score and originalScoreWeight by curiosityWeight does a good job of 'freezing'
-            // learning after a certain number of time a pattern has been accessed. Behavior becomes predictable.
-
-            // Note: I don't think multiplying/ adding score by rubberBandingAmount does anything, because it's
-            // using the same rubberBandingAmount for all scores. If it was privileging scores tied to certain actions
-            // then it might work.
-            // If I started keeping update_counts for each action in a pattern table, and using that as a standin for curiosity, that'd probably work.
             const updatedScore = results[index] ?
-              (results[index].score * originalScoreWeight /* * ageMultiplier */ + score * curiosityMultiplier) / (originalScoreWeight /* * ageMultiplier */ + 1) :
+              (results[index].score * ageMultiplier + score * curiosityMultiplier) / (ageMultiplier + 1) :
               score;
 
             if (updatedScore < bestAction.score) {
