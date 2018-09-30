@@ -192,8 +192,10 @@ app.get('/updateScore', function (req, res) {
   // ex. nextMove string: '1_3_5_2'. Similar to patternRecognizer key format, but
   // no starting 'pattern_'
 
+  // given a state represented by the patternRecognizer, and a certain action represented by
+  // slidingWindow.getTailHead().actionKey is taken, what is the result?
   return patternRecognizer.updateNextMoveScores(
-    slidingWindow.getTailHead().actionKey, // this might just need to be getHead().actionKey?
+    slidingWindow.getTailHead().actionKey,
     driveScores,
     totalCycles
   ).then((bestScore) => {

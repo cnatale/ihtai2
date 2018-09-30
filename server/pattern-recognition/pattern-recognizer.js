@@ -391,9 +391,6 @@ class PatternRecognizer {
 
     const patternString = this.patternToString();
     // let originalScoreWeight = argv.originalScoreWeight || config.moveUpdates.originalScoreWeight;
-    // BUG: totalCycles isn't in scope here. Pass as param
-    // this isn't a good way to calculate b/c totalCycles resets every time the ihtai server instance closes
-    // originalScoreWeight = totalCycles < 1500 * 200 ? originalScoreWeight : originalScoreWeight * 4
     return new Promise((resolve, reject) => {
       // Start by getting current score for each timePeriod stream
 
@@ -416,16 +413,18 @@ class PatternRecognizer {
           const bestAction = { index: 0, score: 99999999999 };
 
           const queries = scores.map((score, index) => {
-            // If no existing score for a time_period, set to score.
-            // Otherwise, update row with weighted average of current score and new score value.
-            // Note: update_count must be > 0 for else result is NaN, adding one to value to account for this,
-            // then adding an extra 1 so that original score weight never becomes 0.
-            // Some example values: 0 => .3, 10 => ~1, 100 => ~2, 1000 => ~3, 10000 => ~4
+            // Note: update_count must be > 0 for else result is NaN, adding one to value to account for this
+            // Some example Math.log10() values: 1=> 0, 2 => .3, 10 => 1, 100 => 2, 1000 => 3, 10000 => 4
 
             // value isn't used if results[index] is undefined
-            const ageMultiplier = results[index] ? 1 + Math.log10(results[index].pattern_update_count + 2) * 2 : 0;
-            const curiosityMultiplier = results[index] ? 1 + Math.log10(results[index].action_update_count + 2) : 0;
+            // represents weighted average of existing score vs current score
+            const ageMultiplier = results[index] ? 1 + Math.log10(results[index].pattern_update_count + 1) * 40 : 0;
+            // maybe curiosity should be linear?
+            // represents rubber banding, so new actions are tried
+            const curiosityMultiplier = results[index] ? 1 + Math.log10(results[index].action_update_count + 1) * 1 : 0;
 
+            // general rules are: higher the age, lower the learning rate; higher the number of times an action is
+            // accessed, the less curious the agent is to try again, all other things being equal.
             const updatedScore = results[index] ?
               (results[index].score * ageMultiplier + score * curiosityMultiplier) / (ageMultiplier + 1) :
               score;

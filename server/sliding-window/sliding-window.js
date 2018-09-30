@@ -83,7 +83,10 @@ class SlidingWindow {
     @returns {number} the computed drive score.
   */
 
-  getAverageDriveScore(distanceFromCurrentMoment, startingIndex = 0) {
+  // TODO: try upping the startingIndex to 2? I think that's right because the current state is moment 0,
+  // the action taken based on this state would occur in moment 1, and nothing based on that action would
+  // register until at least moment 2 (was 0)
+  getAverageDriveScore(distanceFromCurrentMoment, startingIndex = 2) {
     if (distanceFromCurrentMoment > this.timeSteps.length) {
       throw new Error('param `distanceFromCurrentMoment` cannot be greater than the number of timeSteps in memory');
     }
@@ -95,7 +98,7 @@ class SlidingWindow {
       .slice(startingIndex, distanceFromCurrentMoment)
       .map((timeStep, index, array) => {
         // evenly weighted
-        //return timeStep.score;
+        // return timeStep.score;
 
         // weighted multiplier for both short and longterm is roughly 1 to 2
         // weight to short-term (numbers at the beginning of timeSteps queue) (the  + 1 in denominator prevents divide by 0 errors)
