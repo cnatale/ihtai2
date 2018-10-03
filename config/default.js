@@ -5,7 +5,7 @@ module.exports = {
     password: ''
   },
   log: {
-    level: 'error',
+    level: 'info',
     rotate: {
       maxSize: '1g',
       maxFiles: 10
@@ -31,8 +31,8 @@ module.exports = {
   // time it takes for learning to take effect. don't use
   // a smaller value than 3
   slidingWindow: {
-    size: 301,
-    scoreTimesteps: [ 30 ]
+    size: 10,
+    scoreTimesteps: [ 3 ]
   },
   moveUpdates: {
     // successful values for balldemo have been 4/5, 9/10, and 15/16

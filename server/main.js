@@ -3,8 +3,30 @@ const PatternRecognitionGroup = require('./pattern-recognition/pattern-recogniti
 const dbUtil = require('./db/util');
 const bunyan = require('bunyan');
 const config = require('config');
-const log = bunyan.createLogger({ name: 'Ihtai' });
-log.level(config.log.level);
+
+const serverLog = bunyan.createLogger({
+  name: 'IhtaiServer',
+  streams: [
+    {
+      level: 'info',
+      stream: process.stdout            // log INFO and above to stdout
+    },
+    {
+      level: 'info',
+      path: './log/ihtai-server.log'
+    }
+  ]
+});
+const clientLog = bunyan.createLogger({
+  name: 'IhtaiClient',
+  streams: [
+    {
+      level: 'info',
+      path: './log/ihtai-client.log'
+    }
+  ]
+});
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
@@ -20,6 +42,7 @@ let totalCycles = 0;
 // slidingWindowSize {number}
 
 const maxPatterns = argv.maxPatterns || config.maxPatterns;
+
 const scoreTimesteps =
   argv.scoreTimesteps ?
     (() => {
@@ -60,6 +83,11 @@ app.use(bodyParser.json());
 const slidingWindow = new SlidingWindow(slidingWindowSize, scoreTimesteps);
 const patternRecognitionGroup = new PatternRecognitionGroup();
 
+app.post('/log', function (req, res) {
+  clientLog.info(req.body);
+  res.status(200).send();
+});
+
 // test initialization. in practice, use the post version
 app.get('/initialize', function (req, res) {
   patternRecognitionGroup.initialize(
@@ -75,18 +103,18 @@ app.get('/initialize', function (req, res) {
       [0, 5, 10, 15, 20]
     ]
   ).then((result) => {
-    log.info('PATTERN RECOGNITION GROUP INITIALIZED');
+    serverLog.debug('PATTERN RECOGNITION GROUP INITIALIZED');
     res.send(result);
   }, (message) => {
-    log.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
-    log.error(message);
+    serverLog.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
+    serverLog.error(message);
     res.status(500).send(message);
   });
 });
 
 app.post('/initialize', function (req, res) {
-  log.info('initialization request received');
-  log.info(req.body);
+  serverLog.debug('initialization request received');
+  serverLog.debug(req.body);
 
   slidingWindow.flush();
 
@@ -98,8 +126,8 @@ app.post('/initialize', function (req, res) {
     req.body.startingData,
     req.body.possibleActionValues
   ).then((result) => {
-    log.info('PATTERN RECOGNITION GROUP INITIALIZED');
-    log.info(result);
+    serverLog.debug('PATTERN RECOGNITION GROUP INITIALIZED');
+    serverLog.debug(result);
     res.status(200).send(result);
   }, (message) => {
     log.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
@@ -109,8 +137,8 @@ app.post('/initialize', function (req, res) {
 });
 
 app.post('/initializeFromDb', function (req, res) {
-  log.info('initialize from db request received');
-  log.info(req.body);
+  serverLog.debug('initialize from db request received');
+  serverLog.debug(req.body);
 
   slidingWindow.flush();
 
@@ -121,12 +149,12 @@ app.post('/initializeFromDb', function (req, res) {
   patternRecognitionGroup.initializeFromDb(
     req.body.possibleActionValues
   ).then((result) => {
-    log.info('PATTERN RECOGNITION GROUP INITIALIZED FROM DB');
-    log.info(result);
+    serverLog.debug('PATTERN RECOGNITION GROUP INITIALIZED FROM DB');
+    serverLog.debug(result);
     res.status(200).send(result);
   }, (message) => {
-    log.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP FROM DB');
-    log.error(message);
+    serverLog.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP FROM DB');
+    serverLog.error(message);
     res.status(500).send(message);
   });
 });
@@ -135,8 +163,8 @@ app.post('/initializeFromDb', function (req, res) {
   returns the table name of the nearest neighbor pattern
 */
 app.post('/nearestPatternRecognizer', function (req, res) {
-  log.info('request for nearest patternRecognizer received');
-  log.info(req.body);
+  serverLog.debug('request for nearest patternRecognizer received');
+  serverLog.debug(req.body);
 
   patternRecognitionGroup.getNearestPatternRecognizer(
     {
@@ -157,8 +185,8 @@ app.post('/nearestPatternRecognizer', function (req, res) {
 //   ex: '1_2_4_3'
 // @param score {number} the average drive score for this slidingWindow action at this point in time 
 app.put('/addTimeStep', function (req, res) {
-  log.info('request to addTimeStep received');
-  log.info('req.body');
+  serverLog.debug('request to addTimeStep received');
+  serverLog.info(req.body);
 
   res.status(200).send(
     slidingWindow.addTimeStep(req.body.actionKey, req.body.stateKey, req.body.score)
@@ -170,8 +198,7 @@ app.put('/addTimeStep', function (req, res) {
 // equals the slidingWindow tailHead's key
 // @return promise that resolves to true or false
 app.get('/updateScore', function (req, res) {
-  log.info('request to update score for sliding window head received');
-  log.info('req.body');
+  serverLog.debug('request to update score for sliding window head received');
 
   totalCycles++;
   // TODO: since we can now have many time periods stored from a sliding window,
@@ -229,8 +256,8 @@ app.get('/updateScore', function (req, res) {
 
 // expose patternRecognizer.getBestNextAction() when given a patternRecognizer
 app.post('/bestNextAction', function (req, res) {
-  log.info('request for best next action received');
-  log.info(req.body);
+  serverLog.debug('request for best next action received');
+  serverLog.debug(req.body);
   
   // first, get the patternRecognizer from patternRecognitionGroup
   const patternRecognizer = 
@@ -246,8 +273,8 @@ app.post('/bestNextAction', function (req, res) {
 // expose patternRecognitionGroup.splitPatternRecognizer() when given
 // originalPatternRecognizerString and a new point (fitting nDimensionalPointSchema)
 app.post('/splitPatternRecognizer', function(req, res) {
-  log.info('request to split pattern recognizer received');
-  log.info(req.body);
+  serverLog.debug('request to split pattern recognizer received');
+  serverLog.debug(req.body);
 
   if (patternRecognitionGroup.getNumberOfPatterns() > maxPatterns) {
     return res.status(500).send('Maximum number of patterns already created!');
@@ -264,18 +291,18 @@ app.post('/splitPatternRecognizer', function(req, res) {
 // expose method to clear db
 app.delete('/db', function (req, res) {
   dbUtil.emptyDb().then(() => {
-    log.info('DB CLEARED');
+    serverLog.debug('DB CLEARED');
     res.status(200).send('DB CLEARED');
   }, () => {
-    log.error('FAILURE CLEARING DB');
+    serverLog.error('FAILURE CLEARING DB');
     res.status(500).send('FAILURE CLEARING DB');
   });  
 });
 
 // expose method to get updates per minute
 app.post('/updatesPerMinute', function (req, res) {
-  log.info('request for updates per minute received');
-  log.info(req.body);
+  serverLog.debug('request for updates per minute received');
+  serverLog.debug(req.body);
 
   // first, get the patternRecognizer from patternRecognitionGroup
   const patternRecognizer = 
@@ -295,4 +322,4 @@ app.post('/updatesPerMinute', function (req, res) {
 // app.use(express.static('client'));
 
 app.listen(3800);
-log.info('Ihtai server running on port 3800');
+console.log('Ihtai server running on port 3800');
