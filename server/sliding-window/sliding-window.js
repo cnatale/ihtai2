@@ -73,8 +73,7 @@ class SlidingWindow {
     Gets the drive score a particular number of timeSteps in the past.
 
     @param distanceFromCurrentMoment {number, Integer greater than 0} The distance from head with which to select
-      score property. A value of 0 would return the last timestep added to array,
-      1 the second from last, and so on.
+      score property. Inclusive.
 
     @param startingIndex {number, Integer 0 or positive} Which index to start the averaging from. Set to non-zero
       if you want there to be a delay to account for actions taking some time to manifest
@@ -83,10 +82,7 @@ class SlidingWindow {
     @returns {number} the computed drive score.
   */
 
-  // TODO: try upping the startingIndex to 2? I think that's right because the current state is moment 0,
-  // the action taken based on this state would occur in moment 1, and nothing based on that action would
-  // register until at least moment 2 (was 0)
-  getAverageDriveScore(distanceFromCurrentMoment, startingIndex = 2) {
+  getAverageDriveScore(distanceFromCurrentMoment, startingIndex = 1) {
     if (distanceFromCurrentMoment > this.timeSteps.length) {
       throw new Error('param `distanceFromCurrentMoment` cannot be greater than the number of timeSteps in memory');
     }
@@ -100,16 +96,15 @@ class SlidingWindow {
         // evenly weighted
         // return timeStep.score;
 
-        // weighted multiplier for both short and longterm is roughly 1 to 2
-        // weight to short-term (numbers at the beginning of timeSteps queue) (the  + 1 in denominator prevents divide by 0 errors)
-        return timeStep.score * ((array.length - index) / (array.length) + 1)
+        // weighted multiplier for both short and longterm is roughly .5 to 1.5
+        // weight to short-term (numbers at the beginning of timeSteps queue)
+        return timeStep.score * ((array.length - index) / (array.length) + .5)
 
-        // weight to long-term (numbers at the end of timeSteps queue) (the  + 1 in denominator prevents divide by 0 errors)
-        // return timeStep.score * (index / (array.length) + 1)
+        // weight to long-term (numbers at the end of timeSteps queue)
+        // return timeStep.score * (index / (array.length) + .5)
       });
 
-    
-    return math.sum(scoresToAverage) / scoresToAverage.length;
+    return (math.sum(scoresToAverage) / scoresToAverage.length);
   }
 
   /**

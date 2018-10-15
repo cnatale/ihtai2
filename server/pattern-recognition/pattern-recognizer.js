@@ -54,12 +54,14 @@ class PatternRecognizer {
     return new Promise((resolve, reject) => {
       Promise.all([
         this.createActionsTableIfNoneExists(tableName),
-        this.createPointsTableIfNoneExists()
+        this.createPointsTableIfNoneExists(),
+        this.createStatsTableIfNoneExists()
       ]).then(() => {
         // these need to wait until we're sure tables exist
         Promise.all([
           this.initializeAllPossibleActions(possibleActions),
-          this.addPointToPointsTable()
+          this.addPointToPointsTable(),
+          this.addStatsRowIfNoneExists()
         ]).then((result) => {
           resolve(result);
         }, (message) => {
@@ -72,9 +74,24 @@ class PatternRecognizer {
     });
   }
 
+  createStatsTableIfNoneExists() {
+    return knex.schema.createTableIfNotExists('stats', function(table) {
+      table.increments('instance_id');
+      table.bigInteger('global_update_count').unsigned();
+    }).then(() => {
+      return true;
+    }).catch((error) => {
+      if (error.message.includes('ER_TABLE_EXISTS_ERROR')) {
+        console.log(`createStatsTableIfNoneExists: Table already exists.`);
+        return true;
+      }
+      console.log(error);
+      return false;
+    });
+  }
+
   createActionsTableIfNoneExists(tableName) {
     return knex.schema.createTableIfNotExists(tableName, function(table) {
-      // table.string('id').primary();
       table.string('next_action');
       table.double('score');
       table.integer('time_period').unsigned();
@@ -148,7 +165,7 @@ class PatternRecognizer {
 
     const allPossibleActions = patternRecUtil.cartesianProduct(possibleActions);
     const rowsToInsert = allPossibleActions.map((val) => {
-      const score = 0;
+      const score = 100;
       return { next_action: val, score, time_period: 0, update_count: 0 };
     });
 
@@ -201,6 +218,12 @@ class PatternRecognizer {
     });
   }
 
+  addStatsRowIfNoneExists() {
+    return knex('stats').insert({
+      instance_id: 1,
+      global_update_count: 0
+    });
+  }
 
   /*
     Copies the actions table of an existing PatternRecognizer. Creates a new table
@@ -401,72 +424,103 @@ class PatternRecognizer {
       const  originalScoreWeight = argv.originalScoreWeight ||
         config.moveUpdates.originalScoreWeight;
 
-      knex.select('score', `${globalPointsTableName}.update_count as pattern_update_count`, `${patternString}.update_count as action_update_count`).from(patternString)
-        .join(globalPointsTableName, `${globalPointsTableName}.point`, '=', knex.raw('?', [patternString]))
-        .where('next_action', nextActionKey)
-        .orderBy('time_period')
-        .then((results) => {
-          // I would get multiple results here if I have more than one time period in memory. Expect at least 1
-          if (!results.length) {
-            reject('ERROR: no rows selected matching pattern string: ' + patternString);
-          }
-          const bestAction = { index: 0, score: 99999999999 };
+      knex.select('global_update_count')
+      .from('stats')
+      .then((statsResults) => {
+        if(!statsResults) { throw new Error('Error: global update count stats results not found!'); }
+        const globalUpdateCount = statsResults[0].global_update_count;
 
-          const queries = scores.map((score, index) => {
-            // Note: update_count must be > 0 for else result is NaN, adding one to value to account for this
-            // Some example Math.log10() values: 1=> 0, 2 => .3, 10 => 1, 100 => 2, 1000 => 3, 10000 => 4
-
-            // value isn't used if results[index] is undefined
-            // represents weighted average of existing score vs current score
-            const ageMultiplier = results[index] ? 1 + Math.log10(results[index].pattern_update_count + 1) * 40 : 0;
-            // maybe curiosity should be linear?
-            // represents rubber banding, so new actions are tried
-            const curiosityMultiplier = results[index] ? 1 + Math.log10(results[index].action_update_count + 1) * 1 : 0;
-
-            // general rules are: higher the age, lower the learning rate; higher the number of times an action is
-            // accessed, the less curious the agent is to try again, all other things being equal.
-            const updatedScore = results[index] ?
-              (results[index].score * ageMultiplier + score * curiosityMultiplier) / (ageMultiplier + 1) :
-              score;
-
-            if (updatedScore < bestAction.score) {
-              bestAction.index = index;
-              bestAction.score = updatedScore;
+        knex.select('score', `${globalPointsTableName}.update_count as pattern_update_count`, `${patternString}.update_count as action_update_count`).from(patternString)
+          .join(globalPointsTableName, `${globalPointsTableName}.point`, '=', knex.raw('?', [patternString]))
+          .where('next_action', nextActionKey)
+          .orderBy('time_period')
+          .then((results) => {
+            // I would get multiple results here if I have more than one time period in memory. Expect at least 1
+            if (!results.length) {
+              reject('ERROR: no rows selected matching pattern string: ' + patternString);
             }
+            const bestAction = { index: 0, score: 99999999999 };
 
-            return knex.raw(
-              `INSERT INTO \`${patternString}\` (
-                next_action,
-                time_period,
-                score)
-              values (?,?,?)
-                ON DUPLICATE KEY UPDATE score = ?, update_count = ?`, [
-                  nextActionKey,
-                  index,
-                  updatedScore,
-                  updatedScore,
-                  results[index] ? results[index].action_update_count + 1 : 0
-                ])
-              .then((results) => {
-                // affectedRows value of 1 indicates insertion.
-                // affectedRows value of 2 indicates an update.
-                // see https://dev.mysql.com/doc/refman/5.7/en/mysql-affected-rows.html
-                if (results[0].affectedRows !== 1 && results[0].affectedRows !== 2) {
-                  reject('ERROR: no rows affected by score update');
-                }
+            const queries = scores.map((score, index) => {
+              // Note: update_count must be > 0 for else result is NaN, adding one to value to account for this
+              // Some example Math.log10() values: 1=> 0, 2 => .3, 10 => 1, 100 => 2, 1000 => 3, 10000 => 4
 
-                // before resolving, increment update_count in patternRecognizer's globalPointsTable row
-                const globalPointsTableName = config.get('db').globalPointsTableName;
-                return knex(globalPointsTableName)
-                  .increment('update_count', 1)
-                  .where('point', '=', patternString);
-              });
+              // value isn't used if results[index] is undefined
+              // represents weighted average of existing score vs current score
+              const ageMultiplier = results[index] ? 1 + Math.log10(results[index].pattern_update_count + 1) * 1 : 0;
+              const ageSubtractor = results[index] ? 1 / (globalUpdateCount / 250 + 1) : 1;
+
+              /// ^^^^ current range: 1 to ~.01 (for log base 2 * 8 denominator)
+              // think about applying exponential decay based on best score, so that decay is higher the
+              // farther away from 0 it is.
+
+              // maybe curiosity should be linear?
+              // represents rubber banding, so new actions are tried
+              const curiosityMultiplier = results[index] ? 1 + Math.log10(results[index].action_update_count + 1) * 4 : 0;
+              const curiositySubtractor = results[index] ? 1 / (Math.log(results[index].action_update_count + 1) * 2 + 1) : 1;
+
+              // BUG: all scores being picked are from the longest time period alter age/curiosity multipliers accordingly
+              // general rules are: higher the age, lower the learning rate; higher the number of times an action is
+              // accessed, the less curious the agent is to try again, all other things being equal.
+              const updatedScore = results[index] ?
+                (results[index].score * 2 + score /* * curiosityMultiplier */) / (2 + 1) :
+                score;
+
+              if (updatedScore < bestAction.score) {
+                bestAction.index = index;
+                bestAction.score = updatedScore;
+              }
+
+              return knex.raw(
+                `INSERT INTO \`${patternString}\` (
+                  next_action,
+                  time_period,
+                  score)
+                values (?,?,?)
+                  ON DUPLICATE KEY UPDATE score = ?, update_count = ?`, [
+                    nextActionKey,
+                    index,
+                    updatedScore,
+                    updatedScore,
+                    results[index] ? results[index].action_update_count + 1 : 0
+                  ])
+                .then((results) => {
+                  // affectedRows value of 1 indicates insertion.
+                  // affectedRows value of 2 indicates an update.
+                  // see https://dev.mysql.com/doc/refman/5.7/en/mysql-affected-rows.html
+                  if (results[0].affectedRows !== 1 && results[0].affectedRows !== 2) {
+                    reject('ERROR: no rows affected by score update');
+                  }
+
+                  // before resolving, increment update_count in patternRecognizer's globalPointsTable row
+                  const globalPointsTableName = config.get('db').globalPointsTableName;
+                  return knex(globalPointsTableName)
+                    .increment('update_count', 1)
+                    .where('point', '=', patternString);
+
+                  // TODO: add row to point column named 'all', which tracks total number of updates for all points
+                  // Alternatively, add a new table with just that info.
+                })
+                .then(() => {
+                  // rubber banding for all actions except the selected one to encourage diversity of choices
+                  const targetScore = 0;
+                  return knex.raw(
+                    `UPDATE \`${patternString}\`
+                     SET \`score\` = if(\`score\` <= ${targetScore}, \`score\`, \`score\` - ${ageSubtractor})
+                     WHERE \`next_action\` <> '${nextActionKey}'`
+                  );
+                });
+            });
+
+            Promise.all(queries).then(
+              () => knex('stats').increment('global_update_count', 1),
+              () => reject('ERROR: failed to updated all next move scores')
+            ).then(
+              () => resolve(bestAction.score),
+              () => reject('ERROR: failed to update global points count')
+            );
           });
-
-          Promise.all(queries).then(() => {
-            resolve(bestAction.score);
-          });
-        });
+      });
     });
   }
 

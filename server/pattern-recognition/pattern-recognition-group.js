@@ -68,8 +68,6 @@ class PatternRecognitionGroup {
       return Promise.resolve([]);
     }
 
-    // TODO: global points table needs created before
-
     this.isInitialized = true;
     // add all patternRecognizers in nDimensionalPoints list
     return Promise.all(nDimensionalPoints.map((nDimensionalPoint) => {
@@ -77,7 +75,7 @@ class PatternRecognitionGroup {
     }));
   }
 
-  /** 
+  /**
     Add rows from global points table to this group's patternRecognizers list.
 
     @param possibleActionValues {array} an array where each index is an array of all possible

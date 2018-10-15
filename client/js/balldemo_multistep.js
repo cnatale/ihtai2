@@ -288,7 +288,6 @@ function getNearestPatternRecognizer(ihtaiState) {
           nearestPatternString,
           ihtaiState,
           {
-            // TODO: vars here as well for pattern state
             nearestPatternString: nearestPatternString,
             ihtaiState: ihtaiState
           }
@@ -309,7 +308,7 @@ function addTimeStep(nearestPatternString, ihtaiState) {
     var data = JSON.stringify({
         // actionKey: nearestPatternString.split('_')[4],
         // we want to pass along the actual action key
-        // do limit damage done from compression,
+        // to limit damage done from compression,
         // so action table scores still update correctly no matter what
         actionKey: ihtaiState.actionState[0],
         stateKey: nearestPatternString.split('pattern_')[1],
@@ -323,7 +322,18 @@ function addTimeStep(nearestPatternString, ihtaiState) {
           'Content-Type': 'application/json'
         },
         body: data
-    }).then(() => {
+    })/*.then(() => { //warning: logging is slow
+        //test logging
+        return fetch('http://localhost:3800/log', {
+          method: 'post',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: data
+        });
+    })*/
+    .then(() => {
         // ordinarily we can ignore the results of this method
         return updateScore(nearestPatternString);
     });
@@ -436,6 +446,7 @@ function actOnSuggestion (suggestedAction) {
   // 2 : +x
   // 3 : -z
   // 4 : +z
+  console.log('suggestedAction: ' + suggestedAction)
   var v = 3;
   switch (suggestedAction) {
     case 0:
@@ -448,10 +459,10 @@ function actOnSuggestion (suggestedAction) {
       sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(v, 0, 0), sphere.getAbsolutePosition());
       break;
     case 3:
-      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, -v), sphere.getAbsolutePosition());
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, v), sphere.getAbsolutePosition());
       break;
     case 4:
-      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, v), sphere.getAbsolutePosition());
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, -v), sphere.getAbsolutePosition());
       break;
     case 5:
       if (canJump) {
@@ -494,7 +505,7 @@ function actOnSuggestion (suggestedAction) {
 
   const numberOfCycles = 1500;
   if (counter < numberOfCycles) {
-    console.log(`cycle ${counter} complete`)
+    // console.log(`cycle ${counter} complete`)
     counter++;
     return getNearestPatternRecognizer(ihtaiState);
   } else {
@@ -514,23 +525,13 @@ function actOnSuggestion (suggestedAction) {
 }
 
 function getDriveScore(suggestedAction) {
-  // test logic. delete when done.
-  // console.log('SUGGESTEDACTION')
-  // console.log(suggestedAction)
-  // console.log('CURRENTKEY')
-  // console.log(currKey)
-  // if(suggestedAction === currKey) {
+  // test logic
+  // if(suggestedAction === 4) {
   //   return 0;
   // } else {
   //   return 100;
   // }
 
-  // TODO: think about how to add notion of curiosity as
-  // past of the scored. 
-  // For example, model curiosity as delta between score returned by bestAction
-  // and actual score computed here
-  // Would need to start passing in expected score as param along with
-  // suggested action for this to work.
   console.log('SUGGESTEDACTION')
   console.log(suggestedAction)
   var score = Math.round(Math.sqrt(
