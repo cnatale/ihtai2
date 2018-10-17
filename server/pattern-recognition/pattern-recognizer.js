@@ -448,7 +448,8 @@ class PatternRecognizer {
               // value isn't used if results[index] is undefined
               // represents weighted average of existing score vs current score
               const ageMultiplier = results[index] ? 1 + Math.log10(results[index].pattern_update_count + 1) * 1 : 0;
-              const ageSubtractor = results[index] ? 1 / (globalUpdateCount / 250 + 1) : 1;
+              const ageSubtractor = results[index] ? 1 / (globalUpdateCount / 500 + 1) : 1;
+              // TODO: think about using standard deviation for age subtractor
 
               /// ^^^^ current range: 1 to ~.01 (for log base 2 * 8 denominator)
               // think about applying exponential decay based on best score, so that decay is higher the
@@ -459,11 +460,10 @@ class PatternRecognizer {
               const curiosityMultiplier = results[index] ? 1 + Math.log10(results[index].action_update_count + 1) * 4 : 0;
               const curiositySubtractor = results[index] ? 1 / (Math.log(results[index].action_update_count + 1) * 2 + 1) : 1;
 
-              // BUG: all scores being picked are from the longest time period alter age/curiosity multipliers accordingly
               // general rules are: higher the age, lower the learning rate; higher the number of times an action is
               // accessed, the less curious the agent is to try again, all other things being equal.
               const updatedScore = results[index] ?
-                (results[index].score * 2 + score /* * curiosityMultiplier */) / (2 + 1) :
+                (results[index].score * 4 + score /* * curiosityMultiplier */) / (4 + 1) :
                 score;
 
               if (updatedScore < bestAction.score) {
