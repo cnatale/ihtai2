@@ -23,7 +23,7 @@ module.exports = {
   rubberBanding: {
     enabled: false,
     // The score that action scores above targetScore threshold are pulled towards.
-    targetScore: 10,
+    targetScore: 0,
     decay: 0.05
   },
   maxPatterns: 4000,

@@ -4,6 +4,14 @@ const dbUtil = require('./db/util');
 const bunyan = require('bunyan');
 const config = require('config');
 
+
+// TODO: use this callback to close knex connections
+// process.on('SIGINT', function() {
+//     console.log("Caught interrupt signal");
+//     knex.destroy();
+//     process.exit();
+// });
+
 const serverLog = bunyan.createLogger({
   name: 'IhtaiServer',
   streams: [
