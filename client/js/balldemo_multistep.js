@@ -393,8 +393,8 @@ function getUpdatesPerMinute(patternString, bestActionString) {
           // console.log('updates per minute: ');
           // console.log(resultJson);
 
-          // split anytime the pattern has more than 1 update
-          if (resultJson.updatesPerMinute > 50) {
+          // split anytime the current pattern has more than x updates
+          if (resultJson.updatesPerMinute > 200) {
             shouldSplitPatternRecognizer = true;
           }
 
@@ -420,13 +420,13 @@ function splitPatternRecognizer(nearestPatternString, newPoint, timeStepData) {
         },
         body: data
     }).then((result) => {
-      console.log('SPLIT PATTERN RECOGNIZER SUCCESS!')
+      // console.log('SPLIT PATTERN RECOGNIZER SUCCESS!')
       return addTimeStep(
         timeStepData.nearestPatternString,
         timeStepData.ihtaiState
       );
     }, () => {
-      console.log('SPLIT PATTERN RECOGNIZER FAILURE')
+      // console.log('SPLIT PATTERN RECOGNIZER FAILURE')
       return addTimeStep(
         timeStepData.nearestPatternString,
         timeStepData.ihtaiState
@@ -532,8 +532,8 @@ function getDriveScore(suggestedAction) {
   //   return 100;
   // }
 
-  console.log('SUGGESTEDACTION')
-  console.log(suggestedAction)
+  // console.log('SUGGESTEDACTION')
+  // console.log(suggestedAction)
   var score = Math.round(Math.sqrt(
     Math.pow(sphere.position.x - box0.position.x, 2) +
     Math.pow(sphere.position.z - box0.position.z, 2) +
