@@ -93,14 +93,34 @@ class SlidingWindow {
     const scoresToAverage = this.timeSteps
       .slice(startingIndex, distanceFromCurrentMoment)
       .map((timeStep, index, array) => {
+        if(array.length === 1) { return timeStep.score }
         // evenly weighted
         // return timeStep.score;
 
-        // weighted multiplier for both short and longterm is roughly .5 to 1.5
-        // weight to short-term (numbers at the beginning of timeSteps queue)
-        return timeStep.score * ((array.length - index) / (array.length) + .5)
+        // increase importance of short-term values (numbers at the beginning of timeSteps queue)
+        // return timeStep.score * ((array.length - index) / (array.length) + .5)
+        const l = array.length - 1;
+        return timeStep.score * (((l - index) / l) + .5) // <-- no convergence with this algo for some reason
+        // ex algo 1:
+        // 0: ((4 - 0) / 4) + .5 = 1.5
+        // 1: ((4 - 1) / 4) + .5 = 1.25
+        // 2: ((4 - 2) / 4) + .5 = 1
+        // 3: ((4 - 3) / 4) + .5 = .75
+        // total: 4.5
+        // effect = bigger relative scores for shorter time periods?
 
-        // weight to long-term (numbers at the end of timeSteps queue)
+        // 0: ((0 - 0) / 0) + .5 = .5 // this would give the smallest time period a .5 multiplier
+
+
+        // ex algo 2:
+        // 0: ((3 - 0) / 3) + .5 = 1.5
+        // 1: ((3 - 1) / 3) + .5 = ~1.2
+        // 2: ((3 - 2) / 3) + .5 = ~.8
+        // 3: ((3 - 3) / 3) + .5 = .5
+        // total: 4
+        // effect = identical weighting for shorter and longer time periods?
+
+        // increase importance of long-term values (numbers at the end of timeSteps queue)
         // return timeStep.score * (index / (array.length) + .5)
       });
 

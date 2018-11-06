@@ -448,8 +448,18 @@ class PatternRecognizer {
               // value isn't used if results[index] is undefined
               // represents weighted average of existing score vs current score
               const ageMultiplier = results[index] ? 1 + Math.log10(results[index].pattern_update_count + 1) * 1 : 0;
-              const ageSubtractor = results[index] ? 1 / (globalUpdateCount / 500 + 1) : 1;
+              // const ageSubtractor = results[index] ? 1 / (globalUpdateCount / 500 + 1) : 1;
+              // const rubberBandVal = (-globalUpdateCount * .000005 + .5) >= 0 ? (-globalUpdateCount * .000005 + .5) : 0;
+              const rubberBandVal = 1 / (globalUpdateCount / 500 + 1); // TODO: try dividing by 1000 with same settings. doubles subtraction at given point
+              const ageSubtractor = results[index] ? rubberBandVal : 1;
+              // TODO: try changing the number of hits before a patternrecognizer split is attempted
               // TODO: think about using standard deviation for age subtractor
+              // TODO: change the number of memory streams? see if more help? less?
+              // I think there must be something about how the algorithm is scoring that makes it
+              // unable to tell the difference between jumping and standing still as best action
+              // Try giving a weight bonus to short term planning in case there's a flaw/bias in the algo
+              // causing it to always prioritize long-term
+              // Try a sanity check by removing wall and seeing if it can come up with a near perfect score
 
               /// ^^^^ current range: 1 to ~.01 (for log base 2 * 8 denominator)
               // think about applying exponential decay based on best score, so that decay is higher the
@@ -462,8 +472,9 @@ class PatternRecognizer {
 
               // general rules are: higher the age, lower the learning rate; higher the number of times an action is
               // accessed, the less curious the agent is to try again, all other things being equal.
+              // TODO: try weighting by 32
               const updatedScore = results[index] ?
-                (results[index].score * 4 + score /* * curiosityMultiplier */) / (4 + 1) :
+                (results[index].score * 32 + score /* * curiosityMultiplier */) / (32 + 1) :
                 score;
 
               if (updatedScore < bestAction.score) {
