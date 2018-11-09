@@ -93,14 +93,24 @@ class SlidingWindow {
     const scoresToAverage = this.timeSteps
       .slice(startingIndex, distanceFromCurrentMoment)
       .map((timeStep, index, array) => {
+        // if one of the streams has a timestep length of 2 or less, array.length can be 1 and cause an error if we don't exit early.
         if(array.length === 1) { return timeStep.score }
         // evenly weighted
         // return timeStep.score;
 
-        // increase importance of short-term values (numbers at the beginning of timeSteps queue)
+        // the old front-weighted algo:
+        // the old algo would always give a dist of three a 1.5 weight
         // return timeStep.score * ((array.length - index) / (array.length) + .5)
+        // increase importance of short-term values (numbers at the beginning of timeSteps queue)
         const l = array.length - 1;
-        return timeStep.score * (((l - index) / l) + .5) // <-- no convergence with this algo for some reason
+        const score = timeStep.score * (((l - index) / l) + .5);
+        // console.log('*****************')
+        // console.log(`l: ${l}`)
+        // console.log(`index: ${index}`)
+        // console.log(`score: ${timeStep.score}`)
+        // console.log(`weighted score: ${score}`)
+        // console.log('*****************')
+        return score;
         // ex algo 1:
         // 0: ((4 - 0) / 4) + .5 = 1.5
         // 1: ((4 - 1) / 4) + .5 = 1.25
@@ -124,7 +134,7 @@ class SlidingWindow {
         // return timeStep.score * (index / (array.length) + .5)
       });
 
-    return (math.sum(scoresToAverage) / scoresToAverage.length);
+    return (math.sum(scoresToAverage) / scoresToAverage.length) /*- (scoresToAverage.length * .1) */;
   }
 
   /**

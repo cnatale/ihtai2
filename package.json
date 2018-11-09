@@ -13,7 +13,11 @@
     "test-cover": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test/**/*.spec.js",
     "report": "./node_modules/.bin/istanbul report --root ./coverage html",
     "clean-db": "node ./scripts/clean-db.js",
-    "clean-test-db": "NODE_ENV=test node ./scripts/clean-db.js"
+    "clean-test-db": "NODE_ENV=test node ./scripts/clean-db.js",
+    "static-server": "node server/static-server.js",
+    "server": "node  server/main.js --slidingWindowSize=181 --maxPatterns=8000 --rubberBandingTargetScore=1 --rubberBandingDecay=0.05 --originalScoreWeight=9 --scoreTimesteps=2,30,180",
+    "batch-tests": "node automated_browser_scripts/test.js --slidingWindowSize=181 --maxPatterns=8000 --rubberBandingTargetSce=1 --rubberBandingDecay=0.05 --originalScoreWeight=9 --scoreTimesteps=2,30,180",
+    "cleardb": ". cleardb.sh"
   },
   "author": "Chris Natale",
   "license": "ISC",
