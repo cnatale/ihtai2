@@ -27,7 +27,7 @@ describe('main', () => {
             { inputState:[0], actionState: [15], driveState: [0] },
             { inputState: [20], actionState: [20], driveState: [20] }
           ],
-          possibleDataValues: [
+          possibleActionValues: [
             [0, 5, 10, 15, 20]
           ]
         })
@@ -45,7 +45,7 @@ describe('main', () => {
       request(app)
         .post('/initializeFromDb')
         .send({
-          possibleDataValues: [
+          possibleActionValues: [
             [0, 5, 10, 15, 20]
           ]
         })
@@ -70,7 +70,7 @@ describe('main', () => {
         .end(function(err, res) {
           if (err) { throw err; }
 
-          expect(res.text).to.equal('pattern_5_5_5');
+          expect(res.text).to.equal('{"point":"pattern_5_5_5","id":1}');
           done();
         });
     });

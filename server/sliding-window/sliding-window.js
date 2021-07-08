@@ -6,8 +6,10 @@ const math = require('mathjs');
 
 /**
   A sliding window representing the last n timesteps.
-  @param numberOfTimeSteps {Number} - the number of timesteps stored in sliding window
-  @param scoreTimesteps {Array of Numbers} - the timesteps which should be recorded for memory retrieval
+  @param numberOfTimeSteps {Number} - the max number of timesteps stored in sliding window
+  @param scoreTimesteps {Array of Numbers} - the timesteps which should be recorded for memory retrieval.
+    Allows for storing multiple averages. Each value in the array represents the number of timesteps
+    into the future a particular recording will track.
 */
 
 class SlidingWindow {
@@ -16,6 +18,7 @@ class SlidingWindow {
 
     this.numberOfTimeSteps = numberOfTimeSteps || 5;
     this.scoreTimesteps = scoreTimesteps;
+    // A queue of timeSteps. Lower indices represent most recent scores
     this.timeSteps = [];
   }
 
@@ -33,8 +36,10 @@ class SlidingWindow {
     return true;
   }
 
-  isFull() {
-    return this.timeSteps.length >= this.numberOfTimeSteps;
+  isMinimallyFull() {
+    return this.scoreTimesteps.some(scoreTimestep =>
+      this.timeSteps.length >= scoreTimestep
+    );
   }
 
   flush() {
@@ -46,8 +51,10 @@ class SlidingWindow {
     Note that this assumes client is keeping track of the string representing
     current Ihtai state that is the starting point for this action.
 
-    Most recent timesteps are added to the end of the timesteps array.
+    Most recent timesteps are added to the end of the timesteps array. If there are too many timeSteps,
+    one is removed from the beginning of the timeSteps array.
 
+    @param actionKey {string}
     @param stateKey {string} string representing the agent state at this moment
     @param driveScore {number} the drive score average of all drives the moment after action
            in actionTakenKey occurred.
@@ -65,52 +72,85 @@ class SlidingWindow {
   /**
     Gets the drive score a particular number of timeSteps in the past.
 
-    @param distanceFromCurrentMoment {number} The distance from head with which to select
-      score property. A value of 0 would return the last timestep added to array,
-      1 the second from last, and so on.
+    @param distanceFromCurrentMoment {number, Integer greater than 0} The distance from head with which to select
+      score property. Inclusive.
 
-    @returns {number} the drive score.
+    @param startingIndex {number, Integer 0 or positive} Which index to start the averaging from. Set to non-zero
+      if you want there to be a delay to account for actions taking some time to manifest
+      changes in drive scores.
+
+    @returns {number} the computed drive score.
   */
 
-  // TODO: I think this is wrong. The old version performed the following operation:
-  // return this.timeSteps[this.timeSteps.length - 1].score;
-  getDriveScore(distanceFromCurrentMoment) {
-    // ex: this would return the most recently-added timeStep.
-    // return this.timeSteps[this.timeSteps.length - 1].score;
+  getAverageDriveScore(distanceFromCurrentMoment, startingIndex = 1) {
+    if (distanceFromCurrentMoment > this.timeSteps.length) {
+      throw new Error('param `distanceFromCurrentMoment` cannot be greater than the number of timeSteps in memory');
+    }
+    if (startingIndex >= distanceFromCurrentMoment) {
+      throw new Error('param distanceFromCurrentMoment must be less than startingIndex');
+    }
 
-    // this is useless because it's looking backwards in time from the most recent action.
-    // needs to look forward from earliest index.
-
-    // commenting out original logic to try a summation-based approach
-    // ///////////////////////////////////////////////////
-    // const index = distanceFromCurrentMoment;
-    // if (index >= this.timeSteps.length) { throw new Error('Distance is greater than number of timesteps!'); }
-
-    // return this.timeSteps[index].score;
-    // //////////////////////////////////////////////////
-    
-    const startingIndex = 20;
     const scoresToAverage = this.timeSteps
       .slice(startingIndex, distanceFromCurrentMoment)
-      .map(timeStep => timeStep.score);
+      .map((timeStep, index, array) => {
+        // if one of the streams has a timestep length of 2 or less, array.length can be 1 and cause an error if we don't exit early.
+        if(array.length === 1) { return timeStep.score }
+        // evenly weighted
+        // return timeStep.score;
 
-    return math.sum(scoresToAverage) / scoresToAverage.length;
+        // the old front-weighted algo:
+        // the old algo would always give a dist of three a 1.5 weight
+        // return timeStep.score * ((array.length - index) / (array.length) + .5)
+        // increase importance of short-term values (numbers at the beginning of timeSteps queue)
+        const l = array.length - 1;
+        const score = timeStep.score * (((l - index) / l) + .5);
+        // console.log('*****************')
+        // console.log(`l: ${l}`)
+        // console.log(`index: ${index}`)
+        // console.log(`score: ${timeStep.score}`)
+        // console.log(`weighted score: ${score}`)
+        // console.log('*****************')
+        return score;
+        // ex algo 1:
+        // 0: ((4 - 0) / 4) + .5 = 1.5
+        // 1: ((4 - 1) / 4) + .5 = 1.25
+        // 2: ((4 - 2) / 4) + .5 = 1
+        // 3: ((4 - 3) / 4) + .5 = .75
+        // total: 4.5
+        // effect = bigger relative scores for shorter time periods?
+
+        // 0: ((0 - 0) / 0) + .5 = .5 // this would give the smallest time period a .5 multiplier
+
+
+        // ex algo 2:
+        // 0: ((3 - 0) / 3) + .5 = 1.5
+        // 1: ((3 - 1) / 3) + .5 = ~1.2
+        // 2: ((3 - 2) / 3) + .5 = ~.8
+        // 3: ((3 - 3) / 3) + .5 = .5
+        // total: 4
+        // effect = identical weighting for shorter and longer time periods?
+
+        // increase importance of long-term values (numbers at the end of timeSteps queue)
+        // return timeStep.score * (index / (array.length) + .5)
+      });
+
+    return (math.sum(scoresToAverage) / scoresToAverage.length) /*- (scoresToAverage.length * .1) */;
   }
 
   /**
   
-    @returns {Array of Numbers} representing score for every timeStep distance
+    @returns {Array of Numbers} representing average score for every timeStep stream
       specified in scoreTimesteps
   */
-  getAllDriveScores() {
+  getAllAverageDriveScores() {
     // Remove all timeStep distances that are greater than what is stored in this.timeSteps.
     const filteredScoreTimeSteps = this.scoreTimesteps.filter((scoreTimeStepDistance) => {
       const index = scoreTimeStepDistance;
-      return index < this.timeSteps.length;
+      return index <= this.timeSteps.length;
     });
 
     return filteredScoreTimeSteps.map((scoreTimeStepDistance) => {
-      return this.getDriveScore(scoreTimeStepDistance);
+      return this.getAverageDriveScore(scoreTimeStepDistance);
     });
   }
 

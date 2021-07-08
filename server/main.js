@@ -3,12 +3,44 @@ const PatternRecognitionGroup = require('./pattern-recognition/pattern-recogniti
 const dbUtil = require('./db/util');
 const bunyan = require('bunyan');
 const config = require('config');
-const log = bunyan.createLogger({ name: 'Ihtai' });
-log.level(config.log.level);
+
+
+// TODO: use this callback to close knex connections
+// process.on('SIGINT', function() {
+//     console.log("Caught interrupt signal");
+//     knex.destroy();
+//     process.exit();
+// });
+
+const serverLog = bunyan.createLogger({
+  name: 'IhtaiServer',
+  streams: [
+    {
+      level: 'error',
+      stream: process.stdout            // log INFO and above to stdout
+    },
+    {
+      level: 'info',
+      path: './log/ihtai-server.log'
+    }
+  ]
+});
+const clientLog = bunyan.createLogger({
+  name: 'IhtaiClient',
+  streams: [
+    {
+      level: 'info',
+      path: './log/ihtai-client.log'
+    }
+  ]
+});
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
 const argv = require('minimist')(process.argv.slice(2));
+
+let totalCycles = 0;
 // current accepted command line arguments:
 // rubberBandingTargetScore {number}
 // rubberBandingDecay {number}
@@ -18,6 +50,7 @@ const argv = require('minimist')(process.argv.slice(2));
 // slidingWindowSize {number}
 
 const maxPatterns = argv.maxPatterns || config.maxPatterns;
+
 const scoreTimesteps =
   argv.scoreTimesteps ?
     (() => {
@@ -40,6 +73,14 @@ rubberBandingDecay:${rubberBandingDecay}
 
 module.exports = app;
 
+// enable cors
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
+  next();
+});
+
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -49,6 +90,11 @@ app.use(bodyParser.json());
 // instantiate with number of timesteps stored
 const slidingWindow = new SlidingWindow(slidingWindowSize, scoreTimesteps);
 const patternRecognitionGroup = new PatternRecognitionGroup();
+
+app.post('/log', function (req, res) {
+  clientLog.info(req.body);
+  res.status(200).send();
+});
 
 // test initialization. in practice, use the post version
 app.get('/initialize', function (req, res) {
@@ -65,18 +111,18 @@ app.get('/initialize', function (req, res) {
       [0, 5, 10, 15, 20]
     ]
   ).then((result) => {
-    log.info('PATTERN RECOGNITION GROUP INITIALIZED');
+    // serverLog.debug('PATTERN RECOGNITION GROUP INITIALIZED');
     res.send(result);
   }, (message) => {
-    log.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
-    log.error(message);
+    // serverLog.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
+    // serverLog.error(message);
     res.status(500).send(message);
   });
 });
 
 app.post('/initialize', function (req, res) {
-  log.info('initialization request received');
-  log.info(req.body);
+  // serverLog.debug('initialization request received');
+  // serverLog.debug(req.body);
 
   slidingWindow.flush();
 
@@ -85,11 +131,11 @@ app.post('/initialize', function (req, res) {
   }
 
   patternRecognitionGroup.initialize(
-    req.body.startingData, 
-    req.body.possibleDataValues
+    req.body.startingData,
+    req.body.possibleActionValues
   ).then((result) => {
-    log.info('PATTERN RECOGNITION GROUP INITIALIZED');
-    log.info(result);
+    // serverLog.debug('PATTERN RECOGNITION GROUP INITIALIZED');
+    // serverLog.debug(result);
     res.status(200).send(result);
   }, (message) => {
     log.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP');
@@ -99,8 +145,8 @@ app.post('/initialize', function (req, res) {
 });
 
 app.post('/initializeFromDb', function (req, res) {
-  log.info('initialize from db request received');
-  log.info(req.body);
+  // serverLog.debug('initialize from db request received');
+  // serverLog.debug(req.body);
 
   slidingWindow.flush();
 
@@ -109,14 +155,14 @@ app.post('/initializeFromDb', function (req, res) {
   }
 
   patternRecognitionGroup.initializeFromDb(
-    req.body.possibleDataValues
+    req.body.possibleActionValues
   ).then((result) => {
-    log.info('PATTERN RECOGNITION GROUP INITIALIZED FROM DB');
-    log.info(result);
+    // serverLog.debug('PATTERN RECOGNITION GROUP INITIALIZED FROM DB');
+    // serverLog.debug(result);
     res.status(200).send(result);
   }, (message) => {
-    log.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP FROM DB');
-    log.error(message);
+    // serverLog.error('FAILURE INITIALIZING PATTERN RECOGNITION GROUP FROM DB');
+    // serverLog.error(message);
     res.status(500).send(message);
   });
 });
@@ -125,8 +171,8 @@ app.post('/initializeFromDb', function (req, res) {
   returns the table name of the nearest neighbor pattern
 */
 app.post('/nearestPatternRecognizer', function (req, res) {
-  log.info('request for nearest patternRecognizer received');
-  log.info(req.body);
+  // serverLog.debug('request for nearest patternRecognizer received');
+  // serverLog.debug(req.body);
 
   patternRecognitionGroup.getNearestPatternRecognizer(
     {
@@ -135,7 +181,9 @@ app.post('/nearestPatternRecognizer', function (req, res) {
       driveState: req.body.driveState
     }
   ).then((nearestPatternRecognizer) => {
-    res.status(200).send(nearestPatternRecognizer);
+    nearestPatternRecognizer ?
+      res.status(200).send(nearestPatternRecognizer) :
+      res.status(500).send();
   });
 });
 
@@ -145,8 +193,8 @@ app.post('/nearestPatternRecognizer', function (req, res) {
 //   ex: '1_2_4_3'
 // @param score {number} the average drive score for this slidingWindow action at this point in time 
 app.put('/addTimeStep', function (req, res) {
-  log.info('request to addTimeStep received');
-  log.info('req.body');
+  // serverLog.debug('request to addTimeStep received');
+  // serverLog.info(req.body);
 
   res.status(200).send(
     slidingWindow.addTimeStep(req.body.actionKey, req.body.stateKey, req.body.score)
@@ -158,15 +206,15 @@ app.put('/addTimeStep', function (req, res) {
 // equals the slidingWindow tailHead's key
 // @return promise that resolves to true or false
 app.get('/updateScore', function (req, res) {
-  log.info('request to update score for sliding window head received');
-  log.info('req.body');
+  // serverLog.debug('request to update score for sliding window head received');
 
+  totalCycles++;
   // TODO: since we can now have many time periods stored from a sliding window,
   //  call update using scores from all time periods the sliding window is filled
   //  for.
-  if (!slidingWindow.isFull()) {
-    return res.status(500).send(`Sliding window must be full with
-      ${slidingWindow.numberOfTimeSteps} elements in order to update score!`);
+  if (!slidingWindow.isMinimallyFull()) {
+    return res.status(500).send(`Sliding window must be minimally full
+      in order to update score!`);
   }
 
   const patternRecognizer = 
@@ -174,20 +222,35 @@ app.get('/updateScore', function (req, res) {
       'pattern_' + slidingWindow.getHead().stateKey
     );
 
-  const driveScores = slidingWindow.getAllDriveScores();
+  const driveScores = slidingWindow.getAllAverageDriveScores();
 
   // ex. nextMove string: '1_3_5_2'. Similar to patternRecognizer key format, but
   // no starting 'pattern_'
+
+  // given a state represented by the patternRecognizer, and a certain action represented by
+  // slidingWindow.getTailHead().actionKey is taken, what is the result?
   return patternRecognizer.updateNextMoveScores(
-    slidingWindow.getTailHead().actionKey, // this might just need to be getHead().actionKey?
-    driveScores
-  ).then(() => {
+    slidingWindow.getTailHead().actionKey,
+    driveScores,
+    totalCycles
+  ).then((bestScore) => {
+    // create variable rate of rubberbanding
+
+    // cap score at 80
+    // const decayScore = bestScore < 80 ? bestScore : 80;
+
+    // // TODO: make the output range be hyperparameters
+    // // right now is always between .00025 and .05
+    // const decayRate = (decayScore * (.05 - .002)) / 80 + .002;
+
     // apply rubber banding if enabled
-    return config.rubberBanding.enabled ?
-      patternRecognizer.rubberBandActionScores(
-        rubberBandingTargetScore,
-        rubberBandingDecay
-      ) : null;    
+    // return config.rubberBanding.enabled ?
+    //   patternRecognizer.rubberBandActionScores(
+    //     rubberBandingTargetScore,
+    //     rubberBandingDecay
+    //     // totalCycles < 1500 * 200 ? decayRate : /* decayRate * .1 */ .0005
+    //   ) : null;
+    return null;
   }).then(() => {
     res.status(200).json({
       startPattern: patternRecognizer.patternToString(),
@@ -201,8 +264,8 @@ app.get('/updateScore', function (req, res) {
 
 // expose patternRecognizer.getBestNextAction() when given a patternRecognizer
 app.post('/bestNextAction', function (req, res) {
-  log.info('request for best next action received');
-  log.info(req.body);
+  // serverLog.debug('request for best next action received');
+  // serverLog.debug(req.body);
   
   // first, get the patternRecognizer from patternRecognitionGroup
   const patternRecognizer = 
@@ -218,8 +281,8 @@ app.post('/bestNextAction', function (req, res) {
 // expose patternRecognitionGroup.splitPatternRecognizer() when given
 // originalPatternRecognizerString and a new point (fitting nDimensionalPointSchema)
 app.post('/splitPatternRecognizer', function(req, res) {
-  log.info('request to split pattern recognizer received');
-  log.info(req.body);
+  // serverLog.debug('request to split pattern recognizer received');
+  // serverLog.debug(req.body);
 
   if (patternRecognitionGroup.getNumberOfPatterns() > maxPatterns) {
     return res.status(500).send('Maximum number of patterns already created!');
@@ -236,18 +299,18 @@ app.post('/splitPatternRecognizer', function(req, res) {
 // expose method to clear db
 app.delete('/db', function (req, res) {
   dbUtil.emptyDb().then(() => {
-    log.info('DB CLEARED');
+    // serverLog.debug('DB CLEARED');
     res.status(200).send('DB CLEARED');
   }, () => {
-    log.error('FAILURE CLEARING DB');
+    // serverLog.error('FAILURE CLEARING DB');
     res.status(500).send('FAILURE CLEARING DB');
   });  
 });
 
 // expose method to get updates per minute
 app.post('/updatesPerMinute', function (req, res) {
-  log.info('request for updates per minute received');
-  log.info(req.body);
+  // serverLog.debug('request for updates per minute received');
+  // serverLog.debug(req.body);
 
   // first, get the patternRecognizer from patternRecognitionGroup
   const patternRecognizer = 
@@ -264,6 +327,7 @@ app.post('/updatesPerMinute', function (req, res) {
 // TODO: expose method that returns an array of all points in global points table
 
 // serve static client files
-app.use(express.static('client'));
-log.info('Ihtai server running on port 3800');
+// app.use(express.static('client'));
+
 app.listen(3800);
+console.log('Ihtai server running on port 3800');

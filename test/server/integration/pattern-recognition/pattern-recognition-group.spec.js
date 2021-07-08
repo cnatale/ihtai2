@@ -287,7 +287,7 @@ describe('PatternRecognitionGroup', () => {
           { inputState: [1], actionState: [16], driveState: [1] }
         ).then((result) => {
           // expected result 'pattern_0_15_0'
-          expect(result).to.equal('pattern_0_15_0');
+          expect(result).to.deep.equal({ point: 'pattern_0_15_0', id: 3 });
         },
         (err) => {
           throw (err);
@@ -296,7 +296,7 @@ describe('PatternRecognitionGroup', () => {
         patternRecognitionGroup.getNearestPatternRecognizer(
           { inputState: [4], actionState: [5], driveState: [4] }
         ).then((result) => {
-          expect(result).to.equal('pattern_5_5_5');
+          expect(result).to.deep.equal({ point: 'pattern_5_5_5', id: 1 });
         },
         (err) => {
           throw (err);
@@ -305,7 +305,7 @@ describe('PatternRecognitionGroup', () => {
         patternRecognitionGroup.getNearestPatternRecognizer(
           { inputState: [20], actionState: [20], driveState: [20] }
         ).then((result) => {
-          expect(result).to.equal('pattern_20_20_20');
+          expect(result).to.deep.equal({ point: 'pattern_20_20_20', id: 4 });
         },
         (err) => {
           throw (err);
@@ -314,7 +314,7 @@ describe('PatternRecognitionGroup', () => {
         patternRecognitionGroup.getNearestPatternRecognizer(
           { inputState: [8], actionState: [12], driveState: [9] }
         ).then((result) => {
-          expect(result).to.equal('pattern_10_10_10');
+          expect(result).to.deep.equal({ point: 'pattern_10_10_10', id: 2 });
           done();
         },
         (err) => {
