@@ -1,5 +1,7 @@
 # ihtai2
 
+A tabular Q-Learning implementation, which includes adaptive pattern recognition. Patterns that are encountered more often will "split" into new patterns, allowing for increased definition around areas of pattern space that an agent experiences more often.
+
 ## Requirements
 Ihtai uses Memcached for nearest-neighbor search caching. It needs to be running in order for the server to work.
 
