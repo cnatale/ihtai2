@@ -48,7 +48,8 @@ describe('patternRecognizer', () => {
           knex.schema.hasTable(tableName),
           knex.schema.hasColumn(tableName, 'next_action'),
           knex.schema.hasColumn(tableName, 'score'),
-          knex.schema.hasColumn(tableName, 'time_period')
+          knex.schema.hasColumn(tableName, 'time_period'),
+          knex.schema.hasColumn(tableName, 'update_count')
         ]).then(function(results) {
           if (!results.every((result) => result === true)) {
             expect(true).to.equal(false);
@@ -177,7 +178,7 @@ describe('patternRecognizer', () => {
 
       patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3').then(() => {
         patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
-          knex.select('next_action', 'score').from('pattern_1_2_3').orderBy('next_action').then((output) => {
+          knex.select('next_action', 'score', 'update_count').from('pattern_1_2_3').orderBy('next_action').then((output) => {
             const expectedOutput = [
               '-1_a_x',
               '-1_a_y',
@@ -194,6 +195,7 @@ describe('patternRecognizer', () => {
             output.forEach((element, index) => {
               expect(element.next_action).to.equal(expectedOutput[index]);
               expect(element.score).to.be.a('number').at.least(0).and.at.most(1);
+              expect(element.update_count).to.equal(0);
             });
 
             done();
@@ -306,16 +308,18 @@ describe('patternRecognizer', () => {
       });
 
       Math.seedrandom('hello.');
+      // TODO: need to initialize global points table now b/c updateNextMoveScores joins on it
       patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3').then(() => {
         patternRecognizer.initializeAllPossibleActions([[-1, 1], ['a', 'b'], ['x', 'y']]).then(() => {
 
           patternRecognizer.updateNextMoveScores('-1_a_x', [10])
             .then((result) => {
-              expect(result).to.equal(true);
+              const expectedScore = 0.2702702702702703;
+              expect(result).to.equal(expectedScore);
+
               // get the updated move score from table
               // const expectedScore = (0.3684589274859717 * 9 + 10) / 10;
               // hard-coding for now until I make random number generation less brittle
-              const expectedScore = 1;
 
               knex.column('next_action', 'score')
                 .select('score', 'next_action')
@@ -347,12 +351,10 @@ describe('patternRecognizer', () => {
 
           patternRecognizer.updateNextMoveScores('-1_a_x', [10, 5, 2, 4])
             .then((result) => {
-              expect(result).to.equal(true);
-              // get the updated move score from table
-              // const expectedScore = (0.3684589274859717 * 9 + 10) / 10;
-              // hard-coding for now until I make random number generation less brittle
-              const expectedScore = 1;
+              const expectedScore = 0.2702702702702703;
+              expect(result).to.equal(0.2702702702702703);
 
+              // get the updated move score from table
               knex.column('next_action', 'score')
                 .select('score', 'next_action')
                 .from('pattern_1_2_3')
@@ -385,7 +387,7 @@ describe('patternRecognizer', () => {
 
           patternRecognizer.updateNextMoveScores('-1_a_x', [10])
             .then((result) => {
-              expect(result).to.equal(true);
+              expect(result).to.equal(0.2702702702702703);
 
               const globalPointsTableName = config.get('db').globalPointsTableName;
               knex(globalPointsTableName).select().where('point', '=', patternRecognizer.patternToString())
@@ -399,94 +401,9 @@ describe('patternRecognizer', () => {
         });
       });
     });
-  });
 
-  // TODO: re-implement after rubber banding algorithm solidifies
-  describe.skip('rubberBandActionScores', () => {
-    it('should throw an error if both parameters are not numbers', () => {
-      const patternRecognizer = new PatternRecognizer({
-        inputState: [1],
-        actionState: [2],
-        driveState: [3]
-      });
-
-      expect(patternRecognizer.rubberBandActionScores.bind(patternRecognizer)).to.throw();
-      expect(patternRecognizer.rubberBandActionScores.bind(patternRecognizer, 1)).to.throw();
-      expect(patternRecognizer.rubberBandActionScores.bind(patternRecognizer, 1, 'a')).to.throw();
-    });
-
-    it('should apply an algorithm to pull all scores towards a target score', (done) => {
-      const patternRecognizer = new PatternRecognizer({
-        inputState: [1],
-        actionState: [2],
-        driveState: [3]
-      });
-
-      patternRecognizer.createPointsTableIfNoneExists().then(
-      patternRecognizer.addPointToPointsTable()).then(
-      patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3')).then(() => {
-        patternRecognizer.initializeAllPossibleActions([[1], [2], [3]]).then(() => {
-          return patternRecognizer.rubberBandActionScores(2, 1);
-        }).then(() => {
-          knex.select('score').from('pattern_1_2_3').then((result) => {
-            // should equal 0.3333333333333333, or the original value times
-            // first param, plus second param, divided by first param plus one.
-            expect(result[0].score).to.equal(((0 * 2) + 1) / 3);
-            done();
-          });
-        });
-
-      });
-    });
-
-    it('should change the pull of rubber banding based on config rubberBanding.dampeningValue', (done) => {
-      const patternRecognizer = new PatternRecognizer({
-        inputState: [1],
-        actionState: [2],
-        driveState: [3]
-      });
-      const dampening = 5;
-      const target = 2;
-
-      patternRecognizer.createPointsTableIfNoneExists().then(
-      patternRecognizer.addPointToPointsTable()).then(
-      patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3')).then(() => {
-        patternRecognizer.initializeAllPossibleActions([[1], [2], [3]]).then(() => {
-          return patternRecognizer.rubberBandActionScores(dampening, target);
-        }).then(() => {
-          knex.select('score').from('pattern_1_2_3').then((result) => {
-            expect(result[0].score).to.equal(((0 * dampening) + target) / (dampening + 1));
-            done();
-          });
-        });
-      });
-    });
-
-    it('should change target score based on config rubberBanding.targetScore', (done) => {
-      const patternRecognizer = new PatternRecognizer({
-        inputState: [1],
-        actionState: [2],
-        driveState: [3]
-      });
-      const dampening = 5;
-      const target = 4;
-
-      patternRecognizer.createPointsTableIfNoneExists().then(
-      patternRecognizer.addPointToPointsTable()).then(
-      patternRecognizer.createActionsTableIfNoneExists('pattern_1_2_3')).then(() => {
-        patternRecognizer.initializeAllPossibleActions([[1], [2], [3]]).then(() => {
-          return patternRecognizer.rubberBandActionScores(dampening, target);
-        }).then(() => {
-          knex.select('score').from('pattern_1_2_3').then((result) => {
-            expect(result[0].score).to.equal(((0 * dampening) + target) / (dampening + 1));
-            done();
-          });
-        });
-      });
-    });
-
-    it('should decay scores above threshold based on decay param', (done) => {
-
+    it('sets updates the chosen action`s update_count', () => {
+      assert(false);
     });
   });
 
@@ -532,6 +449,10 @@ describe('patternRecognizer', () => {
 
     });
 
+    it('sets update_count to 0 for all rows in the split table', () => {
+      assert(false);
+    });
+
   });
 
   describe('addPatternToExistingActionsTables', () => {
@@ -574,8 +495,10 @@ describe('patternRecognizer', () => {
         expect(originalResult.score).to.equal(copyResult.score);
         done();
       });
+    });
 
-      
+    it('sets update_count to 0 for all added rows', () => {
+      assert(false);
     });
   });
 });

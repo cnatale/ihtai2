@@ -62,4 +62,4 @@ then in another window run:
 
 `node ./node ./automated_browser_scripts/test.js --slidingWindowSize=301 --maxPatterns=1000 --rubberBandingTargetScore=5 --rubberBandingDecay=0.1 --originalScoreWeight=8 --scoreTimesteps=30,60,90,120,150,180,210,240,270,300`
 
-Also note that for each Ihtai instance with distinct params needs its own db. I'll automate this process soon, but for now you need to manually drop than recreate the `ihtaidb` db in mysql.
+Also note that for each Ihtai instance with distinct params needs its own db. I'll automate this process soon, but for now you need to manually drop then recreate the `ihtaidb` db in mysql.

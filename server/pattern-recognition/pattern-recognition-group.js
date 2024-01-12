@@ -27,11 +27,6 @@ class PatternRecognitionGroup {
       used for creating child PatternRecognizers. If you don't want to initialize
       with points, pass an empty array.
 
-      TODO: add logic that does a query for all rows in global points table, and also
-        generates PatternRecognizers based on the results. Will need to add three extra
-        rows to global_points_table that hold the index for first input, index for first action, and
-        input for first drive.
-
       Length = inputState.length + actionState.length + driveState.length
       Ex: [{inputState: [-1], actionState: [a], driveState: [x]},
            {inputState: [0], actionState: [b], driveState: [y]},
@@ -80,7 +75,7 @@ class PatternRecognitionGroup {
     }));
   }
 
-  /** 
+  /**
     Add rows from global points table to this group's patternRecognizers list.
 
     @param possibleActionValues {array} an array where each index is an array of all possible
@@ -114,7 +109,8 @@ class PatternRecognitionGroup {
         return results.map((result) => {
           const prefixRemoved = result.point.replace('pattern_', '');
           const allPoints = prefixRemoved.split('_').map((numberString) => {
-            return parseInt(numberString, 10);
+            // return parseInt(numberString, 10);
+            return numberString;
           });
 
           // return an nDimensionalPoints object
@@ -126,12 +122,16 @@ class PatternRecognitionGroup {
           return nDimensionalPoint;
         });
         // return an array of nDimensionalPoints representing existing points
+      }, (error) => {
+        console.log('Error: PatternRecognitionGroup.initializeFromDb():');
+        return Promise.reject(error);
       })
       .then((nDimensionalPoints) => {
-        const nDimensionalPointsSchemaValidation = nDimensionalPointsSchema.validate(nDimensionalPoints);
-        if (nDimensionalPointsSchemaValidation.error !== null) {
-          throw nDimensionalPointsSchemaValidation;
-        }
+        // temporarily turn off while changing schema
+        // const nDimensionalPointsSchemaValidation = nDimensionalPointsSchema.validate(nDimensionalPoints);
+        // if (nDimensionalPointsSchemaValidation.error !== null) {
+        //   throw nDimensionalPointsSchemaValidation;
+        // }
 
         this.isInitialized = true;
         // add all patternRecognizers in nDimensionalPoints list
@@ -150,10 +150,12 @@ class PatternRecognitionGroup {
     @returns {Promise} A promise resolving to true or false, depending on if action was successful
   */
   addPatternRecognizer (nDimensionalPoint) {
-    const schemaValidator = nDimensionalPointSchema.validate(nDimensionalPoint);
-    if (schemaValidator.error !== null) {
-      return Promise.reject(schemaValidator);
-    }
+    // temporarily disabling until schema solidifies
+    // const schemaValidator = nDimensionalPointSchema.validate(nDimensionalPoint);
+    // if (schemaValidator.error !== null) {
+    //   return Promise.reject(schemaValidator);
+    // }
+
     if (!this.possibleActionValues) {
       return Promise.reject(new Error('PatternRecognitionGroup.addPatternRecognizer: possibleActionValues not initialized.'));
     }
@@ -265,6 +267,7 @@ class PatternRecognitionGroup {
       : this.nearestNeighborQuery(null, nearestNeighborQueryString, nearestNeighborString);
   }
 
+  // TODO: add integration tests
   nearestNeighborQuery (cachedNearestNeighbor, nearestNeighborQueryString, nearestNeighborString) {
     if (cachedNearestNeighbor) {
       return cachedNearestNeighbor;
@@ -273,7 +276,7 @@ class PatternRecognitionGroup {
     // query global points table for nearest neighbor
     const globalPointsTableName = config.get('db').globalPointsTableName;
     return knex(globalPointsTableName)
-      .select('point')
+      .select('point', 'id')
       .orderByRaw(nearestNeighborQueryString)
       .limit(1)
       .then((result) => {
@@ -281,7 +284,10 @@ class PatternRecognitionGroup {
           nodeFn
             .call(memcached.set.bind(memcached), nearestNeighborString, result[0].point, 0)
             .then(() => result[0].point)
-          : result[0].point;
+          : { point: result[0].point, id: result[0].id };
+      }, (error) => {
+        console.log('nearestNeighborQuery: failure to access global points table')
+        return false
       });
   }
 
@@ -339,13 +345,13 @@ class PatternRecognitionGroup {
   splitPatternRecognizer (originalPatternRecognizerString, newPoint) {
     const schemaValidator = nDimensionalPointSchema.validate(newPoint);
     if (schemaValidator.error !== null) {
-      return Promise.reject(new Error('splitPatternRecognizer: incorrect format for newPoint!'));
+      return Promise.reject(new Error('splitPatternRecognizer(): Incorrect format for newPoint!'));
     }
 
     const newPatternRecognizer = new PatternRecognizer(newPoint);
 
     if (typeof this.patternRecognizers[newPatternRecognizer.patternToString()] !== 'undefined') {
-      return Promise.reject(new Error('splitPatternRecognizer: split point is already a PatternRecognizer!'));
+      return Promise.reject(new Error('splitPatternRecognizer(): Split failted. Split point is already a PatternRecognizer.'));
     }
 
     return Promise.all([
@@ -355,18 +361,21 @@ class PatternRecognitionGroup {
     ]).then(() => {
       this.patternRecognizers[newPatternRecognizer.patternToString()] = newPatternRecognizer;
 
+      // Verify that the action pattern doesn't already exist in the splitting PatternRecognizer's table.
+      // The assumption is that if it doesn't exist here, it needs to be added to every PatternRecognizer table.
       return this.doesActionsPatternExist(
         newPatternRecognizer.actionPatternToString(),
         originalPatternRecognizerString
       );
     }).then((isActionPatternAlreadyInTables) => {
-      // if action pattern does not already exist in patternRecognizers list
       if (isActionPatternAlreadyInTables) { return true; }
 
+      // this is slooooooow. TODO: improve performance. try skipping the map() by patternToString() values.
       return newPatternRecognizer.addPatternToExistingActionsTables(
         _.map(this.patternRecognizers, (patternRecognizer) => patternRecognizer.patternToString()),
         this.patternRecognizers[originalPatternRecognizerString].actionPatternToString()
       );
+      return true;
     }).then(() => {
       // Need to flush memcached every time a pattern recognizer is added
       // b/c old nearest neighbors may no longer be applicable.

@@ -2,7 +2,7 @@
 const canvas = document.getElementById("renderCanvas"); // Get the canvas element 
 const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 
-var sphere, box0, helperBox, ground, divider, border0, border1, border2, border3;
+var sphere, box0, helperBox, ground, ceiling, divider, border0, border1, border2, border3;
 var canJump = true;
 
 var createScene = function () {
@@ -72,6 +72,11 @@ var createScene = function () {
   ground.position.y = -5.0;
   ground.checkCollisions = true;
 
+  ceiling = BABYLON.Mesh.CreateBox("Ceiling", 1, scene);
+  ceiling.scaling = new BABYLON.Vector3(100, 1, 100);
+  ceiling.position.y = 45.0;
+  ceiling.checkCollisions = true;
+
   divider = BABYLON.Mesh.CreateBox("divider", 1, scene);
   divider.scaling = new BABYLON.Vector3(100, 16, 1);
   divider.position.y = -3.5;
@@ -112,6 +117,7 @@ var createScene = function () {
   groundMat.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.2);
   groundMat.backFaceCulling = false;
   ground.material = groundMat;
+  ceiling.material = groundMat;
   divider.material = dividerMat;
   border0.material = groundMat;
   border1.material = groundMat;
@@ -123,6 +129,7 @@ var createScene = function () {
   helperBox.physicsImpostor = new BABYLON.PhysicsImpostor(helperBox, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 100, friction: 0.4, restitution: 0.3 }, scene);
   box0.physicsImpostor = new BABYLON.PhysicsImpostor(box0, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 2, friction: 0.4, restitution: 0.3 }, scene);
   ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, friction: 0.5, restitution: 0.7 }, scene);
+  ceiling.physicsImpostor = new BABYLON.PhysicsImpostor(ceiling, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, friction: 0.5, restitution: 0.7 }, scene);
   divider.physicsImpostor = new BABYLON.PhysicsImpostor(divider, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
   border0.physicsImpostor = new BABYLON.PhysicsImpostor(border0, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
   border1.physicsImpostor = new BABYLON.PhysicsImpostor(border1, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
@@ -194,24 +201,26 @@ window.addEventListener('resize', function () { // Watch for browser/canvas resi
 let scoreSum = 0;
 let timeInTargetAreaSum = 0;
 
-var currentInputState = [
-  Math.round(sphere.position.x - box0.position.x),
-  Math.round(sphere.position.z - box0.position.z),
+var startingInputState = [
+  Math.round(((sphere.position.x - box0.position.x)/12.5) * 1000),
+  Math.round(((sphere.position.z - box0.position.z)/12.5) * 1000),
+  Math.round(((sphere.position.y - box0.position.y)/12.5) * 1000),
   0,
   0,
-  canJump ? 0 : 20
+  0
 ];                  
-var currentActionState = 0; // 0 = don't move
+var startingActionState = 0; // 0 = don't move
 var counter = 0; // used to control number of api call cycles for test purposes
-var driveScore = getDriveScore(currentActionState);
+// use this var to record drive score throughout application life
+var driveScore = getDriveScore(startingActionState);
 
-const possibleDataValues = [0, 1, 2, 3, 4, 5];
+const possibleActionValues = [0, 1, 2, 3, 4, 5];
 var startingData = JSON.stringify({
     startingData: [
-      { inputState: currentInputState, actionState: [currentActionState], driveState: [0] /* [driveScore] */ }
+      { inputState: startingInputState, actionState: [startingActionState], driveState: [driveScore] }
     ],
-    possibleDataValues: [
-      possibleDataValues
+    possibleActionValues: [
+      possibleActionValues
     ]
 });
 
@@ -224,8 +233,9 @@ function clearDb() {
 
 // clearDb();
 
-//////// START DATA FETCH CHAIN ////////
+//////// START INITIAL DATA FETCH CHAIN ////////
 
+// attempt to initialize from db first
 fetch('http://localhost:3800/initializeFromDb', {
     method: 'post',
     headers: {
@@ -233,7 +243,7 @@ fetch('http://localhost:3800/initializeFromDb', {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      possibleDataValues: [possibleDataValues]
+      possibleActionValues: [possibleActionValues]
     })
 }).then((response) =>
 fetch('http://localhost:3800/initialize', {
@@ -244,15 +254,21 @@ fetch('http://localhost:3800/initialize', {
     },
     body: startingData
 })).then((response) => {
+    // TODO: verify startingInputState, startingActionState, and driveScore are actually
+    // being updated. Taking a cursory glance at the code, it seems like they're always set to
+    // initial value.
+
     return getNearestPatternRecognizer({
-      inputState: currentInputState,
-      actionState: [currentActionState],
-      driveState: [0] /* [driveScore] */
+      inputState: startingInputState,
+      actionState: [startingActionState],
+      driveState: [driveScore]
     });
 }, (message) => {
     console.log('initialize failure: ');
     console.log(message);
 });
+
+//////// END INITIAL DATA FETCH CHAIN ////////
 
 function getNearestPatternRecognizer(ihtaiState) {
     return fetch('http://localhost:3800/nearestPatternRecognizer', {
@@ -262,7 +278,9 @@ function getNearestPatternRecognizer(ihtaiState) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(ihtaiState)
-    }).then((response) => response.text()).then(function (nearestPatternString) {
+    }).then((response) => response.json()).then(function (nearestPattern) {
+      const nearestPatternString = nearestPattern.point;
+      document.getElementById('currentNearestNeighbor').innerHTML = nearestPattern.id;
 
       if (shouldSplitPatternRecognizer) {
         shouldSplitPatternRecognizer = false;
@@ -270,7 +288,6 @@ function getNearestPatternRecognizer(ihtaiState) {
           nearestPatternString,
           ihtaiState,
           {
-            // TODO: vars here as well for pattern state
             nearestPatternString: nearestPatternString,
             ihtaiState: ihtaiState
           }
@@ -291,7 +308,7 @@ function addTimeStep(nearestPatternString, ihtaiState) {
     var data = JSON.stringify({
         // actionKey: nearestPatternString.split('_')[4],
         // we want to pass along the actual action key
-        // do limit damage done from compression,
+        // to limit damage done from compression,
         // so action table scores still update correctly no matter what
         actionKey: ihtaiState.actionState[0],
         stateKey: nearestPatternString.split('pattern_')[1],
@@ -305,7 +322,18 @@ function addTimeStep(nearestPatternString, ihtaiState) {
           'Content-Type': 'application/json'
         },
         body: data
-    }).then(() => {
+    })/*.then(() => { //warning: logging is slow
+        //test logging
+        return fetch('http://localhost:3800/log', {
+          method: 'post',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: data
+        });
+    })*/
+    .then(() => {
         // ordinarily we can ignore the results of this method
         return updateScore(nearestPatternString);
     });
@@ -365,8 +393,8 @@ function getUpdatesPerMinute(patternString, bestActionString) {
           // console.log('updates per minute: ');
           // console.log(resultJson);
 
-          // split anytime the pattern has more than 1 update
-          if (resultJson.updatesPerMinute > 1) {
+          // split anytime the current pattern has more than x updates
+          if (resultJson.updatesPerMinute > 200) {
             shouldSplitPatternRecognizer = true;
           }
 
@@ -392,13 +420,13 @@ function splitPatternRecognizer(nearestPatternString, newPoint, timeStepData) {
         },
         body: data
     }).then((result) => {
-      console.log('SPLIT PATTERN RECOGNIZER SUCCESS!')
+      // console.log('SPLIT PATTERN RECOGNIZER SUCCESS!')
       return addTimeStep(
         timeStepData.nearestPatternString,
         timeStepData.ihtaiState
       );
     }, () => {
-      console.log('SPLIT PATTERN RECOGNIZER FAILURE')
+      // console.log('SPLIT PATTERN RECOGNIZER FAILURE')
       return addTimeStep(
         timeStepData.nearestPatternString,
         timeStepData.ihtaiState
@@ -409,7 +437,7 @@ function splitPatternRecognizer(nearestPatternString, newPoint, timeStepData) {
 function actOnSuggestion (suggestedAction) {
   // console.log('suggestedAction to be acted on: ' + suggestedAction);
   // x and z axes apply force horizontally
-  // signals. 
+  //
   // +x is right, -x is left
   // +z is away from camera, -z is towards
   // so action signal can be:
@@ -418,26 +446,27 @@ function actOnSuggestion (suggestedAction) {
   // 2 : +x
   // 3 : -z
   // 4 : +z
-
+  console.log('suggestedAction: ' + suggestedAction)
+  var v = 3;
   switch (suggestedAction) {
     case 0:
       // no impulse
       break;
     case 1:
-      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(-3, 0, 0), sphere.getAbsolutePosition());
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(-v, 0, 0), sphere.getAbsolutePosition());
       break;
     case 2:
-      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(3, 0, 0), sphere.getAbsolutePosition());
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(v, 0, 0), sphere.getAbsolutePosition());
       break;
     case 3:
-      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, -3), sphere.getAbsolutePosition());
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, v), sphere.getAbsolutePosition());
       break;
     case 4:
-      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, 3), sphere.getAbsolutePosition());
+      sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 0, -v), sphere.getAbsolutePosition());
       break;
     case 5:
       if (canJump) {
-        sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 10, 0), sphere.getAbsolutePosition());
+        sphere.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, 20, 0), sphere.getAbsolutePosition());
       }
       break;
     default:
@@ -453,18 +482,19 @@ function actOnSuggestion (suggestedAction) {
   // the suggestedAction value leads to inputState and driveScore
   var sphereLinearVelocity = sphere.physicsImpostor.getLinearVelocity();
   // dividing by two here to attempt a simple way to compress better than i currently am
-  driveScore = Math.round(getDriveScore(suggestedAction));
+  driveScore = getDriveScore(suggestedAction);
   // probably needs velocity to figure anything out
   var ihtaiState = {
       inputState: [
-        Math.round((sphere.position.x - box0.position.x)),
-        Math.round((sphere.position.z - box0.position.z)),
-        Math.round((sphereLinearVelocity.x)),
-        Math.round((sphereLinearVelocity.z)),
-        canJump ? 0 : 20
+        Math.round(((sphere.position.x - box0.position.x)/12.5) * 1000),
+        Math.round(((sphere.position.z - box0.position.z)/12.5) * 1000),
+        Math.round(((sphere.position.y - box0.position.y)/12.5) * 1000),
+        Math.round(((sphereLinearVelocity.x)/12.5) * 1000),
+        Math.round(((sphereLinearVelocity.z)/12.5) * 1000),
+        Math.round(((sphereLinearVelocity.y)/12.5) * 1000)
       ],
       actionState: [suggestedAction],
-      driveState: [0] // [driveScore]
+      driveState: [driveScore]
   };
 
   const timeInTargetAreaAdder =
@@ -473,9 +503,9 @@ function actOnSuggestion (suggestedAction) {
   timeInTargetAreaSum += timeInTargetAreaAdder;
   scoreSum += driveScore;
 
-  const numberOfCycles = 750;
+  const numberOfCycles = 1500;
   if (counter < numberOfCycles) {
-    console.log(`cycle ${counter} complete`)
+    // console.log(`cycle ${counter} complete`)
     counter++;
     return getNearestPatternRecognizer(ihtaiState);
   } else {
@@ -495,22 +525,19 @@ function actOnSuggestion (suggestedAction) {
 }
 
 function getDriveScore(suggestedAction) {
-  // test logic. delete when done.
-  // console.log('SUGGESTEDACTION')
-  // console.log(suggestedAction)
-  // console.log('CURRENTKEY')
-  // console.log(currKey)
-  // if(suggestedAction === currKey) {
+  // test logic
+  // if(suggestedAction === 4) {
   //   return 0;
   // } else {
   //   return 100;
   // }
 
-  console.log('SUGGESTEDACTION')
-  console.log(suggestedAction)
+  // console.log('SUGGESTEDACTION')
+  // console.log(suggestedAction)
   var score = Math.round(Math.sqrt(
     Math.pow(sphere.position.x - box0.position.x, 2) +
-    Math.pow(sphere.position.z - box0.position.z, 2)
+    Math.pow(sphere.position.z - box0.position.z, 2) +
+    Math.pow(sphere.position.y - box0.position.y, 2)
   ));
 
   return score;
